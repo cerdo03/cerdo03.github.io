@@ -1,0 +1,11 @@
+# Local tools, secrets and private notes
+.claude/
+.DS_Store
+.env
+.env.*
+!.env.example
+node_modules/
+*.pem
+*.key
+*.log
+private/
