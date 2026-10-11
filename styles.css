@@ -217,3 +217,8 @@ footer {
 .writing-group + .writing-group {
   margin-top: 30px;
 }
+
+.learning-entry + .learning-entry,
+#sites .entry + .entry {
+  margin-top: 28px;
+}

@@ -49,3 +49,7 @@ One visual language, two levels of interaction. The homepage is a quiet director
 - Main pushes automatically publish after checks. Verify successful deployment and live pages before claiming publication complete.
 
 - Deployment versions all local CSS/JS URLs and module imports with the commit SHA. Keep this automatic cache invalidation when changing the deployment process; never require visitors to clear cache after design updates.
+
+## Inference site ownership
+
+`labs/inference/` is the canonical public inference website. The original learning chat edits these same files through its local `dist` symlink. Preserve this single source; do not copy it back into an independent site. Local edits appear here immediately; publish reviewed changes through the existing main deployment. Keep learner memory and progress files outside this public repository.
