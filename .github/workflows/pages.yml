@@ -27,14 +27,7 @@ jobs:
       - run: npm test
       - uses: actions/configure-pages@v6
       - name: Prepare public website files
-        run: |
-          mkdir _site
-          cp index.html styles.css _site/
-          cp -R assets journal labs _site/
-          if find _site -type l | read; then
-            echo "Website artifact must not contain symlinks"
-            exit 1
-          fi
+        run: node scripts/prepare-site.mjs _site "$GITHUB_SHA"
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

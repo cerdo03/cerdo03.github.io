@@ -46,3 +46,5 @@ One visual language, two levels of interaction. The homepage is a quiet director
 - GitHub Actions deploys an allowlisted static bundle: `index.html`, `styles.css`, `assets/`, `journal/`, `labs/`.
 - Keep `CLAUDE.md`, `AGENTS.md`, tests, development dependencies and private state out of the deployment artifact. Git supports the tracked symlink; Pages artifacts must contain no symlinks.
 - Main pushes automatically publish after checks. Verify successful deployment and live pages before claiming publication complete.
+
+- Deployment versions all local CSS/JS URLs and module imports with the commit SHA. Keep this automatic cache invalidation when changing the deployment process; never require visitors to clear cache after design updates.
