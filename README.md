@@ -25,3 +25,7 @@ Run `npm ci`, then `npm run lint`. Node packages are development tools only; the
 ## Privacy
 
 This repository is public. Keep credentials, private notes, internal company material and personal data out of the site and its Git history. Review staged files before pushing. Ask the owner before pushing any sensitive information.
+
+## Kafka learning site
+
+`labs/kafka/` contains the interactive Kafka Design Reader, built to understand Chirag Hasija’s [Design a Distributed Message Queue (like Kafka)](https://chiraghasija.cc/posts/design-distributed-message-queue-system-design/). The original article is credited on the site. Run `npm test` for its analytical checks.

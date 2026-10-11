@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A faithful, interactive study guide for designing a distributed message queue like Kafka.">
+    <title>Kafka Design Reader</title>
+    <link rel="stylesheet" href="./styles.css?v=article-depth-3">
+  </head>
+  <body>
+    <header class="topbar"><a class="brand" href="#top">Kafka <span>Design Reader</span></a><nav><a href="#scope">Start reading</a><a href="#capacity">Capacity</a><a href="#replication">Reliability</a><a href="#bottlenecks">Recap</a></nav></header>
+    <main id="top">
+      <section class="hero">
+        <p class="eyebrow">AN INTERACTIVE STUDY GUIDE</p>
+        <h1>Design a distributed message queue, step by step.</h1>
+        <p>One clean path through Chirag Hasija’s article. Each section follows the source order. Small tools appear only where they help you test an idea.</p>
+        <div class="hero-line"><b>Core idea</b><span>A Kafka-like queue is a partitioned, replicated, append-only log. Consumers own their offsets.</span></div>
+        <a class="action" href="#scope">Start at section 01</a>
+      </section>
+      <div class="reader-layout">
+        <aside class="article-nav" aria-label="Article sections"><p>ARTICLE MAP</p><div id="article-nav"></div></aside>
+        <section id="article-content" aria-live="polite"></section>
+      </div>
+    </main>
+    <footer>Built from <a href="https://chiraghasija.cc/posts/design-distributed-message-queue-system-design/" target="_blank" rel="noreferrer">Design a Distributed Message Queue (like Kafka)</a>. Built to help me understand this article through interactive examples. <a href="../../">Back to my technical journal</a>.</footer>
+    <script type="module" src="./app.js?v=article-depth-2"></script>
+  </body>
+</html>
