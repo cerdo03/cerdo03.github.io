@@ -24,23 +24,23 @@
 :root[data-theme="midnight"] {
   color-scheme: dark;
 
-  --paper: #171d1a;
-  --ink: #edf3ee;
-  --muted: #bcc9be;
-  --line: #4b5b50;
-  --card: #222c25;
-  --surface-alt: #2a362e;
-  --accent: #a9d8b5;
-  --accent-hover: #c7e7ce;
-  --on-accent: #15261b;
-  --accent-soft: #2c4333;
-  --success: #a9d8b5;
-  --success-soft: #2c4333;
+  --paper: #1d1916;
+  --ink: #f4eee7;
+  --muted: #c5b8aa;
+  --line: #55483d;
+  --card: #28221d;
+  --surface-alt: #342b24;
+  --accent: #d8b596;
+  --accent-hover: #ead0b8;
+  --on-accent: #211a14;
+  --accent-soft: #403025;
+  --success: #d8b596;
+  --success-soft: #403025;
   --danger-soft: #49342d;
-  --diagram: #101612;
-  --diagram-surface: #2a362e;
-  --diagram-ink: #edf3ee;
-  --diagram-muted: #bcc9be;
+  --diagram: #14110f;
+  --diagram-surface: #342b24;
+  --diagram-ink: #f4eee7;
+  --diagram-muted: #c5b8aa;
 }
 
 :root[data-theme="contrast"] {
@@ -83,4 +83,32 @@
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+}
+
+/* Shared reading typography across the journal and learning sites. */
+body {
+  font-family: var(--body-font);
+  font-size: 16px;
+  line-height: 1.65;
+}
+
+h2, h3, h4 {
+  font-family: var(--body-font);
+  font-weight: 600;
+}
+
+button.theme-toggle {
+  font: 500 13px/1.4 var(--body-font);
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+  letter-spacing: normal;
+}
+
+button.theme-toggle:hover {
+  border-color: var(--accent);
 }

@@ -26,3 +26,11 @@ test('invalid or missing preferences safely follow a valid global default', asyn
   assert.equal(resolve('midnight', 'unknown'), 'midnight');
   assert.equal(resolve('unknown', null), 'paper');
 });
+
+test('appearance preference applies across pages without changing design schemes', async () => {
+  const { resolveAppearance } = await import('../assets/theme-model.js');
+  assert.equal(resolveAppearance('paper', 'dark'), 'midnight');
+  assert.equal(resolveAppearance('midnight', 'light'), 'paper');
+  assert.equal(resolveAppearance('contrast', null), 'contrast');
+  assert.equal(resolveAppearance('paper', 'unknown'), 'paper');
+});
