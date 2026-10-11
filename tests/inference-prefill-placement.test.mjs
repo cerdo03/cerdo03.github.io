@@ -1,4 +1,14 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-test('prefill chart is inside the explanation that refers to bars below',()=>{const source=readFileSync(new URL('../labs/inference/app.js',import.meta.url),'utf8');assert.ok(source.includes('<p>${s.depth}</p>${s.scene===\'prefill\'?probabilityBars():\'\'}</details>'));});
+import {diagramHTML} from '../labs/inference/course-visuals.js';
+test('prefill reveals probability bars after processing and before selection',()=>{
+ assert.ok(!diagramHTML('prefill',{event:1}).includes('prob-track'));
+ const scored=diagramHTML('prefill',{event:2});
+ assert.ok(scored.includes('prob-track'));assert.ok(scored.includes('60%'));
+ assert.ok(!scored.includes('Chosen first answer token'));
+ assert.ok(diagramHTML('prefill',{event:3}).includes('Chosen first answer token'));
+});
+test('projection visual reveals operations without prematurely showing attention outputs',()=>{
+ const initial=diagramHTML('qkv',{event:0});assert.ok(!initial.includes('Attention output'));assert.ok(initial.includes('Q not calculated yet'));
+ const live=diagramHTML('qkv',{event:3,position:1,first:4});assert.ok(live.includes('Q = [4, 1]'));assert.ok(live.includes('K = [1, 4]'));assert.ok(live.includes('V = [8, 1]'));
+});

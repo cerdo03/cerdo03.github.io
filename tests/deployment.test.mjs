@@ -12,7 +12,7 @@ test('deployment versions page assets and module dependencies together', () => {
     assert.equal(result.status, 0, result.stderr);
     assert.match(readFileSync(join(directory, 'index.html'), 'utf8'), /assets\/theme.css\?v=test-revision/);
     assert.match(readFileSync(join(directory, 'labs/kafka/index.html'), 'utf8'), /app.js\?v=test-revision/);
-    assert.match(readFileSync(join(directory, 'labs/inference/app.js'), 'utf8'), /advanced.js\?v=test-revision/);
+    assert.match(readFileSync(join(directory, 'labs/inference/app.js'), 'utf8'), /course-visuals.js\?v=test-revision/);
     assert.match(readFileSync(join(directory, 'assets/theme.js'), 'utf8'), /theme-config.js\?v=test-revision/);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
