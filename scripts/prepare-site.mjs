@@ -16,6 +16,7 @@ function versionAssets(directory) {
     if (!/\.(html|js)$/.test(entry.name)) continue;
     let source = readFileSync(path, 'utf8');
     if (entry.name.endsWith('.html')) {
+      source = source.replace('</body>', '<script data-goatcounter="https://cerdo.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script></body>');
       source = source.replace(/(href|src)=(['"])([^'"?#]+\.(?:css|js))(?:\?[^'"#]*)?\2/g,
         (match, attribute, quote, url) => /^(?:https?:|\/\/)/.test(url) ? match : `${attribute}=${quote}${url}?v=${revision}${quote}`);
     } else {

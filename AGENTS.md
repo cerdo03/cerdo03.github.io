@@ -53,3 +53,10 @@ One visual language, two levels of interaction. The homepage is a quiet director
 ## Inference site ownership
 
 `labs/inference/` is the canonical public inference website. The original learning chat edits these same files through its local `dist` symlink. Preserve this single source; do not copy it back into an independent site. Local edits appear here immediately; publish reviewed changes through the existing main deployment. Keep learner memory and progress files outside this public repository.
+
+## Basic analytics
+
+- Published HTML gets the async GoatCounter beacon in scripts/prepare-site.mjs; local source previews do not track.
+- Endpoint: https://cerdo.goatcounter.com/count. This is a public collection address, not a credential.
+- Keep analytics limited to default page visits and referrers. No custom events, quiz tracking, learner notes or typed answers.
+- Preserve one beacon per page, including future learning sites and journal posts. No analytics dashboard or extra controls in visitor UI.
