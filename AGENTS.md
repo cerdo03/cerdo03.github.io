@@ -34,7 +34,7 @@ One visual language, two levels of interaction. The homepage is a quiet director
 
 - All pages load `assets/theme.css` and `assets/theme.js` using correct relative paths, including journal posts and every learning site.
 - Owner default lives in `assets/theme-config.js`: `defaultTheme` is `paper`, `midnight` or `contrast`. Changing it and deploying changes the design everywhere for all visitors.
-- Paper: warm neutral background and green accent. Midnight: dark neutral background and light green accent. High contrast: black/white with yellow accents.
+- Paper: warm beige background, near-black text, white surfaces and restrained brown accents. Midnight: dark neutral background and light green accent. High contrast: black/white with yellow accents.
 - Colors must use shared semantic CSS variables. Never add page-specific palettes, hardcoded colors, font families or local theme implementations. Page-specific layouts and interactive diagrams are encouraged.
 - Prefer shared `--paper`, `--ink`, `--muted`, `--line`, `--card`, `--surface-alt`, `--accent`, `--on-accent`, `--accent-soft`, `--success-soft`, `--danger-soft` and diagram tokens. Typography uses `--body-font` and `--heading-font`.
 - Theme control belongs to the owner only. Do not expose theme selectors, design menus or visitor overrides. Every visitor sees the global owner setting; ignore any legacy browser preference.

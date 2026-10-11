@@ -2,23 +2,23 @@
 :root, :root[data-theme="paper"] {
   color-scheme: light;
 
-  --paper: #faf9f6;
-  --ink: #242823;
-  --muted: #626a61;
-  --line: #dcded6;
+  --paper: #f7f3ed;
+  --ink: #211c18;
+  --muted: #6b6056;
+  --line: #ded4c8;
   --card: #ffffff;
-  --surface-alt: #efeee8;
-  --accent: #386248;
-  --accent-hover: #294c36;
+  --surface-alt: #eee6dc;
+  --accent: #79543b;
+  --accent-hover: #593c29;
   --on-accent: #ffffff;
-  --accent-soft: #e6efe6;
-  --success: #386248;
-  --success-soft: #e6efe6;
+  --accent-soft: #ede0d2;
+  --success: #79543b;
+  --success-soft: #ede0d2;
   --danger-soft: #f5e6dd;
-  --diagram: #242823;
-  --diagram-surface: #37463c;
+  --diagram: #211c18;
+  --diagram-surface: #3d3027;
   --diagram-ink: #ffffff;
-  --diagram-muted: #cbdcd0;
+  --diagram-muted: #ddd0c2;
 }
 
 :root[data-theme="midnight"] {
