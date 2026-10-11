@@ -8,7 +8,7 @@ Run `python3 -m http.server 8000` from the repository root, then open http://loc
 
 ## Publish with GitHub Pages
 
-In repository Settings → Pages, choose **Deploy from a branch**, **main**, **/(root)**, then save. Pushes to main automatically publish the site at https://cerdo03.github.io/.
+In repository Settings → Pages, choose **GitHub Actions**. The Pages workflow checks the site and deploys only public website files. Pushes to main automatically publish https://cerdo03.github.io/.
 
 ## Add a journal entry
 
@@ -20,7 +20,7 @@ Put static site files in a folder under `labs/` (for example `labs/my-experiment
 
 ## Checks
 
-Run `npm ci`, then `npm run lint`. Node packages are development tools only; the deployed site has no runtime dependencies.
+With Node.js 24 or newer, run `npm ci`, then `npm run lint`. Node packages are development tools only; the deployed site has no runtime dependencies.
 
 ## Privacy
 
@@ -29,3 +29,11 @@ This repository is public. Keep credentials, private notes, internal company mat
 ## Kafka learning site
 
 `labs/kafka/` contains the interactive Kafka Design Reader, built to understand Chirag Hasija’s [Design a Distributed Message Queue (like Kafka)](https://chiraghasija.cc/posts/design-distributed-message-queue-system-design/). The original article is credited on the site. Run `npm test` for its analytical checks.
+
+## Change the design globally
+
+Edit `defaultTheme` in `assets/theme-config.js` (`paper`, `midnight`, `contrast`), then push to main. Every page follows this default unless its visitor explicitly chooses a different theme. Choose **Site default** to follow the owner setting again. Visitor choices persist across pages and synchronize between tabs on this site.
+
+Edit `assets/theme.css` to change the shared palette or fonts. Local page CSS controls layout only. Add both shared CSS and script to every new page using relative paths. Include a labeled select with `data-theme-picker` and values `site`, `paper`, `midnight`, `contrast`.
+
+`CLAUDE.md` symlinks to `AGENTS.md`; edit the latter for future-agent design and privacy rules.

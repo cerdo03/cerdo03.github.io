@@ -1,0 +1,105 @@
+/* Shared tokens: page styles must never define their own palettes. */
+:root, :root[data-theme="paper"] {
+  color-scheme: light;
+
+  --paper: #faf9f6;
+  --ink: #242823;
+  --muted: #626a61;
+  --line: #dcded6;
+  --card: #ffffff;
+  --surface-alt: #efeee8;
+  --accent: #386248;
+  --accent-hover: #294c36;
+  --on-accent: #ffffff;
+  --accent-soft: #e6efe6;
+  --success: #386248;
+  --success-soft: #e6efe6;
+  --danger-soft: #f5e6dd;
+  --diagram: #242823;
+  --diagram-surface: #37463c;
+  --diagram-ink: #ffffff;
+  --diagram-muted: #cbdcd0;
+}
+
+:root[data-theme="midnight"] {
+  color-scheme: dark;
+
+  --paper: #171d1a;
+  --ink: #edf3ee;
+  --muted: #bcc9be;
+  --line: #4b5b50;
+  --card: #222c25;
+  --surface-alt: #2a362e;
+  --accent: #a9d8b5;
+  --accent-hover: #c7e7ce;
+  --on-accent: #15261b;
+  --accent-soft: #2c4333;
+  --success: #a9d8b5;
+  --success-soft: #2c4333;
+  --danger-soft: #49342d;
+  --diagram: #101612;
+  --diagram-surface: #2a362e;
+  --diagram-ink: #edf3ee;
+  --diagram-muted: #bcc9be;
+}
+
+:root[data-theme="contrast"] {
+  color-scheme: dark;
+
+  --paper: #000000;
+  --ink: #ffffff;
+  --muted: #eeeeee;
+  --line: #ffffff;
+  --card: #000000;
+  --surface-alt: #161616;
+  --accent: #ffff00;
+  --accent-hover: #ffffff;
+  --on-accent: #000000;
+  --accent-soft: #262600;
+  --success: #ffff00;
+  --success-soft: #262600;
+  --danger-soft: #3b1d1d;
+  --diagram: #000000;
+  --diagram-surface: #242424;
+  --diagram-ink: #ffffff;
+  --diagram-muted: #eeeeee;
+}
+
+/* Legacy learning components consume the same semantic palette. */
+:root {
+  --orange: var(--accent);
+  --orange-soft: var(--accent-soft);
+  --teal: var(--success);
+  --teal-soft: var(--success-soft);
+  --bad: var(--danger-soft);
+  --body-font: system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif;
+  --heading-font: georgia, "Times New Roman", serif;
+}
+
+.theme-control {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0 0;
+  color: var(--muted);
+  font: 12px/1.5 var(--body-font);
+}
+
+.theme-control select {
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+
+:where(a, button, input, select):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
