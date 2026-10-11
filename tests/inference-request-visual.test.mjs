@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {requestFrame} from '../labs/inference/request-visual.js';
+test('sampling first token does not cache it',()=>{const s=requestFrame(3);assert.deepEqual(s.output,['It']);assert.deepEqual(s.cache,['Explain','KV','caching']);});
+test('decode consumes first output and appends its KV before choosing second',()=>{const a=requestFrame(4),b=requestFrame(5),c=requestFrame(6);assert.equal(a.input,'It');assert.equal(a.cache.length,3);assert.equal(b.cache.length,4);assert.deepEqual(c.output,['It','stores']);assert.equal(c.cache.length,4);});
