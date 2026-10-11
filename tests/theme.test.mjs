@@ -14,10 +14,10 @@ test('site default changes apply to visitors following the global scheme', async
   assert.equal(resolve('midnight', 'site'), 'midnight');
 });
 
-test('a valid visitor preference survives navigation between pages', async () => {
+test('owner setting overrides legacy visitor preferences', async () => {
   const resolve = await resolver();
-  assert.equal(resolve('paper', 'midnight'), 'midnight');
-  assert.equal(resolve('contrast', 'midnight'), 'midnight');
+  assert.equal(resolve('paper', 'midnight'), 'paper');
+  assert.equal(resolve('contrast', 'midnight'), 'contrast');
 });
 
 test('invalid or missing preferences safely follow a valid global default', async () => {

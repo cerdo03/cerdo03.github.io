@@ -33,11 +33,11 @@ One visual language, two levels of interaction. The homepage is a quiet director
 ## Shared themes: one global source
 
 - All pages load `assets/theme.css` and `assets/theme.js` using correct relative paths, including journal posts and every learning site.
-- Owner default lives in `assets/theme-config.js`: `defaultTheme` is `paper`, `midnight` or `contrast`. Changing it and deploying changes the default everywhere.
+- Owner default lives in `assets/theme-config.js`: `defaultTheme` is `paper`, `midnight` or `contrast`. Changing it and deploying changes the design everywhere for all visitors.
 - Paper: warm neutral background and green accent. Midnight: dark neutral background and light green accent. High contrast: black/white with yellow accents.
 - Colors must use shared semantic CSS variables. Never add page-specific palettes, hardcoded colors, font families or local theme implementations. Page-specific layouts and interactive diagrams are encouraged.
 - Prefer shared `--paper`, `--ink`, `--muted`, `--line`, `--card`, `--surface-alt`, `--accent`, `--on-accent`, `--accent-soft`, `--success-soft`, `--danger-soft` and diagram tokens. Typography uses `--body-font` and `--heading-font`.
-- Every page includes an accessible `[data-theme-picker]` selector. Default is Site default; explicit visitor choices persist across same-origin pages/tabs. A visitor override wins over the owner's default until they select Site default.
+- Theme control belongs to the owner only. Do not expose theme selectors, design menus or visitor overrides. Every visitor sees the global owner setting; ignore any legacy browser preference.
 - New palettes, fonts and global visual decisions belong in shared assets, not copied page CSS. Test all themes after adding a component.
 - This synchronizes sites hosted under this journal origin; separately hosted external sites need their own integration.
 

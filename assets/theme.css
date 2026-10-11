@@ -76,25 +76,6 @@
   --heading-font: georgia, "Times New Roman", serif;
 }
 
-.theme-control {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 20px 0 0;
-  color: var(--muted);
-  font: 12px/1.5 var(--body-font);
-}
-
-.theme-control select {
-  padding: 6px 9px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--card);
-  color: var(--ink);
-  font: inherit;
-}
-
 :where(a, button, input, select):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 4px;

@@ -32,8 +32,8 @@ This repository is public. Keep credentials, private notes, internal company mat
 
 ## Change the design globally
 
-Edit `defaultTheme` in `assets/theme-config.js` (`paper`, `midnight`, `contrast`), then push to main. Every page follows this default unless its visitor explicitly chooses a different theme. Choose **Site default** to follow the owner setting again. Visitor choices persist across pages and synchronize between tabs on this site.
+Edit `defaultTheme` in `assets/theme-config.js` (`paper`, `midnight`, `contrast`), then push to main. Every page uses this owner setting for every visitor. There are no public design controls or saved visitor overrides.
 
-Edit `assets/theme.css` to change the shared palette or fonts. Local page CSS controls layout only. Add both shared CSS and script to every new page using relative paths. Include a labeled select with `data-theme-picker` and values `site`, `paper`, `midnight`, `contrast`.
+Edit `assets/theme.css` to change the shared palette or fonts. Local page CSS controls layout only. Add both shared CSS and script to every new page using relative paths.
 
 `CLAUDE.md` symlinks to `AGENTS.md`; edit the latter for future-agent design and privacy rules.
