@@ -1,6 +1,6 @@
 # Project instructions
 
-Public technical journal for GitHub account cerdo03. `CLAUDE.md` is a relative symlink to this file; keep this as the single source of agent instructions.
+Public personal journal for GitHub account cerdo03. `CLAUDE.md` is a relative symlink to this file; keep this as the single source of agent instructions.
 
 ## Privacy and workflow
 
@@ -11,14 +11,14 @@ Public technical journal for GitHub account cerdo03. `CLAUDE.md` is a relative s
 - Run relevant tests and local lint. If a lint failure comes from the current change, get owner approval before fixing it.
 - Keep source buildless HTML/CSS/JavaScript. Development tools are allowed; avoid runtime frameworks unless needed and agreed.
 
-## Design scheme: technical notebook
+## Design scheme: personal notebook
 
 One visual language, two levels of interaction. The homepage is a quiet directory and short personal introduction. Inner learning sites teach through exploration.
 
 ### Homepage and journal
 
-- Keep the homepage simple: short bio, contact links, dated notes and learning-site links. No ornamental animations, dashboards, hero illustrations or dense cards.
-- Journal entries describe a question, insight, trade-off, experiment or remaining uncertainty. Link the source and related learning site.
+- Keep the homepage simple: short bio, contact links, dated notes, a reading shelf and learning-site links. No ornamental animations, dashboards, hero illustrations or dense cards.
+- Journal entries can cover books, personal reflections, everyday observations or technical questions and experiments. Link sources and related learning sites when relevant. Never invent book opinions, ratings or experiences for the owner. Keep reading status distinct from published reflections.
 - Use readable type, generous spacing and clear hierarchy. Keep navigation short. Avoid long resumes and invented accomplishments.
 
 ### Learning sites
