@@ -19,3 +19,10 @@ test('prefill cells name the words each position mixes and the later words it ca
  assert.ok(html.includes('Mixes in: <span class="seen">Explain</span> <span class="seen">KV</span> <span class="seen">caching</span>'));
  assert.ok(html.includes('can never use later words'));
 });
+test('prefill explains mixing with a worked weighted sum before attention lessons',()=>{
+ const html=diagramHTML('prefill',{event:1});
+ assert.ok(html.includes('What does “mixing” mean?'));
+ assert.ok(html.includes('0.5 × [2, 0] = [1, 0]'));
+ assert.ok(html.includes('= [1.3, 0.8]'));
+ assert.ok(html.includes('steps 5 and 7'));
+});
