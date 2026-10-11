@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="assets/theme.css">
   <script type="module" src="assets/theme.js"></script>
+  <script type="module" src="assets/learning-tags.js"></script>
 </head>
 <body>
   <div class="page">
@@ -29,12 +30,12 @@
       <section id="sites" class="section" aria-labelledby="sites-title">
         <div class="section-heading"><h2 id="sites-title">Learning sites</h2><span>Ideas you can explore</span></div>
         <article class="entry">
-          <div class="entry-meta"><span>Interactive guide</span><span>Kafka · system design</span></div>
+          <div class="entry-meta"><span>Interactive guide</span><span data-learning-site="kafka">Kafka · System design</span></div>
           <div><h3><a href="labs/kafka/">Kafka Design Reader <span aria-hidden="true">↗</span></a></h3><p>I built this site to understand <a href="https://chiraghasija.cc/posts/design-distributed-message-queue-system-design/">Design a Distributed Message Queue (like Kafka)</a> by Chirag Hasija. Explore partitions, consumer offsets, replication, and delivery guarantees through diagrams and interactive examples.</p></div>
         </article>
         <article class="entry learning-entry">
-          <div class="entry-meta"><span>Interactive guide</span><span>AI · inference</span></div>
-          <div><h3><a href="labs/inference/">LLM Inference Lab <span aria-hidden="true">↗</span></a></h3><p>Learn how language models generate tokens, from prefill and decode to KV caching and prefix reuse. Step through diagrams, adjust examples, and explore deeper labs.</p></div>
+          <div class="entry-meta"><span>Collection · 1 site</span><span data-learning-project="llm-systems">AI · LLM systems</span></div>
+          <div><h3><a href="labs/llm-systems/">Learning LLM Systems <span aria-hidden="true">↗</span></a></h3><p>My ongoing study of language model inference and serving. Start with an interactive guide to token generation and KV caching; related learning sites will join this collection as I work through them.</p></div>
         </article>
       </section>
       <section id="journal" class="section" aria-labelledby="journal-title">

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A personal collection of interactive learning sites about LLM inference and serving.">
+  <title>Learning LLM Systems — Surya</title>
+  <link rel="stylesheet" href="../../styles.css">
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="../../assets/learning-tags.js"></script>
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a class="wordmark" href="../../">surya<span> / journal</span></a>
+      <nav aria-label="Collection navigation"><a href="../../#sites">All learning sites</a></nav>
+    </header>
+    <main>
+      <section class="intro" aria-labelledby="collection-title">
+        <p class="eyebrow">Learning collection · 1 published site</p>
+        <h1 id="collection-title">Learning LLM Systems</h1>
+        <p class="lede">My ongoing study of how language models generate text, reuse computation, and serve requests efficiently.</p>
+        <p class="small" data-learning-project="llm-systems">AI · LLM systems</p>
+        <p>This collection can grow into separate learning sites for papers and experiments. Only published sites are listed below.</p>
+      </section>
+      <section class="section" aria-labelledby="sites-title">
+        <div class="section-heading"><h2 id="sites-title">In this collection</h2><span>Start with the foundations</span></div>
+        <article class="entry">
+          <div class="entry-meta"><span>Interactive guide</span><span data-learning-site="inference">AI · LLM systems · Inference · KV cache</span></div>
+          <div>
+            <h3><a href="../inference/">LLM Inference: Foundations &amp; KV Cache <span aria-hidden="true">↗</span></a></h3>
+            <p>Explore tokens, prefill, decode, attention, cache memory and prefix reuse through interactive diagrams. These simplified simulations build intuition; they do not run a real model or measure performance.</p>
+            <p>Built while studying <a href="https://arxiv.org/abs/2309.06180">Efficient Memory Management for Large Language Model Serving with PagedAttention</a>, alongside the <a href="https://huggingface.co/docs/transformers/kv_cache">Hugging Face cache guide</a> and <a href="https://docs.vllm.ai/en/latest/features/automatic_prefix_caching/">vLLM prefix caching documentation</a>. This site covers prerequisites and related mechanisms, rather than the entire paper.</p>
+          </div>
+        </article>
+      </section>
+    </main>
+    <footer><span>Surya’s personal journal</span><a href="../../#sites">Back to learning sites</a></footer>
+  </div>
+</body>
+</html>

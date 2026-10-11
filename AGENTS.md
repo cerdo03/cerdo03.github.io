@@ -60,3 +60,11 @@ One visual language, two levels of interaction. The homepage is a quiet director
 - Endpoint: https://cerdo.goatcounter.com/count. This is a public collection address, not a credential.
 - Keep analytics limited to default page visits and referrers. No custom events, quiz tracking, learner notes or typed answers.
 - Preserve one beacon per page, including future learning sites and journal posts. No analytics dashboard or extra controls in visitor UI.
+
+## Learning collections and tags
+
+- A collection represents one learning project: a course, paper or research topic. It opens a simple landing page listing its published websites; standalone sites stay direct links.
+- Do not move existing lab URLs or break the inference source-chat symlink. Group membership is metadata, not a filesystem migration.
+- assets/learning-catalog.js is the source for project/site metadata. siteTags merges inherited project tags with site tags, deduplicating them. assets/learning-tags.js displays those tags.
+- New sites register in the catalog and appear on their collection page. Update the published count; never present planned lessons as available websites.
+- Describe scope honestly, credit primary sources, distinguish simulations from measurements, and keep personal study budgets/career plans out of public lesson guidance.
