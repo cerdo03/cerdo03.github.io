@@ -119,15 +119,18 @@ h2 {
 .entry-meta span {
   font-family: ui-monospace, monospace;
 }
-h3 {
+h3,
+h4 {
   font-size: 18px;
   font-weight: 550;
   margin: 0 0 7px;
 }
-h3 a {
+h3 a,
+h4 a {
   text-decoration: none;
 }
-h3 a span {
+h3 a span,
+h4 a span {
   color: var(--accent);
   margin-left: 5px;
 }
@@ -210,3 +213,7 @@ footer {
 @media (prefers-reduced-motion: reduce) { html {
   scroll-behavior: auto;
 } }
+
+.writing-group + .writing-group {
+  margin-top: 30px;
+}
