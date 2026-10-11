@@ -17,7 +17,7 @@ One visual language, two levels of interaction. The homepage is a quiet director
 
 ### Homepage and journal
 
-- Put personal identity first: short professional bio and modest interests, then Writing, Books and Learning sites. Keep navigation to those three links; contact links belong in the introduction. Writing has separate Technical notes and Personal reflections groups; the reading shelf tracks books, with future book essays in Personal reflections.
+- Put personal identity first: short professional bio and modest interests, then Learning sites, Writing and Books. Keep navigation to those three links; contact links belong in the introduction. Writing has separate Technical notes and Personal reflections groups; the reading shelf tracks books, with future book essays in Personal reflections.
 - Keep the homepage simple: short bio, contact links, dated notes, a reading shelf and learning-site links. No ornamental animations, dashboards, hero illustrations or dense cards.
 - Journal entries can cover books, personal reflections, everyday observations or technical questions and experiments. Link sources and related learning sites when relevant. Never invent book opinions, ratings or experiences for the owner. Keep reading status distinct from published reflections.
 - Use readable type, generous spacing and clear hierarchy. Keep navigation short. Avoid long resumes and invented accomplishments.
