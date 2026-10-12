@@ -30,6 +30,7 @@ One visual language, two levels of interaction. The homepage is a quiet director
 - Include predictions/checks with explanatory feedback where useful; do not block navigation behind quizzes.
 - Label invented numbers and simplified models. State important limits and trade-offs. Attribute and link the original article; do not present its prose as original work.
 - Preserve keyboard access, focus states, readable contrast, mobile layouts, reduced motion and a return link to the journal. Never encode meaning through color alone.
+- Inline symbol explanations: every math symbol, variable and tensor marker in lesson prose, equations, tables and diagrams (for example Q, K, V, A, O, M, T, d_model, d_k, d_v, H, H_KV, D, L, B) shows its short meaning in place when the pointer hovers it, matching the page's notation/legend table (e.g. "H_KV — Query heads and key/value heads", "B — Bytes per stored element (2 for BF16/FP16)"). Keep one shared glossary per site as the single source for these texts; never write different definitions for the same symbol. The explanation must also appear on keyboard focus and on tap, be dismissible with Escape, use an accessible description (aria-describedby or equivalent), stay within the viewport on mobile and use shared theme variables only. The visible notation table stays; tooltips supplement it.
 
 ## Shared themes: one global source
 
