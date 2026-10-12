@@ -28,9 +28,9 @@ function draw(focus){
  if(!saved.scenes[id])saved.scenes[id]={event:['decode','cache','recap'].includes(id)?(id==='decode'?2:3):0,version};
  const state=saved.scenes[id],root=$('#scene');
  if(['qkv','scores','mix'].includes(id))Object.assign(state,saved.attention||{});
- const expanded=[...root.querySelectorAll('details')].map(d=>d.open);
+ const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));
  root.innerHTML=diagramHTML(id,state);
- root.querySelectorAll('details').forEach((d,i)=>{if(expanded[i])d.open=true});
+ root.querySelectorAll('details').forEach(d=>{d.open=expanded.has(d.querySelector('summary').textContent)});
  const change=()=>{persist();draw(focus)};
  root.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{
  focus=`[data-action="${b.dataset.action}"]`;
@@ -38,10 +38,11 @@ function draw(focus){
  if(b.dataset.action==='back')state.event=Math.max(0,(state.event||0)-1);
  if(b.dataset.action==='append')state.changed=false;
  if(b.dataset.action==='edit')state.changed=true;
+ if(b.dataset.action==='restore'){state.first=representations[state.position??2][0];saved.attention={position:state.position??2,first:state.first}}
  change();
  });
  root.querySelectorAll('input,select').forEach(input=>{
- input.oninput=()=>{
+ input[input.type==='range'?'onchange':'oninput']=()=>{
  focus=`#${input.id}`;
  const key={component:'first'}[input.id]||input.id;
  state[key]=Number(input.value);
