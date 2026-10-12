@@ -1,0 +1,143 @@
+/* Lesson 2.5 page-specific layout. Shared theme tokens only (no colours or fonts defined here). */
+
+.preset-row {
+  align-items: center;
+}
+
+.preset-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.calc-table td.num,
+.calc-table th.num {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.calc-table td.formula {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.calc-table tr.is-total > th,
+.calc-table tr.is-total > td {
+  font-weight: 700;
+  border-top: 2px solid var(--ink);
+}
+
+.calc-table.is-stale {
+  opacity: 0.45;
+}
+
+input[aria-invalid="true"] {
+  border: 2px dashed var(--ink);
+  background: var(--danger-soft);
+}
+
+.lab-error ul {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+}
+
+/* Chart */
+.kv-chart {
+  margin: 8px 0 0;
+}
+
+.kv-chart svg {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  color: var(--ink);
+}
+
+.kv-chart figcaption {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.chart-grid line {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-grid line.chart-axis {
+  stroke: var(--muted);
+}
+
+.chart-tick {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-axis-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chart-end {
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-series polyline,
+.legend-swatch line {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.series-current polyline,
+.series-current line {
+  stroke: var(--accent);
+}
+
+.series-current circle {
+  fill: var(--accent);
+  stroke: var(--card);
+  stroke-width: 2;
+}
+
+.series-reference polyline,
+.series-reference line {
+  stroke: var(--ink);
+  stroke-dasharray: 7 5;
+}
+
+.series-reference rect {
+  fill: var(--card);
+  stroke: var(--ink);
+  stroke-width: 2;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.chart-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-swatch {
+  inline-size: 36px;
+  block-size: 12px;
+  flex: none;
+}

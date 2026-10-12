@@ -7,6 +7,7 @@
   <title>2.5 KV-Cache Memory &amp; Performance — Module 2</title>
   <link rel="stylesheet" href="../../assets/theme.css">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lesson-5.css">
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-5.js"></script>
@@ -50,32 +51,232 @@
       <header class="lesson-header">
         <p class="eyebrow">Module 2 · Lesson 2.5 of 2.5</p>
         <h1>KV-Cache Memory &amp; Performance</h1>
-        <!-- LESSON CONTENT: lesson agent fills (learning goal and lesson intro) -->
+        <p class="lede">Lesson 2.4 showed <em>what</em> the KV cache holds. This lesson asks <em>how big</em> it is and <em>what it costs</em> to read during decode.</p>
+        <div class="callout">
+          <p><span class="callout-label">Learning goal.</span> Derive the raw KV-cache size from a model’s attention configuration, compute it for real-looking configurations in correct units, see how it grows with context length and concurrency, and explain why reading it can dominate decode-time memory traffic.</p>
+          <p><span class="callout-label">Concrete example used throughout.</span> A hypothetical decoder with <var>L</var> = 32 layers, <var>H</var><sub>KV</sub> = 8 KV heads, head dimension <var>D</var> = 128, cache stored in BF16, holding a 4,096-token context. Its cache is exactly 536,870,912 bytes = 512 MiB.</p>
+          <p><span class="callout-label">Builds on.</span> <a href="lesson-3.html#s2-3-3">2.3 KV heads (MHA/MQA/GQA)</a> and <a href="lesson-4.html#s2-4-2">2.4 cache shape</a>.</p>
+        </div>
       </header>
 
       <section id="s2-5-1" aria-labelledby="s2-5-1-title">
         <h2 id="s2-5-1-title">2.5.1 Deriving KV-cache memory</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p><strong>The problem.</strong> Before deploying a model you need to know how much memory each request’s cache will occupy. The answer follows directly from the conceptual shape from Lesson 2.4: for each layer, keys and values are each a tensor of shape [<var>T</var>, <var>H</var><sub>KV</sub>, <var>D</var>].</p>
+
+        <h3>Step 1: one token in one layer</h3>
+        <p>For one new token, each KV head in a layer stores one key vector and one value vector, each with <var>D</var> numbers, and each number takes <var>B</var> bytes.</p>
+        <div class="eq" role="math" aria-label="bytes per token per layer equals 2 times H KV times D times B">bytes per token per layer = 2 · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
+        <p>Example: 2 × 8 × 128 × 2 = <span class="num">4,096</span> B = 4 KiB. The 2 counts the key <em>and</em> the value; forgetting it is the most common mistake.</p>
+
+        <h3>Step 2: one token across all layers</h3>
+        <p>Every attention layer has its own projections, so every layer keeps its own K and V for the token. Nothing is shared across layers in this model.</p>
+        <div class="eq" role="math" aria-label="bytes per token equals 2 times L times H KV times D times B">bytes per token = 2 · <var>L</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
+        <p>Example: 32 × 4,096 = <span class="num">131,072</span> B = 128 KiB per cached token.</p>
+
+        <h3>Step 3: a whole sequence</h3>
+        <p>A sequence with <var>T</var> cached tokens stores that per-token amount <var>T</var> times.</p>
+        <div class="eq eq-boxed" role="math" aria-label="M KV equals 2 times L times T times H KV times D times B">
+          <var>M</var><sub>KV</sub> = 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>  bytes
+        </div>
+        <dl class="eq-vars">
+          <dt><var>M</var><sub>KV</sub></dt><dd>Raw key and value storage for one sequence, in bytes. Not total GPU memory.</dd>
+          <dt>2</dt><dd>One key tensor and one value tensor (K and V are the same size here).</dd>
+          <dt><var>L</var></dt><dd>Number of attention layers, each with its own cache.</dd>
+          <dt><var>T</var></dt><dd>Cached tokens in the sequence: prompt plus processed generated tokens (Lesson 2.4: tokens processed, not merely sampled).</dd>
+          <dt><var>H</var><sub>KV</sub></dt><dd>Key/value heads per layer: equal to query heads for MHA, 1 for MQA, between for GQA (Lesson 2.3).</dd>
+          <dt><var>D</var></dt><dd>Head dimension: numbers per key or value vector (assumed equal for K and V).</dd>
+          <dt><var>B</var></dt><dd>Bytes per stored element: 4 for FP32, 2 for BF16/FP16, 1 for FP8/INT8.</dd>
+        </dl>
+        <p>Worked example: 2 × 32 × 4,096 × 8 × 128 × 2 = <strong class="num">536,870,912 bytes</strong>. Because every factor is a power of two, this is exactly 2<sup>29</sup> bytes = <strong>512 MiB</strong>.</p>
+        <p><strong>Engineering implication.</strong> Memory is linear in every factor. Doubling context doubles it; cutting KV heads from 32 to 8 (MHA-style to GQA-style) cuts it by 4×; halving bytes per element halves it. Query heads do not appear, because queries are not cached.</p>
+
+        <h3>Decimal versus binary units</h3>
+        <p>Two unit systems are in everyday use and are easy to mix up. Decimal (SI) units are powers of 1,000; binary (IEC) units are powers of 1,024. GPU memory is often marketed in GB while tools such as <code>nvidia-smi</code> report MiB, so always say which you mean.</p>
+        <section class="table-scroll" tabindex="0" aria-label="Byte unit comparison">
+          <table class="key-table">
+            <caption>The worked-example cache in both unit systems</caption>
+            <thead><tr><th scope="col">Unit</th><th scope="col">Bytes per unit</th><th scope="col">536,870,912 B is</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">MB (megabyte)</th><td class="num">1,000,000 = 10<sup>6</sup></td><td class="num">536.87 MB</td></tr>
+              <tr><th scope="row">MiB (mebibyte)</th><td class="num">1,048,576 = 2<sup>20</sup></td><td class="num">512 MiB exactly</td></tr>
+              <tr><th scope="row">GB (gigabyte)</th><td class="num">1,000,000,000 = 10<sup>9</sup></td><td class="num">0.537 GB</td></tr>
+              <tr><th scope="row">GiB (gibibyte)</th><td class="num">1,073,741,824 = 2<sup>30</sup></td><td class="num">0.5 GiB exactly</td></tr>
+            </tbody>
+          </table>
+        </section>
+        <p>1 MiB is about 4.9% larger than 1 MB, and 1 GiB is about 7.4% larger than 1 GB. At the scale of a deployment (tens of GiB) that gap is several gigabytes, enough to turn “fits” into “does not fit”.</p>
       </section>
 
       <section id="s2-5-2" aria-labelledby="s2-5-2-title">
         <h2 id="s2-5-2-title">2.5.2 KV-cache memory calculator</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>The calculator applies the boxed formula to any configuration and to many concurrent sequences. With <var>N</var> sequences of possibly different lengths <var>T</var><sub>i</sub>, the raw total is a sum; for equal lengths it collapses to a product:</p>
+        <div class="eq" role="math" aria-label="M total equals the sum over i of 2 L T i H KV D B, which for N equal lengths equals N times 2 L T H KV D B">
+          <var>M</var><sub>total</sub> = Σ<sub><var>i</var></sub> 2 · <var>L</var> · <var>T</var><sub><var>i</var></sub> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>   =   <var>N</var> · 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>  (if every <var>T</var><sub><var>i</var></sub> = <var>T</var>)
+        </div>
+        <p>Unequal example (worked example config): three requests with 1,000, 4,000 and 8,000 cached tokens hold 13,000 tokens × 131,072 B = 1,703,936,000 B ≈ 1.70 GB ≈ 1.59 GiB. Only the total token count matters, not how it is split. The calculator below assumes equal lengths.</p>
+
+        <div class="lab" role="group" aria-labelledby="calc-title" id="kv-calculator">
+          <div class="lab-header"><h3 id="calc-title">KV-cache memory calculator</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>Raw K and V bytes for one sequence and for <var>N</var> concurrent sequences, from the formula above, in exact bytes, decimal and binary units.</dd></div>
+              <div><dt>Try</dt><dd>Load Example C (MHA-style) and compare it with Example A, then change only <var>T</var>, then only <var>B</var>.</dd></div>
+              <div><dt>What to notice</dt><dd>Each input scales the result proportionally. Example C needs 4× Example A because it has 4× the KV heads; nothing else differs.</dd></div>
+            </dl></div>
+          <div class="lab-controls">
+            <label class="field"><span>Layers <var>L</var></span><input id="calc-layers" type="number" min="1" max="1024" step="1" value="32" inputmode="numeric"></label>
+            <label class="field"><span>KV heads <var>H</var><sub>KV</sub></span><input id="calc-kv-heads" type="number" min="1" max="1024" step="1" value="8" inputmode="numeric"></label>
+            <label class="field"><span>Head dim <var>D</var></span><input id="calc-head-dim" type="number" min="1" max="4096" step="1" value="128" inputmode="numeric"></label>
+            <label class="field"><span>Cached tokens <var>T</var></span><input id="calc-seq-len" type="number" min="1" max="10000000" step="1" value="4096" inputmode="numeric"></label>
+            <label class="field"><span>Precision <var>B</var></span>
+              <select id="calc-bytes">
+                <option value="4">FP32 (4 bytes)</option>
+                <option value="2" selected>BF16 / FP16 (2 bytes)</option>
+                <option value="1">FP8 / INT8 (1 byte)</option>
+              </select></label>
+            <label class="field"><span>Sequences <var>N</var></span><input id="calc-sequences" type="number" min="1" max="100000" step="1" value="1" inputmode="numeric"></label>
+            <button type="button" class="button-secondary" id="calc-reset">Reset to worked example</button>
+          </div>
+          <div class="lab-controls preset-row">
+            <span class="preset-label" id="preset-label">Illustrative configurations (hypothetical; they set <var>L</var>, <var>H</var><sub>KV</sub>, <var>D</var>):</span>
+            <div class="preset-buttons" role="group" aria-labelledby="preset-label">
+              <button type="button" class="button-secondary" data-preset="a">A: 32 / 8 / 128 (GQA-style)</button>
+              <button type="button" class="button-secondary" data-preset="b">B: 40 / 8 / 128 (GQA-style)</button>
+              <button type="button" class="button-secondary" data-preset="c">C: 32 / 32 / 128 (MHA-style)</button>
+              <button type="button" class="button-secondary" data-preset="d">D: 32 / 1 / 128 (MQA-style)</button>
+            </div>
+          </div>
+          <div class="lab-body">
+            <p class="lab-error" role="alert" id="calc-errors" hidden></p>
+            <section class="table-scroll" tabindex="0" aria-label="Calculator results">
+              <table id="calc-table" class="calc-table">
+                <caption>Raw KV-cache storage for the current inputs</caption>
+                <thead><tr><th scope="col">Quantity</th><th scope="col">Formula (bytes)</th><th scope="col">Bytes</th><th scope="col">Decimal (SI)</th><th scope="col">Binary (IEC)</th></tr></thead>
+                <tbody id="calc-rows"></tbody>
+              </table>
+            </section>
+          </div>
+          <div class="lab-output" aria-live="polite">
+            <p id="calc-summary"></p>
+            <p id="calc-growth"></p>
+            <p id="calc-preset-note" class="small"></p>
+          </div>
+          <p class="lab-assumptions">Assumptions: K and V have the same head dimension; every layer has the same <var>H</var><sub>KV</sub> and caches every token; contiguous logical tensors; no cache sharing between sequences. The example configurations are illustrative, not the specifications of any particular released model. FP8/INT8 KV quantization usually also stores small per-block or per-head scale factors, which this calculator does not model.</p>
+        </div>
+
+        <div class="callout limit">
+          <p><span class="callout-label">What this number is not.</span> It is the raw size of the K and V tensors only, not total GPU memory. It excludes:</p>
+          <ul>
+            <li>model weights (usually the largest single item);</li>
+            <li>activations and temporary buffers for the forward pass (including attention workspace and logits);</li>
+            <li>allocator metadata, block tables and fragmentation;</li>
+            <li>padding and partially filled blocks in block-based allocators (2.5.3);</li>
+            <li>the serving framework’s own memory, CUDA context and communication buffers;</li>
+            <li>savings from prefix sharing or KV compression/quantization schemes beyond the chosen <var>B</var>.</li>
+          </ul>
+        </div>
       </section>
 
       <section id="s2-5-3" aria-labelledby="s2-5-3-title">
         <h2 id="s2-5-3-title">2.5.3 Memory versus context length</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>The formula says memory is proportional to <var>T</var>: a straight line through zero whose slope is the per-token cost times <var>N</var>. The chart makes the two levers visible together: context length moves you along a line; KV-head count changes the line’s slope.</p>
+
+        <div class="lab" role="group" aria-labelledby="chart-title" id="kv-chart-lab">
+          <div class="lab-header"><h3 id="chart-title">Raw KV memory versus context length</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>Aggregate raw KV memory for <var>N</var> equal-length sequences as <var>T</var> grows, for your <var>H</var><sub>KV</sub> (solid, circles) and a reference <var>H</var><sub>KV</sub> (dashed, squares).</dd></div>
+              <div><dt>Try</dt><dd>Set the maximum context to 131,072 tokens, then raise <var>N</var> to 8. Then set <var>H</var><sub>KV</sub> to 1 (MQA-style).</dd></div>
+              <div><dt>What to notice</dt><dd>Lines stay straight; <var>N</var> and <var>H</var><sub>KV</sub> only change the slope. The gap between the lines is a constant ratio, reference ÷ current.</dd></div>
+            </dl></div>
+          <div class="lab-controls">
+            <label class="field"><span>KV heads <var>H</var><sub>KV</sub></span><input id="chart-kv-heads" type="number" min="1" max="128" step="1" value="8" inputmode="numeric"></label>
+            <label class="field"><span>Reference <var>H</var><sub>KV</sub></span><input id="chart-ref-heads" type="number" min="1" max="128" step="1" value="32" inputmode="numeric"></label>
+            <label class="field"><span>Maximum context</span>
+              <select id="chart-max-context">
+                <option value="4096">4,096 tokens</option>
+                <option value="8192">8,192 tokens</option>
+                <option value="32768" selected>32,768 tokens</option>
+                <option value="131072">131,072 tokens</option>
+              </select></label>
+            <label class="field"><span>Sequences <var>N</var></span><input id="chart-sequences" type="number" min="1" max="1024" step="1" value="1" inputmode="numeric"></label>
+            <button type="button" class="button-secondary" id="chart-reset">Reset</button>
+          </div>
+          <div class="lab-body">
+            <p class="lab-error" role="alert" id="chart-errors" hidden></p>
+            <ul class="chart-legend">
+              <li><svg class="legend-swatch series-current" viewBox="0 0 36 12" aria-hidden="true"><line x1="0" y1="6" x2="36" y2="6"></line><circle cx="18" cy="6" r="4"></circle></svg> <span>Your <var>H</var><sub>KV</sub>: solid line, circle markers</span></li>
+              <li><svg class="legend-swatch series-reference" viewBox="0 0 36 12" aria-hidden="true"><line x1="0" y1="6" x2="36" y2="6"></line><rect x="14" y="2" width="8" height="8"></rect></svg> <span>Reference <var>H</var><sub>KV</sub> (default 32, MHA-style): dashed line, square markers</span></li>
+            </ul>
+            <figure class="kv-chart">
+              <svg id="kv-chart" viewBox="0 0 640 340" role="img" aria-labelledby="kv-chart-title kv-chart-desc"><title id="kv-chart-title">Raw KV-cache memory versus cached context length</title><desc id="kv-chart-desc">Loading chart.</desc></svg>
+              <figcaption>Fixed in this chart: <var>L</var> = 32, <var>D</var> = 128, BF16 (<var>B</var> = 2). The y-axis uses binary units; exact bytes are in the table.</figcaption>
+            </figure>
+            <section class="table-scroll" tabindex="0" aria-label="Chart data table">
+              <table class="calc-table">
+                <caption>Chart data (same values as the plotted markers)</caption>
+                <thead><tr><th scope="col">Cached tokens <var>T</var></th><th scope="col" id="chart-col-current">H_KV</th><th scope="col" id="chart-col-ref">Reference</th></tr></thead>
+                <tbody id="chart-rows"></tbody>
+              </table>
+            </section>
+          </div>
+          <div class="lab-output" aria-live="polite" id="chart-output"></div>
+          <p class="lab-assumptions">Assumptions: idealised linear model with exactly <var>T</var> × per-token bytes per sequence; all <var>N</var> sequences have the same length; no block rounding, fragmentation, weights or activations; <var>L</var>, <var>D</var> and <var>B</var> fixed as stated.</p>
+        </div>
+
+        <h3>Real allocators grow in steps</h3>
+        <p>Serving engines rarely grow one token at a time. A common design reserves KV memory in fixed-size <em>blocks</em> of tokens; vLLM, for example, exposes a <code>block_size</code> setting, the “size of a contiguous cache block in number of tokens” (<a href="https://docs.vllm.ai/en/latest/configuration/engine_args.html">vLLM engine arguments</a>); 16 tokens is a commonly used value and is used in the example below. With 16-token blocks, a sequence of <var>T</var> tokens reserves ⌈<var>T</var> / 16⌉ × 16 token slots, so the true curve is a staircase that sits on or slightly above the straight line.</p>
+        <p>Example (worked-example config): <var>T</var> = 4,097 needs ⌈4,097 / 16⌉ = 257 blocks = 4,112 slots. The 15 unused slots cost 15 × 131,072 B = 1,966,080 B ≈ 1.88 MiB. The waste per sequence is at most one partly filled block, so it matters most for many short sequences and little for a few long ones. How blocks are allocated, shared and freed is the subject of Module 3 (PagedAttention); here, just remember that the linear formula is a lower bound for what an allocator reserves.</p>
       </section>
 
       <section id="s2-5-4" aria-labelledby="s2-5-4-title">
         <h2 id="s2-5-4-title">2.5.4 Bandwidth during decode</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Memory capacity is one cost of the cache. The other is <em>reading</em> it. In each decode step, the new token’s query must be compared with every cached key and must weight every cached value (Lesson 2.4: caching avoids recomputing K/V, not attention itself). So the attention layers read the cached K and V of every attended position, in every layer, at every step.</p>
+
+        <figure class="diagram">
+          <ol class="flow-steps">
+            <li>Longer context <var>T</var></li>
+            <li>More cached K/V per sequence</li>
+            <li>More KV bytes read per decode step</li>
+            <li>Greater memory-bandwidth demand</li>
+          </ol>
+          <figcaption>Simplified causal chain. Caveats: attention variants that attend to fewer positions (for example sliding windows), cache data already resident in on-chip memory, kernel optimisations and hardware all change how strongly the last step follows.</figcaption>
+        </figure>
+
+        <h3>KV bytes read per decode step</h3>
+        <p>Assume the new query attends to all <var>T</var> cached positions and every cached byte is read from GPU memory exactly once per step. Then one decode step for one sequence reads approximately the whole cache:</p>
+        <div class="eq" role="math" aria-label="KV bytes read per decode step approximately equals 2 times L times T times H KV times D times B">KV bytes read per step ≈ 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
+        <p>Worked example: for the default configuration at <var>T</var> = 4,096, every generated token requires reading ≈ 536,870,912 B = <strong>512 MiB</strong> of K/V for that one sequence, and the amount grows by 128 KiB with each token generated. With 32 such sequences in a decode batch, a step reads ≈ 16 GiB (≈ 17.18 GB) of K/V. For scale: the weights of a hypothetical 8-billion-parameter model in BF16 are about 16 GB, so at this batch size and context the KV reads are comparable to the weight reads.</p>
+
+        <h3>Arithmetic intensity: why KV reads are hard to hide</h3>
+        <p><em>Arithmetic intensity</em> is FLOPs performed per byte moved from memory. Work whose intensity is below the hardware’s compute-to-bandwidth ratio (commonly tens to hundreds of FLOPs per byte on modern data-centre GPUs) tends to be limited by memory bandwidth rather than arithmetic.</p>
+        <ul>
+          <li><strong>Attention during decode.</strong> Per layer and KV head, a step reads 2 · <var>T</var> · <var>D</var> · <var>B</var> bytes of K and V. Each of the <var>g</var> query heads sharing that KV head does about 2<var>D</var> FLOPs per key (scores) and 2<var>D</var> per value (weighted sum), so about 4 · <var>g</var> · <var>T</var> · <var>D</var> FLOPs. Intensity ≈ 2<var>g</var> / <var>B</var>: with 32 query heads over 8 KV heads (<var>g</var> = 4) in BF16, about 4 FLOPs per byte; MHA (<var>g</var> = 1) about 1. Simplified: softmax and scaling are ignored.</li>
+          <li><strong>Weight matrix multiplies.</strong> A weight matrix is read once per step and used by every sequence in the batch, so its intensity grows roughly with batch size (about <var>b</var> FLOPs per byte for batch <var>b</var> in BF16).</li>
+          <li><strong>The asymmetry.</strong> Each sequence has its own cache, so KV reads do not amortise across the batch. Raising decode batch size improves weight-read utilisation, but total KV traffic grows with Σ <var>T</var><sub>i</sub> and attention’s intensity stays low. Long contexts therefore make decode increasingly dominated by KV reads, and fewer KV heads (GQA/MQA) or smaller <var>B</var> reduce those bytes directly.</li>
+        </ul>
+
+        <div class="callout limit">
+          <p><span class="callout-label">Limits.</span> Decode is often bandwidth-sensitive but not always bandwidth-bound: with short contexts, small batches dominated by fixed overheads, or large batches whose weight multiplies become compute-heavy, other limits appear. Prefill attention, with many queries per cached key, has much higher intensity. There is no universal latency equation: real step time depends on kernels, overlap of compute and memory traffic, cache residency, parallelism and hardware. The per-step read formula is a first-order estimate of traffic, not a timing model.</p>
+        </div>
+        <p>IO-aware attention kernels such as FlashAttention (<a href="https://arxiv.org/abs/2205.14135">Dao et al., 2022</a>) reduce memory traffic by avoiding materialising the full attention matrix in GPU memory; they still have to read the cached K and V. Their internals are outside this module.</p>
       </section>
 
       <section id="s2-5-5" aria-labelledby="s2-5-5-title">
         <h2 id="s2-5-5-title">2.5.5 Exercise: sizing a deployment’s KV cache</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Use the boxed formula (or work by hand, then check with the calculator) to size a deployment’s cache. Choose the unit you computed in; GB and GiB are graded as different units.</p>
+        <div id="kv-exercise"></div>
+
+        <h3>Why this number alone cannot decide a deployment</h3>
+        <p>Knowing the raw KV total is necessary but not sufficient to say whether a GPU deployment works:</p>
+        <ul>
+          <li><strong>Weights come first.</strong> Model parameters usually occupy more memory than any single item, and they must fit alongside the cache.</li>
+          <li><strong>Activations and workspace.</strong> The forward pass needs temporary buffers, especially during prefill of long prompts.</li>
+          <li><strong>Allocator overhead and fragmentation.</strong> Block rounding, block tables and fragmentation make reserved memory exceed the raw total.</li>
+          <li><strong>Sharding across GPUs.</strong> With tensor parallelism, KV heads are typically split across GPUs, so each GPU holds only part of the cache (and if there are fewer KV heads than GPUs, heads may be replicated, increasing the total). The per-GPU figure, not the total, has to fit.</li>
+          <li><strong>Request-length variance.</strong> Real requests are not all 8,000 tokens; the sum Σ <var>T</var><sub>i</sub> fluctuates, and output length is unknown when a request is admitted.</li>
+          <li><strong>Headroom.</strong> Engines reserve a configurable fraction of GPU memory (vLLM’s <code>gpu_memory_utilization</code>, the fraction of GPU memory the engine may use, for example) and need slack for spikes; running at 100% leads to preemption or out-of-memory failures.</li>
+          <li><strong>Bandwidth, not just capacity.</strong> Even when the cache fits, 2.5.4 shows that reading it every step affects throughput and latency.</li>
+        </ul>
+        <p>Further reading: <a href="https://docs.vllm.ai/">vLLM documentation</a> (KV cache memory management and configuration); <a href="https://arxiv.org/abs/2305.13245">Ainslie et al., GQA</a>; <a href="https://arxiv.org/abs/1911.02150">Shazeer, MQA</a>.</p>
       </section>
 
       <nav class="pager" aria-label="Previous and next lesson">
