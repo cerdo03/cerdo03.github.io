@@ -7,6 +7,7 @@
   <title>2.3 MHA vs MQA vs GQA — Module 2</title>
   <link rel="stylesheet" href="../../assets/theme.css">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lesson-3.css">
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-3.js"></script>
@@ -51,37 +52,185 @@
       <header class="lesson-header">
         <p class="eyebrow">Module 2 · Lesson 2.3 of 2.5</p>
         <h1>MHA vs MQA vs GQA</h1>
-        <!-- LESSON CONTENT: lesson agent fills (learning goal and lesson intro) -->
+        <p class="lede"><strong>Learning goal:</strong> explain how multi-head, multi-query and grouped-query attention differ only in how many key/value heads they keep; map any query head to its KV head; and compute how that choice changes the raw KV cache for one sequence.</p>
+        <p>In Lesson 2.2 every head had its own query, key and value projections. During decode, the keys and values of every processed token are cached (Module 1), so the number of <em>key/value</em> heads decides how much is stored and read per step. This lesson changes only that number and keeps everything else fixed.</p>
       </header>
 
       <section id="s2-3-1" aria-labelledby="s2-3-1-title">
         <h2 id="s2-3-1-title">2.3.1 Three ways to share key/value heads</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Write <var>H</var><sub>q</sub> for the number of query heads and <var>H</var><sub>KV</sub> for the number of key/value heads in one attention layer. Each KV head has one key projection and one value projection, so it produces one cached key vector and one cached value vector per token. Query heads never shrink in these designs: every query head still computes its own attention pattern. What changes is how many distinct key/value heads those queries read.</p>
+        <div class="table-scroll">
+          <table class="key-table">
+            <caption>Reference layouts with 16 query heads and head dimension <var>D</var> = 128 (example values)</caption>
+            <thead>
+              <tr><th scope="col">Layout</th><th scope="col">Query heads <var>H</var><sub>q</sub></th><th scope="col">Key heads</th><th scope="col">Value heads</th><th scope="col">Query heads per KV head</th><th scope="col">K (and V) projection output width <var>H</var><sub>KV</sub>·<var>D</var></th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">MHA (multi-head)</th><td class="num">16</td><td class="num">16</td><td class="num">16</td><td class="num">1</td><td class="num">2,048</td></tr>
+              <tr><th scope="row">GQA (grouped-query)</th><td class="num">16</td><td class="num">4</td><td class="num">4</td><td class="num">4</td><td class="num">512</td></tr>
+              <tr><th scope="row">MQA (multi-query)</th><td class="num">16</td><td class="num">1</td><td class="num">1</td><td class="num">16</td><td class="num">128</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li><strong>MHA</strong> (Vaswani et al., 2017) gives every query head a private key head and value head.</li>
+          <li><strong>MQA</strong> (Shazeer, 2019) keeps many query heads but one shared key head and one shared value head.</li>
+          <li><strong>GQA</strong> (Ainslie et al., 2023) splits the query heads into equal groups; each group shares one key head and one value head.</li>
+        </ul>
+        <p class="callout"><span class="callout-label">Intuition, not mechanism:</span> think of KV heads as shared reference tables. MHA gives each reader its own copy built by its own projection; MQA makes all readers consult one table; GQA gives each team of readers one table. Each reader still asks its own question (its own query), so attention weights can still differ across heads that share K and V.</p>
       </section>
 
       <section id="s2-3-2" aria-labelledby="s2-3-2-title">
         <h2 id="s2-3-2-title">2.3.2 GQA generalises MHA and MQA</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p><strong>Problem it solves:</strong> one rule should tell us which key/value head every query head reads, for any valid layout.</p>
+        <div class="eq eq-boxed" role="math" aria-label="G equals H q over H K V. g of i equals floor of i over G. head i equals Attention of X W Q i, X W K g of i, X W V g of i.">
+          <var>G</var> = <var>H</var><sub>q</sub> / <var>H</var><sub>KV</sub><br><var>g</var>(<var>i</var>) = ⌊<var>i</var> / <var>G</var>⌋<br>head<sub><var>i</var></sub> = Attention(<var>X</var><var>W</var><sup>Q</sup><sub><var>i</var></sub>, <var>X</var><var>W</var><sup>K</sup><sub><var>g</var>(<var>i</var>)</sub>, <var>X</var><var>W</var><sup>V</sup><sub><var>g</var>(<var>i</var>)</sub>)
+        </div>
+        <dl class="eq-vars">
+          <dt><var>H</var><sub>q</sub>, <var>H</var><sub>KV</sub></dt><dd>query heads and key/value heads in the layer; <var>H</var><sub>q</sub> must be divisible by <var>H</var><sub>KV</sub> so every group has the same size.</dd>
+          <dt><var>G</var></dt><dd>group size: how many query heads share one KV head.</dd>
+          <dt><var>i</var></dt><dd>query head index, numbered from 0 to <var>H</var><sub>q</sub> − 1.</dd>
+          <dt><var>g</var>(<var>i</var>)</dt><dd>index of the KV head (and group) that query head <var>i</var> reads.</dd>
+          <dt><var>X</var>, <var>W</var></dt><dd>layer input [<var>T</var>, <var>d</var><sub>model</sub>] and learned projections; <var>W</var><sup>Q</sup><sub><var>i</var></sub>, <var>W</var><sup>K</sup><sub><var>g</var></sub>, <var>W</var><sup>V</sup><sub><var>g</var></sub> each have shape [<var>d</var><sub>model</sub>, <var>D</var>] (biases omitted).</dd>
+        </dl>
+        <p><strong>Example:</strong> <var>H</var><sub>q</sub> = 16, <var>H</var><sub>KV</sub> = 4, so <var>G</var> = 4. Query head 5 reads KV head ⌊5 / 4⌋ = 1, together with query heads 4, 6 and 7. Query head 15 reads KV head ⌊15 / 4⌋ = 3.</p>
+        <p><strong>Special cases:</strong></p>
+        <ul>
+          <li><var>H</var><sub>KV</sub> = <var>H</var><sub>q</sub> → <var>G</var> = 1 → <var>g</var>(<var>i</var>) = <var>i</var>: every query head has its own KV head. This is <strong>MHA</strong>.</li>
+          <li><var>H</var><sub>KV</sub> = 1 → <var>G</var> = <var>H</var><sub>q</sub> → <var>g</var>(<var>i</var>) = 0 for all <var>i</var>: one KV head for everyone. This is <strong>MQA</strong>.</li>
+        </ul>
+        <h3>Tensor view</h3>
+        <p>Per layer, without a batch dimension: <var>Q</var> has shape [<var>T</var>, <var>H</var><sub>q</sub>, <var>D</var>], while <var>K</var> and <var>V</var> have shape [<var>T</var>, <var>H</var><sub>KV</sub>, <var>D</var>]. Only the smaller K and V tensors go into the cache. The illustrative pseudo-code below shows two ways to compute the same result.</p>
+        <pre><code># Q: [T, H_q, D]   K, V: [T, H_kv, D]   (one layer, no batch dimension)
+G = H_q // H_kv
+
+# Naive: materialise repeated copies so shapes match MHA code.
+K_rep = repeat_each_head(K, G, axis=1)   # [T, H_q, D]: KV0 x G, KV1 x G, ...
+V_rep = repeat_each_head(V, G, axis=1)   # [T, H_q, D]
+for i in range(H_q):
+    out[:, i] = attention(Q[:, i], K_rep[:, i], V_rep[:, i])
+
+# Index-based: read the shared head directly; no [T, H_q, D] copies.
+for i in range(H_q):
+    out[:, i] = attention(Q[:, i], K[:, i // G], V[:, i // G])</code></pre>
+        <p>The repeat must place copies next to each other (KV0, KV0, KV0, KV0, KV1, …) so that position <var>i</var> holds KV head ⌊<var>i</var>/<var>G</var>⌋. Even in the naive version the cache stores only [<var>T</var>, <var>H</var><sub>KV</sub>, <var>D</var>]; the repeated tensors are temporaries. Optimised attention kernels typically avoid materialising them and load each shared K/V block once for all <var>G</var> query heads.</p>
       </section>
 
       <section id="s2-3-3" aria-labelledby="s2-3-3-title">
         <h2 id="s2-3-3-title">2.3.3 Comparing head layouts and KV memory</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>The cache stores one key and one value vector of length <var>D</var> per KV head, per token, per layer. Lesson 2.5 derives this formula step by step; here we use it to compare layouts.</p>
+        <div class="eq eq-boxed" role="math" aria-label="M K V equals 2 times L times T times H K V times D times B">
+          <var>M</var><sub>KV</sub> = 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>
+        </div>
+        <dl class="eq-vars">
+          <dt>2</dt><dd>one key tensor and one value tensor.</dd>
+          <dt><var>L</var></dt><dd>number of attention layers (fixed at 32 in the tool).</dd>
+          <dt><var>T</var></dt><dd>cached sequence length in tokens.</dd>
+          <dt><var>H</var><sub>KV</sub></dt><dd>key/value heads per layer. <var>H</var><sub>q</sub> does not appear.</dd>
+          <dt><var>D</var></dt><dd>head dimension.</dd>
+          <dt><var>B</var></dt><dd>bytes per element (fixed at 2 for BF16 in the tool).</dd>
+        </dl>
+
+        <div class="lab" id="gqa-lab" role="group" aria-labelledby="gqa-lab-title">
+          <div class="lab-header">
+            <h3 id="gqa-lab-title">Head layout and KV memory comparison</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>Which KV head each query head reads, and the raw KV storage of MHA, your layout and MQA for one sequence.</dd></div>
+              <div><dt>Try</dt><dd>Use the presets, then change KV heads with query heads fixed. Select a query head to see its group. Then change query heads alone.</dd></div>
+              <div><dt>What to notice</dt><dd>Memory follows <var>H</var><sub>KV</sub>, <var>D</var> and <var>T</var> linearly. Changing <var>H</var><sub>q</sub> alone changes the sharing, not the current layout's memory.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls">
+            <label class="field"><span>Query heads <var>H</var><sub>q</sub></span><select id="gqa-q"></select></label>
+            <label class="field"><span>KV heads <var>H</var><sub>KV</sub> (divisors only)</span><select id="gqa-kv"></select></label>
+            <label class="field"><span>Head dim <var>D</var></span><select id="gqa-d"></select></label>
+            <label class="field"><span>Sequence length <var>T</var></span><input id="gqa-t" type="number" min="1" max="1048576" step="1" inputmode="numeric"></label>
+            <div class="gqa-presets" role="group" aria-label="Presets">
+              <button type="button" class="button-secondary" data-preset="mha">MHA 16 / 16</button>
+              <button type="button" class="button-secondary" data-preset="gqa">GQA 16 / 4</button>
+              <button type="button" class="button-secondary" data-preset="mqa">MQA 16 / 1</button>
+            </div>
+          </div>
+          <p class="lab-error" id="gqa-error" role="alert" hidden></p>
+          <div class="lab-body">
+            <h4 id="gqa-diagram-title">Grouping (heads numbered from 0)</h4>
+            <p class="small">Each box is one group: its query-head buttons on top, the key head (K) and value head (V) they share below. In MHA every box holds one query head. Select a query head.</p>
+            <ol class="gqa-diagram" id="gqa-diagram" aria-labelledby="gqa-diagram-title"></ol>
+            <p class="gqa-selection" id="gqa-selection" aria-live="polite"></p>
+            <p class="small" id="gqa-shapes"></p>
+          </div>
+          <div class="lab-output" aria-live="polite">
+            <p id="gqa-change"></p>
+            <p id="gqa-summary"></p>
+          </div>
+          <div class="lab-body">
+            <div class="table-scroll">
+              <table class="key-table gqa-table">
+                <caption>Raw KV storage for one sequence; <var>H</var><sub>q</sub>, <var>D</var>, <var>T</var>, <var>L</var> = 32 and <var>B</var> = 2 identical in every row</caption>
+                <thead>
+                  <tr><th scope="col">Layout</th><th scope="col"><var>H</var><sub>q</sub> / <var>H</var><sub>KV</sub></th><th scope="col">Group size</th><th scope="col">Bytes per token (all layers)</th><th scope="col"><var>M</var><sub>KV</sub> per sequence</th><th scope="col">Reduction vs MHA</th></tr>
+                </thead>
+                <tbody id="gqa-table-body"></tbody>
+              </table>
+            </div>
+            <p class="eq" id="gqa-formula"></p>
+          </div>
+          <p class="lab-assumptions">Assumptions: fixed <var>L</var> = 32 layers and BF16 (<var>B</var> = 2 bytes); one sequence, no batch; every row uses the same <var>H</var><sub>q</sub> and <var>D</var> (real models may also change <var>d</var><sub>model</sub> or <var>D</var>); contiguous cache with no padding, block or allocator overhead. <var>M</var><sub>KV</sub> is raw KV storage, not total GPU memory: weights, activations, temporary buffers and fragmentation are excluded. MiB = 2<sup>20</sup> bytes, GiB = 2<sup>30</sup> bytes.</p>
+        </div>
+
+        <p><strong>Read the defaults:</strong> at <var>T</var> = 4,096 and <var>D</var> = 128, MHA stores 2 · 32 · 4,096 · 16 · 128 · 2 = 1,073,741,824 bytes (1 GiB) per sequence. GQA with 4 KV heads stores a quarter of that (256 MiB, 75% less) and MQA a sixteenth (64 MiB, 93.75% less). The reduction is always 1 − <var>H</var><sub>KV</sub>/<var>H</var><sub>q</sub>, independent of <var>T</var>, <var>D</var>, <var>L</var> and <var>B</var>, because those factors cancel.</p>
       </section>
 
       <section id="s2-3-4" aria-labelledby="s2-3-4-title">
         <h2 id="s2-3-4-title">2.3.4 Why fewer KV heads matter during decode</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Each decode step processes one new token per sequence. In every layer, each query head of that token scores against the keys of all cached positions and mixes their values. So, in a simplified model where nothing stays in on-chip memory between steps, a step at cache length <var>T</var> reads about <var>M</var><sub>KV</sub> bytes of cached K/V, and that read volume scales with <var>H</var><sub>KV</sub> exactly as storage does.</p>
+        <figure class="diagram">
+          <ol class="flow-steps">
+            <li>Fewer KV heads</li>
+            <li>Fewer cached bytes per token</li>
+            <li>Less KV memory per sequence and fewer KV bytes read per decode step</li>
+            <li>Less capacity and bandwidth pressure from the cache</li>
+          </ol>
+          <figcaption>The chain of effects in the simplified model. Each step is a reduction in pressure, not a guaranteed speedup.</figcaption>
+        </figure>
+        <ul>
+          <li><strong>Memory capacity:</strong> with a fixed amount of memory set aside for the cache, a quarter of the bytes per token means roughly four times as many cached tokens fit, whether as longer contexts or more concurrent sequences (ignoring allocator overhead).</li>
+          <li><strong>Decode read traffic:</strong> attention during decode does little arithmetic per byte loaded from the cache. Reducing the bytes loaded per step lowers the bandwidth demand from attention, which matters most when decode is bandwidth-sensitive.</li>
+          <li><strong>Smaller K/V projections:</strong> <var>W</var><sup>K</sup> and <var>W</var><sup>V</sup> shrink from [<var>d</var><sub>model</sub>, <var>H</var><sub>q</sub>·<var>D</var>] to [<var>d</var><sub>model</sub>, <var>H</var><sub>KV</sub>·<var>D</var>]. This saves some parameters and projection work, but the query and output projections are unchanged.</li>
+        </ul>
+        <details>
+          <summary>Advanced: sharing raises arithmetic intensity, it does not remove score computation</summary>
+          <p>Per new token and layer, all <var>H</var><sub>q</sub> query heads still compute <var>T</var> scores each, about <var>H</var><sub>q</sub> · <var>T</var> · <var>D</var> multiply-adds for <var>QK</var><sup>T</sup> and the same again for the weighted sum of values. Those counts do not depend on <var>H</var><sub>KV</sub>. What drops is the K/V data needed: 2 · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> elements. A kernel that loads each shared K/V block once and uses it for all <var>G</var> query heads of the group performs about <var>G</var> times more arithmetic per cached byte loaded. Whether that turns into lower latency depends on whether the step was limited by memory bandwidth in the first place.</p>
+        </details>
       </section>
 
       <section id="s2-3-5" aria-labelledby="s2-3-5-title">
         <h2 id="s2-3-5-title">2.3.5 Limits and trade-offs</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <div class="callout limit">
+          <p><span class="callout-label">What the arithmetic does not tell you</span></p>
+          <ul>
+            <li><strong>No guaranteed proportional speedup.</strong> A 75% smaller cache does not make generation four times faster. End-to-end time also depends on attention kernels, batch size, sequence length and hardware, and at small batch sizes reading the model weights for every step can dominate the memory traffic. Short sequences have small caches to begin with.</li>
+            <li><strong>Quality cannot be read from this diagram.</strong> Sharing K/V reduces how many distinct key and value projections the model can learn. Whether that costs accuracy is an empirical result for a given model, data set and training budget.</li>
+            <li><strong>Reported findings, not guarantees.</strong> Shazeer (2019) reports that multi-query attention decodes much faster in his experiments with only minor quality degradation. Ainslie et al. (2023) report that uptrained GQA models reach quality close to MHA while running at speeds comparable to MQA, on the models and tasks they evaluated.</li>
+            <li><strong>Trained models cannot be converted arbitrarily.</strong> The number of KV heads is baked into the learned <var>W</var><sup>K</sup> and <var>W</var><sup>V</sup>. Ainslie et al. convert multi-head checkpoints by mean-pooling the key and value projection heads within each group, then continue pre-training (uptraining) using about 5% of the original pre-training compute. Simply deleting or repeating heads in a trained model is not the same model.</li>
+            <li><strong>Divisibility.</strong> In the standard formulation, <var>H</var><sub>q</sub> must be divisible by <var>H</var><sub>KV</sub>; the tool only offers such values.</li>
+          </ul>
+        </div>
+        <h3>References</h3>
+        <ul class="references">
+          <li>Vaswani et al., <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>, arXiv:1706.03762 (2017). Multi-head attention.</li>
+          <li>Noam Shazeer, <a href="https://arxiv.org/abs/1911.02150">Fast Transformer Decoding: One Write-Head is All You Need</a>, arXiv:1911.02150 (2019). Multi-query attention.</li>
+          <li>Ainslie, Lee-Thorp, de Jong, Zemlyanskiy, Lebrón and Sanghai, <a href="https://arxiv.org/abs/2305.13245">GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints</a>, arXiv:2305.13245 (2023). Grouped-query attention and uptraining.</li>
+        </ul>
       </section>
 
       <section id="s2-3-check" aria-labelledby="s2-3-check-title">
         <h2 id="s2-3-check-title">Knowledge check</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Answer, then read the explanation. You can retry any question.</p>
+        <div id="gqa-check-1"></div>
+        <div id="gqa-check-2"></div>
+        <div id="gqa-check-3"></div>
+        <noscript><p>The comparison tool and knowledge checks need JavaScript.</p></noscript>
       </section>
 
       <nav class="pager" aria-label="Previous and next lesson">

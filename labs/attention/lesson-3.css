@@ -1,0 +1,134 @@
+/* Lesson 2.3 layout for the head-grouping diagram. Shared theme tokens only. */
+
+.gqa-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gqa-diagram {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gqa-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+}
+
+.gqa-group.is-highlight {
+  border: 2px solid var(--ink);
+  font-weight: inherit;
+}
+
+.gqa-group p {
+  margin: 0;
+}
+
+.gqa-group-label,
+.gqa-connector {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.gqa-group.is-highlight .gqa-group-label {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.gqa-queries {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.gqa-diagram button.gqa-q {
+  min-width: 2.8em;
+  padding: 2px 6px;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.gqa-diagram button.gqa-q:hover {
+  background: var(--surface-alt);
+}
+
+.gqa-diagram button.gqa-q[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--on-accent);
+  outline: 3px solid var(--ink);
+  outline-offset: 1px;
+  text-decoration: underline;
+}
+
+.gqa-kv {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.gqa-kv-note {
+  flex-basis: 100%;
+  contain: inline-size; /* do not widen the group box */
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.gqa-kv-note:empty {
+  display: none;
+}
+
+.gqa-selection {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.gqa-bytes {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* One query head per group (MHA): drop repeated labels so 64 groups stay compact. */
+.gqa-diagram.is-compact {
+  gap: 6px;
+}
+
+.gqa-diagram.is-compact .gqa-group {
+  padding: 4px;
+}
+
+.gqa-diagram.is-compact .gqa-group-label,
+.gqa-diagram.is-compact .gqa-connector {
+  display: none;
+}
+
+.gqa-diagram.is-compact .gqa-kv-note {
+  display: none;
+}
+
+.gqa-diagram.is-compact .tensor-tag,
+.gqa-diagram.is-compact button.gqa-q {
+  font-size: 13px;
+  min-width: 2.4em;
+  padding: 0 3px;
+}
