@@ -54,52 +54,279 @@
       <header class="lesson-header">
         <p class="eyebrow">Module 2 · Lesson 2.1 of 2.5</p>
         <h1>Self-Attention From First Principles</h1>
-        <!-- LESSON CONTENT: lesson agent fills (learning goal and lesson intro) -->
+        <p class="lede">One attention layer takes a sequence of vectors and returns a new sequence of the same length, where each output row is a weighted mix of information from the other positions. This lesson derives that operation one step at a time, with numbers small enough to check by hand.</p>
+        <div class="callout">
+          <p><span class="callout-label">Learning goal.</span> By the end you should be able to write Attention(<var>Q</var>, <var>K</var>, <var>V</var>) = softmax(<var>QK</var><sup>T</sup> / √<var>d</var><sub>k</sub> + <var>M</var>)<var>V</var> from memory, give the shape of every intermediate tensor, explain why the √<var>d</var><sub>k</sub> scale and the causal mask exist, and compute a small example by hand.</p>
+          <p><span class="callout-label">Builds on.</span> <a href="../inference/">Module 1</a> treated attention as a black box inside prefill and decode. Here we open the box. The KV cache comes back in Lessons 2.4 and 2.5, once we know exactly what K and V are.</p>
+          <p><span class="callout-label">Conventions and simplifications.</span> Row-vector convention: a sequence is a matrix whose rows are token positions, and projections are written <var>XW</var>. One attention head, one sequence (no batch dimension), biases omitted, word-level tokens. All matrices and embeddings in the examples are invented toy values with <var>d</var> = 2, chosen so the arithmetic is readable; they do not come from a trained model.</p>
+        </div>
+        <p class="small">Primary source: Vaswani et al., <a href="https://arxiv.org/abs/1706.03762">“Attention Is All You Need”</a> (2017), Section 3.2. The derivations and examples below are written for this site.</p>
       </header>
 
       <section id="s2-1-1" aria-labelledby="s2-1-1-title">
         <h2 id="s2-1-1-title">2.1.1 Why attention?</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Consider the sentence <q>The animal was tired because it had been running.</q> A language model builds one vector per position, layer by layer. To build a useful vector for <q>it</q>, the model needs information that lives at other positions: which earlier noun <q>it</q> could refer to, what state that noun was in, and so on. The question this section answers is mechanical: <em>how does a position get information from other positions at all?</em></p>
+        <p>Before transformers, the common answer was a recurrent network. It reads tokens in order and keeps one fixed-size state vector, updated once per token. Information about <q>animal</q> (position 2) reaches <q>it</q> (position 6) only by surviving four sequential state updates, and those updates cannot run in parallel across positions during training. A convolution reaches only a fixed window of neighbours per layer.</p>
+        <p>Self-attention takes a different route. Every position computes a weighted average over the vectors of all positions it is allowed to see, in one step. The weights are computed from the content of the vectors themselves, so the same layer can draw mostly from position 2 for one sentence and from position 9 for another. The path between any two visible positions is one step long, regardless of distance. The price is that every position is compared with every visible position: <var>T</var> positions produce on the order of <var>T</var><sup>2</sup> comparisons.</p>
+        <div class="lab" id="lab-context" role="group" aria-labelledby="lab-context-title">
+          <div class="lab-header">
+            <h3 id="lab-context-title">Which positions can a query position read?</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>For a chosen position, which tokens are available to its attention in a causal (left-to-right) language model.</dd></div>
+              <div><dt>Try</dt><dd>Select “it”, then “The”, then the final “.”.</dd></div>
+              <div><dt>What to notice</dt><dd>Every visible position is one attention step away, however far back it is. Future positions are unavailable (Section 2.1.6 explains how).</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls" data-part="controls"></div>
+          <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. In a causal model, position <var>i</var> can read positions 1 to <var>i</var>.</p></noscript></div>
+          <div class="lab-output" data-part="output" aria-live="polite"></div>
+          <p class="lab-assumptions">Assumptions: word-level tokens (real tokenizers often split words differently); causal visibility as used by decoder-only language models. This view shows only availability, not how much weight a trained model would actually assign.</p>
+        </div>
+        <div class="callout limit">
+          <p><span class="callout-label">What this does not claim.</span> Whether a trained model actually puts high weight on <q>animal</q> when processing <q>it</q> depends on the model, the layer and the head. Attention weights show how values were mixed; they are not, by themselves, a reliable explanation of a model's reasoning. The sentence only motivates why positions need access to each other.</p>
+        </div>
       </section>
 
       <section id="s2-1-2" aria-labelledby="s2-1-2-title">
         <h2 id="s2-1-2-title">2.1.2 Queries, keys and values</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Attention needs two different things from every pair of positions (<var>i</var>, <var>j</var>): a <em>number</em> saying how much position <var>i</var> should draw from position <var>j</var>, and a <em>vector</em> saying what position <var>j</var> provides if it is drawn from. Self-attention gets both by projecting each input row three times with three learned matrices.</p>
+        <div class="eq" role="math" aria-label="Q equals X times W Q; K equals X times W K; V equals X times W V">
+          <var>Q</var> = <var>X</var><var>W</var><sub>Q</sub>, &nbsp; <var>K</var> = <var>X</var><var>W</var><sub>K</sub>, &nbsp; <var>V</var> = <var>X</var><var>W</var><sub>V</sub>
+        </div>
+        <dl class="eq-vars">
+          <dt><var>X</var> ∈ ℝ<sup><var>T</var>×<var>d</var><sub>model</sub></sup></dt><dd>Input to the layer: one row <var>x</var><sub>i</sub> per token position. In a real model these are the hidden states coming from the previous layer (or the embeddings, for layer 1).</dd>
+          <dt><var>T</var></dt><dd>Number of positions in the sequence.</dd>
+          <dt><var>d</var><sub>model</sub></dt><dd>Width of each input row.</dd>
+          <dt><var>W</var><sub>Q</sub>, <var>W</var><sub>K</sub> ∈ ℝ<sup><var>d</var><sub>model</sub>×<var>d</var><sub>k</sub></sup></dt><dd>Learned query and key projections. They must share the output width <var>d</var><sub>k</sub> because queries and keys are compared by dot product.</dd>
+          <dt><var>W</var><sub>V</sub> ∈ ℝ<sup><var>d</var><sub>model</sub>×<var>d</var><sub>v</sub></sup></dt><dd>Learned value projection. <var>d</var><sub>v</sub> may differ from <var>d</var><sub>k</sub>.</dd>
+          <dt><var>Q</var>, <var>K</var>, <var>V</var></dt><dd>Shapes <span class="shape">[<var>T</var>, <var>d</var><sub>k</sub>]</span>, <span class="shape">[<var>T</var>, <var>d</var><sub>k</sub>]</span>, <span class="shape">[<var>T</var>, <var>d</var><sub>v</sub>]</span>. Row <var>i</var> of each is <var>q</var><sub>i</sub> = <var>x</var><sub>i</sub><var>W</var><sub>Q</sub>, <var>k</var><sub>i</sub> = <var>x</var><sub>i</sub><var>W</var><sub>K</sub>, <var>v</var><sub>i</sub> = <var>x</var><sub>i</sub><var>W</var><sub>V</sub>.</dd>
+        </dl>
+        <p>The roles come from how the results are used, not from anything inside the matrices: <span class="tensor-tag t-q">Q</span> rows are compared against <span class="tensor-tag t-k">K</span> rows to produce scores (2.1.3), and the scores decide how the <span class="tensor-tag t-v">V</span> rows are mixed (2.1.7). Training adjusts all three matrices so that this pipeline helps predict the next token.</p>
+        <div class="callout">
+          <p><span class="callout-label">Analogy, not mathematics.</span> A query is like a search request, keys are like the labels on stored items, and values are the items' contents. The analogy breaks in two important ways: attention is <em>soft</em> retrieval, returning a weighted blend of every visible value rather than one match, and all three vectors are linear functions of the same input row, with no rule forcing them into these roles.</p>
+        </div>
+        <p><strong>Toy example.</strong> Take <var>T</var> = 3 tokens (“animal”, “was”, “tired”) and <var>d</var><sub>model</sub> = <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub> = 2. The third input row is <var>x</var><sub>3</sub> = <span class="num" data-num="x3">[1, 1]</span>. Multiplying it by the three toy matrices gives <var>q</var><sub>3</sub> = <span class="num" data-num="q3">[1, 2]</span>, <var>k</var><sub>3</sub> = <span class="num" data-num="k3">[1, 3]</span> and <var>v</var><sub>3</sub> = <span class="num" data-num="v3">[1, 1]</span>: one input, three different vectors.</p>
+        <div class="lab" id="lab-proj" role="group" aria-labelledby="lab-proj-title">
+          <div class="lab-header">
+            <h3 id="lab-proj-title">Projection inspector</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>The toy input matrix <var>X</var>, the three learned matrices, and the resulting <var>Q</var>, <var>K</var>, <var>V</var> with the selected row highlighted and its arithmetic written out.</dd></div>
+              <div><dt>Try</dt><dd>Select each input token in turn and compare its <var>q</var>, <var>k</var> and <var>v</var>.</dd></div>
+              <div><dt>What to notice</dt><dd>The same input row produces three different vectors. Because the projections are linear and <var>x</var><sub>3</sub> = <var>x</var><sub>1</sub> + <var>x</var><sub>2</sub> here, every projection of “tired” is the sum of the projections of “animal” and “was”.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls" data-part="controls"></div>
+          <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. <var>W</var><sub>Q</sub> = [[1, 0], [0, 2]], <var>W</var><sub>K</sub> = [[2, 1], [−1, 2]], <var>W</var><sub>V</sub> = [[1, −1], [0, 2]], <var>X</var> = [[1, 0], [0, 1], [1, 1]].</p></noscript></div>
+          <div class="lab-output" data-part="output" aria-live="polite"></div>
+          <p class="lab-assumptions">Assumptions: invented toy values; <var>d</var><sub>model</sub> = <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub> = 2; biases omitted; one head. Matrices are fixed because in a model they are learned, not chosen per input.</p>
+        </div>
+        <p><strong>Biases.</strong> Some implementations add a bias vector to each projection (<var>XW</var><sub>Q</sub> + <var>b</var><sub>Q</sub>); many recent decoder models omit them. Leaving them out keeps the arithmetic small and does not change the structure of anything that follows.</p>
+        <p><strong>Engineering implication.</strong> The three projections are three matrix multiplications over all <var>T</var> rows, about <var>T</var>·<var>d</var><sub>model</sub>·(2<var>d</var><sub>k</sub> + <var>d</var><sub>v</sub>) multiply-adds. Implementations commonly fuse them into one multiplication by a concatenated weight matrix. The <var>K</var> and <var>V</var> rows computed here are exactly what a KV cache stores during generation (Lesson 2.4): they depend only on the token's own input row, so once computed they can be reused.</p>
       </section>
 
       <section id="s2-1-3" aria-labelledby="s2-1-3-title">
         <h2 id="s2-1-3-title">2.1.3 Attention scores: S = QK<sup>T</sup></h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>We now need the number that says how strongly position <var>i</var> should draw from position <var>j</var>. Attention uses the dot product of query <var>i</var> with key <var>j</var>, for every pair at once.</p>
+        <div class="eq" role="math" aria-label="s i j equals q i dot k j equals the sum over c of q i c times k j c; S equals Q times K transpose">
+          <var>s</var><sub>ij</sub> = <var>q</var><sub>i</sub> · <var>k</var><sub>j</sub> = Σ<sub><var>c</var>=1…<var>d</var><sub>k</sub></sub> <var>q</var><sub>ic</sub> <var>k</var><sub>jc</sub>, &nbsp;&nbsp; <var>S</var> = <var>Q</var><var>K</var><sup>T</sup> ∈ ℝ<sup><var>T</var>×<var>T</var></sup>
+        </div>
+        <dl class="eq-vars">
+          <dt><var>s</var><sub>ij</sub></dt><dd>Raw score of query position <var>i</var> against key position <var>j</var>. Row <var>i</var> of <var>S</var> holds one score per key.</dd>
+          <dt><var>c</var></dt><dd>Index over the <var>d</var><sub>k</sub> components of the vectors.</dd>
+          <dt><var>K</var><sup>T</sup></dt><dd>Transpose of <var>K</var>, shape <span class="shape">[<var>d</var><sub>k</sub>, <var>T</var>]</span>, so <span class="shape">[<var>T</var>, <var>d</var><sub>k</sub>]</span> × <span class="shape">[<var>d</var><sub>k</sub>, <var>T</var>]</span> gives <span class="shape">[<var>T</var>, <var>T</var>]</span>.</dd>
+        </dl>
+        <p><strong>Worked example.</strong> With <var>q</var> = <var>q</var><sub>3</sub> = <span class="num" data-num="q3">[1, 2]</span>, <var>k</var><sub>1</sub> = <span class="num" data-num="k1">[2, 1]</span> and <var>k</var><sub>2</sub> = <span class="num" data-num="k2">[−1, 2]</span>: <var>q</var> · <var>k</var><sub>1</sub> = <span class="num" data-num="s31-terms">1·2 + 2·1 = 4</span> and <var>q</var> · <var>k</var><sub>2</sub> = <span class="num" data-num="s32-terms">1·(−1) + 2·2 = 3</span>. The third key <var>k</var><sub>3</sub> = <span class="num" data-num="k3">[1, 3]</span> scores <span class="num" data-num="s33">7</span>.</p>
+        <p><strong>Raw scores are not normalised similarity.</strong> Since <var>q</var> · <var>k</var> = ‖<var>q</var>‖ ‖<var>k</var>‖ cos θ, a score mixes direction (cos θ) with length. Here <var>k</var><sub>1</sub> has cosine <span class="num" data-num="cos31">0.8</span> with <var>q</var> and length <span class="num" data-num="norm-k1">2.24</span>, while <var>k</var><sub>3</sub> has cosine <span class="num" data-num="cos33">0.99</span> and length <span class="num" data-num="norm-k3">3.16</span>. A longer key can outscore a better-aligned one. The model is free to use vector length as part of the signal; nothing normalises it away.</p>
+        <div class="lab" id="lab-scores" role="group" aria-labelledby="lab-scores-title">
+          <div class="lab-header">
+            <h3 id="lab-scores-title">Attention-score explorer</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>One query against the three toy keys: each elementwise product, the sum that forms the raw score, key lengths and cosines, and a bar comparison. The same explorer continues in 2.1.5 with softmax.</dd></div>
+              <div><dt>Try</dt><dd>Switch query rows. Then edit <var>q</var> to [2, 1]: <var>k</var><sub>1</sub> points the same way (cosine 1) yet ties with <var>k</var><sub>3</sub>. Try [0, 0] and [−1, −2].</dd></div>
+              <div><dt>What to notice</dt><dd>A score is a sum of per-component products, so one large component can dominate it. Negating <var>q</var> negates every score and reverses the ranking.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls" data-part="controls"></div>
+          <div data-part="error"></div>
+          <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. The worked example above gives the same numbers for <var>q</var><sub>3</sub>.</p></noscript></div>
+          <div class="lab-output" data-part="output" aria-live="polite"></div>
+          <p class="lab-assumptions">Assumptions: toy keys from 2.1.2; the query can be edited only within [−4, 4] in steps of 0.5, and invalid entries are rejected rather than computed. In a real model the query comes from <var>x</var><sub>i</sub><var>W</var><sub>Q</sub>; editing it here is a what-if probe.</p>
+        </div>
+        <p><strong>Engineering implication.</strong> <var>S</var> has <var>T</var><sup>2</sup> entries per head and costs <var>T</var><sup>2</sup>·<var>d</var><sub>k</sub> multiply-adds. At <var>T</var> = 8,192 that is about 67 million scores per head per layer. Storing <var>S</var> in GPU memory and reading it back is expensive, which is why fused kernels such as FlashAttention (Dao et al., <a href="https://arxiv.org/abs/2205.14135">arXiv 2205.14135</a>) compute it in tiles without materialising the full matrix. The mathematics is unchanged.</p>
       </section>
 
       <section id="s2-1-4" aria-labelledby="s2-1-4-title">
         <h2 id="s2-1-4-title">2.1.4 Scaling by √<var>d</var><sub>k</sub></h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Raw scores have a size problem that grows with <var>d</var><sub>k</sub>. Softmax (2.1.5) is sensitive to the <em>differences</em> between scores, and the typical size of a dot product grows with the number of terms it sums. The Transformer divides every score by √<var>d</var><sub>k</sub>.</p>
+        <div class="eq eq-boxed" role="math" aria-label="scaled scores equal Q K transpose divided by the square root of d k">
+          <var>S</var><sub>scaled</sub> = <var>Q</var><var>K</var><sup>T</sup> / √<var>d</var><sub>k</sub>
+        </div>
+        <h3>Why √<var>d</var><sub>k</sub>: the variance argument</h3>
+        <p>Assume, as a model, that the components <var>q</var><sub>c</sub> and <var>k</var><sub>c</sub> are independent random variables with mean 0 and variance 1. Then each product <var>q</var><sub>c</sub><var>k</var><sub>c</sub> has mean 0 and variance E[<var>q</var><sub>c</sub><sup>2</sup>]·E[<var>k</var><sub>c</sub><sup>2</sup>] = 1, and the products are independent of each other, so</p>
+        <div class="eq" role="math" aria-label="expected value of q dot k is 0; variance of q dot k is the sum of d k unit variances, which equals d k">
+          E[<var>q</var> · <var>k</var>] = 0, &nbsp;&nbsp; Var(<var>q</var> · <var>k</var>) = Σ<sub><var>c</var>=1…<var>d</var><sub>k</sub></sub> Var(<var>q</var><sub>c</sub><var>k</var><sub>c</sub>) = <var>d</var><sub>k</sub>
+        </div>
+        <p>The standard deviation of a raw score is √<var>d</var><sub>k</sub>, so dividing by √<var>d</var><sub>k</sub> brings the variance back to 1 whatever the head width. Vaswani et al. give this argument (Section 3.2.1, footnote 4). Two limits matter: trained projections do not produce independent unit-variance components, so the argument motivates the choice of constant rather than proving anything about a trained model; and scaling reduces one cause of softmax saturation, it does not guarantee stable gradients.</p>
+        <p><strong>Toy example.</strong> With <var>d</var><sub>k</sub> = 2, the row for <var>q</var><sub>3</sub> goes from [<span class="num" data-num="s31">4</span>, <span class="num" data-num="s32">3</span>, <span class="num" data-num="s33">7</span>] to <span class="num" data-num="scaled3">[2.83, 2.12, 4.95]</span>. At <var>d</var><sub>k</sub> = 2 the effect is mild. It becomes decisive at realistic head widths such as 64 or 128.</p>
+        <p><strong>A larger example.</strong> Let <var>d</var><sub>k</sub> = 16 and give <var>q</var> entries of ±1. Build each key by copying <var>q</var> and flipping the sign of its first <var>f</var> entries. Each unflipped entry contributes +1 to the dot product and each flipped entry −1, so <var>q</var> · <var>k</var> = 16 − 2<var>f</var>. With <var>f</var> = 4, 6, 8, 10 the raw scores are <span class="num" data-num="sc-raw">[8, 4, 0, −4]</span>. Under the independence model above (random ±1 entries have mean 0 and variance 1), a raw score has standard deviation √16 = 4, so these are 2, 1, 0 and −1 standard deviations: typical sizes, not extremes. Scaling gives <span class="num" data-num="sc-scaled">[2, 1, 0, −1]</span>.</p>
+        <div class="lab" id="lab-scale" role="group" aria-labelledby="lab-scale-title">
+          <div class="lab-header">
+            <h3 id="lab-scale-title">Scaled vs unscaled softmax</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>The <var>d</var><sub>k</sub> = 16 vectors, a side-by-side table of both weight distributions, and the selected distribution as bars.</dd></div>
+              <div><dt>Try</dt><dd>Switch between unscaled and scaled softmax input.</dd></div>
+              <div><dt>What to notice</dt><dd>The ranking never changes. Without scaling, nearly all weight lands on <var>k</var><sub>1</sub> and the slope of that weight with respect to its score collapses.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls" data-part="controls"></div>
+          <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. Unscaled weights: <span class="num" data-num="sc-w-unscaled">[0.981684, 0.01798, 0.000329, 0.000006]</span>. Scaled weights: <span class="num" data-num="sc-w-scaled">[0.644, 0.237, 0.087, 0.032]</span>.</p></noscript></div>
+          <div class="lab-output" data-part="output" aria-live="polite"></div>
+          <p class="lab-assumptions">Assumptions: constructed ±1 vectors with <var>d</var><sub>k</sub> = 16 (not from a trained model); a single query row; no mask.</p>
+        </div>
+        <p><strong>Why saturation matters.</strong> The softmax derivative is ∂<var>a</var><sub>i</sub>/∂<var>z</var><sub>j</sub> = <var>a</var><sub>i</sub>(δ<sub>ij</sub> − <var>a</var><sub>j</sub>), where δ<sub>ij</sub> is 1 when <var>i</var> = <var>j</var> and 0 otherwise. When one weight is close to 1, every one of these derivatives is close to 0: small changes to the scores barely move the weights, so little gradient flows back into <var>W</var><sub>Q</sub> and <var>W</var><sub>K</sub>. In the example the top weight is <span class="num" data-num="sc-top-unscaled">0.982</span> unscaled and <span class="num" data-num="sc-top-scaled">0.644</span> scaled, and its slope with respect to its own raw score is <span class="num" data-num="sc-slope-unscaled">0.018</span> versus <span class="num" data-num="sc-slope-scaled">0.057</span> (the scaled slope includes the chain-rule factor 1/4).</p>
+        <p><strong>Engineering implication.</strong> The scale is a constant, so it costs essentially nothing: kernels multiply it in once, or it is folded into <var>W</var><sub>Q</sub>. Some architectures choose a different constant or fold the factor into weight initialisation, so do not assume every model uses exactly 1/√<var>d</var><sub>k</sub> at runtime.</p>
       </section>
 
       <section id="s2-1-5" aria-labelledby="s2-1-5-title">
         <h2 id="s2-1-5-title">2.1.5 Softmax: scores to weights</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>A row of scores is not yet usable as mixing weights: scores can be negative and do not sum to anything in particular. We want weights that are non-negative, sum to 1, preserve the ordering of the scores and are differentiable. Softmax does this.</p>
+        <div class="eq" role="math" aria-label="a j equals e to the z j divided by the sum over k of e to the z k, which equals e to the z j minus m divided by the sum over k of e to the z k minus m, where m is the maximum z">
+          <var>a</var><sub>j</sub> = e<sup><var>z</var><sub>j</sub></sup> / Σ<sub><var>k</var></sub> e<sup><var>z</var><sub>k</sub></sup> = e<sup><var>z</var><sub>j</sub> − <var>m</var></sup> / Σ<sub><var>k</var></sub> e<sup><var>z</var><sub>k</sub> − <var>m</var></sup>, &nbsp;&nbsp; <var>m</var> = max<sub><var>k</var></sub> <var>z</var><sub>k</sub>
+        </div>
+        <dl class="eq-vars">
+          <dt><var>z</var><sub>j</sub></dt><dd>Softmax input for key <var>j</var>: the scaled (and, later, masked) score of one query row.</dd>
+          <dt><var>a</var><sub>j</sub></dt><dd>Attention weight on key <var>j</var>. Softmax is applied separately to each row of the score matrix.</dd>
+          <dt><var>m</var></dt><dd>Row maximum, subtracted for numerical stability.</dd>
+        </dl>
+        <p><strong>Why subtracting <var>m</var> is allowed and needed.</strong> e<sup><var>z</var> − <var>m</var></sup> = e<sup><var>z</var></sup>·e<sup>−<var>m</var></sup>, and the common factor e<sup>−<var>m</var></sup> cancels between numerator and denominator, so the result is identical. Numerically it matters: e<sup><var>z</var></sup> overflows in FP32 for <var>z</var> above about 88.7 and in FP16 above about 11.1. After the shift the largest exponent is e<sup>0</sup> = 1 and the denominator is at least 1.</p>
+        <p><strong>Worked example (query <var>q</var><sub>3</sub>).</strong> Scaled scores <var>z</var> = <span class="num" data-num="scaled3">[2.83, 2.12, 4.95]</span>; <var>m</var> = <span class="num" data-num="max3">4.95</span>; <var>z</var> − <var>m</var> = <span class="num" data-num="shifted3">[−2.12, −2.83, 0]</span>; exponentials <span class="num" data-num="exps3">[0.12, 0.059, 1]</span>; their sum <span class="num" data-num="sum3">1.179</span>; weights <span class="num" data-num="weights3">[0.102, 0.05, 0.848]</span>. (Intermediate values are rounded for display; the weights are computed at full precision.)</p>
+        <p>Three properties follow from the formula. Every weight is strictly positive for finite inputs, so softmax alone never fully ignores a key. Adding the same constant to every score changes nothing. Multiplying all scores by a factor larger than 1 sharpens the distribution, which is exactly the effect 2.1.4 guards against.</p>
+        <div class="lab" id="lab-softmax" role="group" aria-labelledby="lab-softmax-title">
+          <div class="lab-header">
+            <h3 id="lab-softmax-title">Attention-score explorer, continued: softmax</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>The same query and keys as the explorer in 2.1.3, carried through scaling, the max shift, exponentials and normalisation, with scores and weights side by side.</dd></div>
+              <div><dt>Try</dt><dd>Change the query row here, or edit <var>q</var> in 2.1.3: for example [4, 4] versus [0.5, 0.5].</dd></div>
+              <div><dt>What to notice</dt><dd>Doubling <var>q</var> doubles every score and makes the weights sharper; the column <var>z</var><sub>j</sub> − <var>m</var> is always ≤ 0 with one entry exactly 0.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls" data-part="controls"></div>
+          <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. The worked example above gives the same numbers for <var>q</var><sub>3</sub>.</p></noscript></div>
+          <div class="lab-output" data-part="output" aria-live="polite"></div>
+          <p class="lab-assumptions">Assumptions: this panel shares its state with the explorer in 2.1.3 (it is one widget with two views); scale 1/√2 because <var>d</var><sub>k</sub> = 2; no mask yet.</p>
+        </div>
+        <p><strong>Engineering implication.</strong> Softmax needs the maximum and the sum of a whole row before any weight is final, which makes it a row-wise reduction. Fused attention kernels keep a running maximum and running sum while streaming over blocks of keys (often called online softmax), rescaling partial results when the maximum changes. This is how they avoid storing the full score matrix.</p>
       </section>
 
       <section id="s2-1-6" aria-labelledby="s2-1-6-title">
         <h2 id="s2-1-6-title">2.1.6 Causal masking</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>A language model is trained to predict token <var>i</var> + 1 from tokens 1 to <var>i</var>. During training all positions of a sequence are processed in parallel, so without a constraint position <var>i</var> could simply read the token it is supposed to predict. During generation, later tokens do not exist yet. The causal mask enforces the same rule in both cases: position <var>i</var> may attend only to positions <var>j</var> ≤ <var>i</var>.</p>
+        <div class="eq eq-boxed" role="math" aria-label="M i j equals 0 if j is at most i, and minus infinity if j is greater than i. A equals softmax of Q K transpose over root d k plus M">
+          <var>M</var><sub>ij</sub> = 0 if <var>j</var> ≤ <var>i</var>, &nbsp; −∞ if <var>j</var> &gt; <var>i</var>; &nbsp;&nbsp; <var>A</var> = softmax(<var>Q</var><var>K</var><sup>T</sup> / √<var>d</var><sub>k</sub> + <var>M</var>)
+        </div>
+        <dl class="eq-vars">
+          <dt><var>M</var> ∈ ℝ<sup><var>T</var>×<var>T</var></sup></dt><dd>Additive mask: zero on and below the diagonal, −∞ above it. It is not learned.</dd>
+          <dt><var>A</var> ∈ ℝ<sup><var>T</var>×<var>T</var></sup></dt><dd>Attention weights; softmax is applied row by row, so each row sums to 1.</dd>
+        </dl>
+        <p><strong>Why add −∞ rather than multiply by 0.</strong> Multiplying a score by 0 gives a score of 0, and e<sup>0</sup> = 1 is a perfectly ordinary positive weight. Adding −∞ gives e<sup>−∞</sup> = 0, so the masked key receives exactly zero weight, and the remaining weights are normalised over the visible keys only. Implementations often use a large negative finite number instead of −∞ or skip masked blocks entirely; in floating point the masked exponentials underflow to 0, so the result is the same.</p>
+        <p><strong>Example.</strong> Prepend “The” (toy embedding [0.5, 0.5]) to get the 4-token sequence “The animal was tired”; the other input rows are unchanged from 2.1.2. Without a mask, the row for “was” is <span class="num" data-num="mask-was-bidir">[0.084, 0.042, 0.171, 0.703]</span>, with most of its weight on the <em>later</em> token “tired”. With the causal mask it becomes <span class="num" data-num="mask-was-causal">[0.284, 0.14, 0.576, 0]</span>: the future key gets exactly 0 and the visible weights grow, in proportion to their exponentials, to fill the gap. The last row, <span class="num" data-num="mask-tired">[0.067, 0.095, 0.047, 0.792]</span>, is the same in both modes because the last position has no future to hide.</p>
+        <div class="lab" id="lab-mask" role="group" aria-labelledby="lab-mask-title">
+          <div class="lab-header">
+            <h3 id="lab-mask-title">Causal vs bidirectional attention</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>The 4×4 scaled score matrix (with the mask added) and the resulting weight matrix <var>A</var>, with row sums.</dd></div>
+              <div><dt>Try</dt><dd>Toggle between causal and bidirectional and compare each row.</dd></div>
+              <div><dt>What to notice</dt><dd>Masked cells show −∞ in the scores and exactly 0, marked ✕, in the weights. Every row still sums to 1. Only the rows that had future positions change.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls" data-part="controls"></div>
+          <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. The worked example above gives the rows for “was” and “tired”.</p></noscript></div>
+          <div class="lab-output" data-part="output" aria-live="polite"></div>
+          <p class="lab-assumptions">Assumptions: toy 4-token sequence with invented embeddings and the 2.1.2 matrices; <var>d</var><sub>k</sub> = 2; one head. Decoder-only language models use the causal mask in every attention layer; the bidirectional view is shown for comparison and corresponds to encoder models.</p>
+        </div>
+        <p><strong>Engineering implication.</strong> Because row <var>i</var> never uses keys after <var>i</var>, appending a new token never changes the keys, values or outputs of earlier positions. That is precisely why cached K and V stay valid during decoding (Lesson 2.4). The mask also means about half of the <var>T</var>×<var>T</var> score matrix is never needed, and optimised kernels skip fully masked tiles instead of computing and discarding them.</p>
       </section>
 
       <section id="s2-1-7" aria-labelledby="s2-1-7-title">
         <h2 id="s2-1-7-title">2.1.7 Weighted values: O = AV</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>The weights say how much to draw from each position; the values say what is drawn. Each output row is the weighted sum of the value rows.</p>
+        <div class="eq eq-boxed" role="math" aria-label="o i equals the sum over j of a i j times v j; O equals A times V">
+          <var>o</var><sub>i</sub> = Σ<sub><var>j</var></sub> <var>a</var><sub>ij</sub> <var>v</var><sub>j</sub>, &nbsp;&nbsp; <var>O</var> = <var>A</var><var>V</var> ∈ ℝ<sup><var>T</var>×<var>d</var><sub>v</sub></sup>
+        </div>
+        <dl class="eq-vars">
+          <dt><var>o</var><sub>i</sub></dt><dd>Output row for position <var>i</var>, width <var>d</var><sub>v</sub>.</dd>
+          <dt><var>a</var><sub>ij</sub></dt><dd>Weight of query <var>i</var> on key <var>j</var> (row <var>i</var> of <var>A</var>; masked entries are 0).</dd>
+          <dt><var>v</var><sub>j</sub></dt><dd>Value row of position <var>j</var>. Shapes: <span class="shape">[<var>T</var>, <var>T</var>]</span> × <span class="shape">[<var>T</var>, <var>d</var><sub>v</sub>]</span> = <span class="shape">[<var>T</var>, <var>d</var><sub>v</sub>]</span>.</dd>
+        </dl>
+        <p><strong>Worked example (row “tired”, causal).</strong> Weights <span class="num" data-num="out-weights">[0.067, 0.095, 0.047, 0.792]</span>; values <span class="num" data-num="v4-0">[0.5, 0.5]</span>, <span class="num" data-num="v4-1">[1, −1]</span>, <span class="num" data-num="v4-2">[0, 2]</span>, <span class="num" data-num="v4-3">[1, 1]</span>. Contributions <var>a</var><sub>j</sub><var>v</var><sub>j</sub>: <span class="num" data-num="out-c0">[0.033, 0.033]</span>, <span class="num" data-num="out-c1">[0.095, −0.095]</span>, <span class="num" data-num="out-c2">[0, 0.094]</span>, <span class="num" data-num="out-c3">[0.792, 0.792]</span>. Their sum is <var>o</var><sub>4</sub> = <span class="num" data-num="out-o">[0.92, 0.824]</span>. (Contributions are rounded for display; the sum uses full precision.)</p>
+        <p>The top-weighted position supplies most of the output, but the other three still add <span class="num" data-num="out-rest">[0.128, 0.032]</span>. Because the weights are non-negative and sum to 1, every output row is a <em>convex combination</em> of the visible value rows: a point inside the region they span, pulled toward the heavily weighted ones.</p>
+        <div class="lab" id="lab-output" role="group" aria-labelledby="lab-output-title">
+          <div class="lab-header">
+            <h3 id="lab-output-title">Output row inspector</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>For one row of the causal 4-token example: each weight, each value vector, each weighted contribution and their sum, plus the full output matrix <var>O</var>.</dd></div>
+              <div><dt>Try</dt><dd>Select each output row, starting with “The”.</dd></div>
+              <div><dt>What to notice</dt><dd>“The” sees only itself, so its output equals its value vector. Later rows blend several values; masked positions contribute nothing.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls" data-part="controls"></div>
+          <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. The worked example above gives the full calculation for “tired”.</p></noscript></div>
+          <div class="lab-output" data-part="output" aria-live="polite"></div>
+          <p class="lab-assumptions">Assumptions: causal weights from 2.1.6; toy value vectors; <var>d</var><sub>v</sub> = 2; one head, so <var>O</var> is the layer's attention output before any output projection.</p>
+        </div>
+        <p><strong>Engineering implication.</strong> <var>AV</var> costs another <var>T</var><sup>2</sup>·<var>d</var><sub>v</sub> multiply-adds. During decoding, a single new query row must read every cached value row it attends to; that read traffic is a central topic of Lesson 2.5. With several heads, each head produces its own <var>O</var> and the results are concatenated and projected by <var>W</var><sub>O</sub> (Lesson 2.2).</p>
       </section>
 
       <section id="s2-1-8" aria-labelledby="s2-1-8-title">
         <h2 id="s2-1-8-title">2.1.8 The full attention equation</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Putting the steps together gives scaled dot-product attention for one head:</p>
+        <div class="eq eq-boxed" role="math" aria-label="Attention of Q, K, V equals softmax of Q K transpose divided by root d k plus M, times V">
+          Attention(<var>Q</var>, <var>K</var>, <var>V</var>) = softmax(<var>Q</var><var>K</var><sup>T</sup> / √<var>d</var><sub>k</sub> + <var>M</var>) <var>V</var>
+        </div>
+        <p>Here <var>M</var> is the causal mask for a decoder (all zeros for bidirectional attention), and softmax acts on each row separately. The original paper writes the equation without <var>M</var> and describes masking in the decoder separately; the version above makes the mask explicit.</p>
+        <figure class="diagram">
+          <ol class="flow-steps">
+            <li>Input <var>X</var> [<var>T</var>, <var>d</var><sub>model</sub>]</li>
+            <li>Project: <var>Q</var>, <var>K</var> [<var>T</var>, <var>d</var><sub>k</sub>], <var>V</var> [<var>T</var>, <var>d</var><sub>v</sub>]</li>
+            <li>Scores <var>QK</var><sup>T</sup> [<var>T</var>, <var>T</var>]</li>
+            <li>Scale ÷ √<var>d</var><sub>k</sub></li>
+            <li>Mask + <var>M</var></li>
+            <li>Softmax per row → <var>A</var> [<var>T</var>, <var>T</var>]</li>
+            <li>Weighted values <var>AV</var></li>
+            <li>Output <var>O</var> [<var>T</var>, <var>d</var><sub>v</sub>]</li>
+          </ol>
+          <figcaption>Pipeline of one attention head. Text equivalent: the input X is projected into queries, keys and values; queries are compared with keys to give a T×T score matrix; scores are divided by √dₖ, the causal mask is added, and softmax turns each row into weights; the weights mix the value rows into the output O, which has one row per position.</figcaption>
+        </figure>
+        <div class="table-scroll">
+          <table class="key-table">
+            <caption>Shapes and approximate cost for one head over T positions (multiply-adds; no batch)</caption>
+            <thead>
+              <tr><th scope="col">Step</th><th scope="col">Operation</th><th scope="col">Result shape</th><th scope="col">Approximate cost</th></tr>
+            </thead>
+            <tbody>
+              <tr><th scope="row">Project</th><td><var>XW</var><sub>Q</sub>, <var>XW</var><sub>K</sub>, <var>XW</var><sub>V</sub></td><td>[<var>T</var>, <var>d</var><sub>k</sub>] ×2, [<var>T</var>, <var>d</var><sub>v</sub>]</td><td><var>T</var>·<var>d</var><sub>model</sub>·(2<var>d</var><sub>k</sub> + <var>d</var><sub>v</sub>)</td></tr>
+              <tr><th scope="row">Score</th><td><var>QK</var><sup>T</sup></td><td>[<var>T</var>, <var>T</var>]</td><td><var>T</var><sup>2</sup>·<var>d</var><sub>k</sub></td></tr>
+              <tr><th scope="row">Scale and mask</th><td>÷ √<var>d</var><sub>k</sub>, + <var>M</var></td><td>[<var>T</var>, <var>T</var>]</td><td>order <var>T</var><sup>2</sup></td></tr>
+              <tr><th scope="row">Softmax</th><td>row-wise</td><td>[<var>T</var>, <var>T</var>]</td><td>order <var>T</var><sup>2</sup> exponentials</td></tr>
+              <tr><th scope="row">Mix</th><td><var>AV</var></td><td>[<var>T</var>, <var>d</var><sub>v</sub>]</td><td><var>T</var><sup>2</sup>·<var>d</var><sub>v</sub></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The projections grow linearly with <var>T</var>; the score and mixing steps grow with <var>T</var><sup>2</sup>. For short sequences the projections usually dominate the arithmetic, and for long contexts the <var>T</var><sup>2</sup> terms take over. A causal mask roughly halves the useful work in the <var>T</var><sup>2</sup> steps.</p>
+        <div class="callout limit">
+          <p><span class="callout-label">Left out on purpose.</span> Multiple heads and the output projection <var>W</var><sub>O</sub> (Lesson 2.2), positional information such as rotary embeddings, residual connections and normalisation, batching, and any learned bias terms. None of these change the core equation above.</p>
+        </div>
+        <h3>References</h3>
+        <ul class="references">
+          <li>Vaswani, A. et al. (2017). <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>. arXiv:1706.03762. Section 3.2 defines scaled dot-product attention and the √<var>d</var><sub>k</sub> scale.</li>
+          <li>Dao, T. et al. (2022). <a href="https://arxiv.org/abs/2205.14135">FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness</a>. arXiv:2205.14135. Mentioned only; not covered in this module.</li>
+        </ul>
       </section>
 
       <section id="s2-1-check" aria-labelledby="s2-1-check-title">
         <h2 id="s2-1-check-title">Knowledge check</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Three short questions on the reasoning in this lesson. Each gives an explanation after you check your answer; nothing is scored.</p>
+        <div id="l1-checks"><noscript><p>The knowledge check needs JavaScript.</p></noscript></div>
       </section>
 
       <nav class="pager" aria-label="Previous and next lesson">
