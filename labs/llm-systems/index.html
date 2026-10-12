@@ -18,7 +18,7 @@
     </header>
     <main>
       <section class="intro" aria-labelledby="collection-title">
-        <p class="eyebrow">Learning collection · 1 published site</p>
+        <p class="eyebrow">Learning collection · 2 published sites</p>
         <h1 id="collection-title">Learning LLM Systems</h1>
         <p class="lede">My ongoing study of how language models generate text, reuse computation, and serve requests efficiently.</p>
         <p class="small" data-learning-project="llm-systems">AI · LLM systems</p>
@@ -26,12 +26,20 @@
       </section>
       <section class="section" aria-labelledby="sites-title">
         <div class="section-heading"><h2 id="sites-title">In this collection</h2><span>Start with the foundations</span></div>
-        <article class="entry">
+        <article class="entry learning-entry">
           <div class="entry-meta"><span>Interactive guide</span><span data-learning-site="inference">AI · LLM systems · Inference · KV cache</span></div>
           <div>
             <h3><a href="../inference/">LLM Inference: Foundations &amp; KV Cache <span aria-hidden="true">↗</span></a></h3>
             <p>Explore tokens, prefill, decode, attention, cache memory and prefix reuse through interactive diagrams. These simplified simulations build intuition; they do not run a real model or measure performance.</p>
             <p>Built while studying <a href="https://arxiv.org/abs/2309.06180">Efficient Memory Management for Large Language Model Serving with PagedAttention</a>, alongside the <a href="https://huggingface.co/docs/transformers/kv_cache">Hugging Face cache guide</a> and <a href="https://docs.vllm.ai/en/latest/features/automatic_prefix_caching/">vLLM prefix caching documentation</a>. This site covers prerequisites and related mechanisms, rather than the entire paper.</p>
+          </div>
+        </article>
+        <article class="entry learning-entry">
+          <div class="entry-meta"><span>Interactive module</span><span data-learning-site="attention">AI · LLM systems · Attention · KV cache</span></div>
+          <div>
+            <h3><a href="../attention/">Attention Mechanisms &amp; KV-Cache Internals <span aria-hidden="true">↗</span></a></h3>
+            <p>The second module: derive scaled dot-product attention, trace tensor shapes through multi-head, multi-query and grouped-query attention, and calculate what the KV cache stores and how much memory it needs. Small worked examples use invented toy numbers; memory figures count raw KV storage only, and nothing here measures performance.</p>
+            <p>Built while studying <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>, <a href="https://arxiv.org/abs/1911.02150">Fast Transformer Decoding: One Write-Head is All You Need</a> and <a href="https://arxiv.org/abs/2305.13245">GQA</a>, with the <a href="https://docs.vllm.ai/">vLLM documentation</a> for serving context.</p>
           </div>
         </article>
       </section>

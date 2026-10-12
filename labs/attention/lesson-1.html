@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Module 2, Lesson 2.1: Self-Attention From First Principles. Part of an interactive study of attention mechanisms and KV-cache internals.">
+  <title>2.1 Self-Attention From First Principles — Module 2</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="site.js"></script>
+  <script type="module" src="lesson-1.js"></script>
+</head>
+<body data-lesson="1">
+  <a class="skip-link" href="#main">Skip to lesson content</a>
+  <header class="site-header">
+    <a class="wordmark" href="../../">surya<span> / journal</span></a>
+    <nav aria-label="Site">
+      <a href="../llm-systems/">Learning LLM Systems</a>
+      <a href="../inference/">Module 1</a>
+      <a href="./">Module 2</a>
+    </nav>
+  </header>
+  <div class="lesson-layout">
+    <aside class="sidebar">
+      <nav class="lesson-nav" aria-label="Module 2 lessons">
+        <p class="nav-title"><a href="./">Module 2 overview</a></p>
+        <ol>
+          <li><a href="lesson-1.html" data-lesson="1" aria-current="page"><span class="lesson-num">2.1</span> Self-attention from first principles</a></li>
+          <li><a href="lesson-2.html" data-lesson="2"><span class="lesson-num">2.2</span> Multi-head attention</a></li>
+          <li><a href="lesson-3.html" data-lesson="3"><span class="lesson-num">2.3</span> MHA vs MQA vs GQA</a></li>
+          <li><a href="lesson-4.html" data-lesson="4"><span class="lesson-num">2.4</span> KV-cache internals</a></li>
+          <li><a href="lesson-5.html" data-lesson="5"><span class="lesson-num">2.5</span> KV-cache memory &amp; performance</a></li>
+        </ol>
+      </nav>
+      <nav class="toc" aria-label="On this page">
+        <details class="toc-details" open>
+          <summary class="nav-title">On this page</summary>
+          <ol>
+          <li><a href="#s2-1-1">2.1.1 Why attention?</a></li>
+          <li><a href="#s2-1-2">2.1.2 Queries, keys and values</a></li>
+          <li><a href="#s2-1-3">2.1.3 Attention scores: S = QKᵀ</a></li>
+          <li><a href="#s2-1-4">2.1.4 Scaling by √dₖ</a></li>
+          <li><a href="#s2-1-5">2.1.5 Softmax: scores to weights</a></li>
+          <li><a href="#s2-1-6">2.1.6 Causal masking</a></li>
+          <li><a href="#s2-1-7">2.1.7 Weighted values: O = AV</a></li>
+          <li><a href="#s2-1-8">2.1.8 The full attention equation</a></li>
+          <li><a href="#s2-1-check">Knowledge check</a></li>
+          </ol>
+        </details>
+      </nav>
+    </aside>
+    <main id="main">
+      <header class="lesson-header">
+        <p class="eyebrow">Module 2 · Lesson 2.1 of 2.5</p>
+        <h1>Self-Attention From First Principles</h1>
+        <!-- LESSON CONTENT: lesson agent fills (learning goal and lesson intro) -->
+      </header>
+
+      <section id="s2-1-1" aria-labelledby="s2-1-1-title">
+        <h2 id="s2-1-1-title">2.1.1 Why attention?</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-2" aria-labelledby="s2-1-2-title">
+        <h2 id="s2-1-2-title">2.1.2 Queries, keys and values</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-3" aria-labelledby="s2-1-3-title">
+        <h2 id="s2-1-3-title">2.1.3 Attention scores: S = QK<sup>T</sup></h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-4" aria-labelledby="s2-1-4-title">
+        <h2 id="s2-1-4-title">2.1.4 Scaling by √<var>d</var><sub>k</sub></h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-5" aria-labelledby="s2-1-5-title">
+        <h2 id="s2-1-5-title">2.1.5 Softmax: scores to weights</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-6" aria-labelledby="s2-1-6-title">
+        <h2 id="s2-1-6-title">2.1.6 Causal masking</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-7" aria-labelledby="s2-1-7-title">
+        <h2 id="s2-1-7-title">2.1.7 Weighted values: O = AV</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-8" aria-labelledby="s2-1-8-title">
+        <h2 id="s2-1-8-title">2.1.8 The full attention equation</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-1-check" aria-labelledby="s2-1-check-title">
+        <h2 id="s2-1-check-title">Knowledge check</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <nav class="pager" aria-label="Previous and next lesson">
+        <a class="pager-prev" href="./"><span>Previous</span> Module 2 overview</a>
+        <a class="pager-next" href="lesson-2.html" rel="next"><span>Next</span> 2.2 Multi-head attention</a>
+      </nav>
+    </main>
+  </div>
+  <footer class="site-footer">
+    <span>Module 2 of <a href="../llm-systems/">Learning LLM Systems</a>. Simplified models with invented toy numbers unless stated otherwise.</span>
+    <a href="../../">Back to the journal</a>
+  </footer>
+</body>
+</html>

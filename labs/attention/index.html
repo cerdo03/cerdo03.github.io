@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Module 2 of Learning LLM Systems: derive scaled dot-product attention, trace tensor shapes through multi-head, multi-query and grouped-query attention, and size the KV cache.">
+  <title>Attention Mechanisms &amp; KV-Cache Internals — Surya</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to module overview</a>
+  <header class="site-header">
+    <a class="wordmark" href="../../">surya<span> / journal</span></a>
+    <nav aria-label="Site">
+      <a href="../llm-systems/">Learning LLM Systems</a>
+      <a href="../inference/">Module 1</a>
+      <a href="./" aria-current="page">Module 2</a>
+    </nav>
+  </header>
+  <main id="main" class="overview">
+    <header class="lesson-header">
+      <p class="eyebrow">Learning LLM Systems · Module 2</p>
+      <h1>Attention Mechanisms &amp; KV-Cache Internals</h1>
+      <p class="lede">Derive scaled dot-product attention from its parts, follow every tensor shape through multi-head and grouped-query attention, and work out exactly what the KV cache stores and how much memory it needs.</p>
+      <p id="resume" class="resume" hidden></p>
+    </header>
+
+    <section id="goal" aria-labelledby="goal-title">
+      <h2 id="goal-title">Learning goal</h2>
+      <p>By the end of this module you should be able to:</p>
+      <ul>
+        <li>derive <var>Attention</var>(<var>Q</var>, <var>K</var>, <var>V</var>) = softmax(<var>Q</var><var>K</var><sup>T</sup> / √<var>d</var><sub>k</sub> + <var>M</var>)<var>V</var> and explain the job of each term;</li>
+        <li>trace tensor dimensions through single-head and multi-head attention;</li>
+        <li>compare multi-head (MHA), multi-query (MQA) and grouped-query (GQA) attention and their effect on the KV cache;</li>
+        <li>say precisely what the KV cache contains, when entries are appended, and why decoding with a cache changes the work per step;</li>
+        <li>compute raw KV-cache memory for a model configuration and explain why that number alone does not decide whether a deployment fits.</li>
+      </ul>
+      <p><a href="../inference/">Module 1</a> covered prefill and decode, autoregressive generation, why a KV cache helps, and prefix reuse. This module opens up the attention computation underneath those ideas rather than repeating them.</p>
+    </section>
+
+    <section id="lessons" aria-labelledby="lessons-title">
+      <h2 id="lessons-title">Lessons</h2>
+      <ol class="lesson-list lesson-nav">
+        <li>
+          <a href="lesson-1.html" data-lesson="1"><span class="lesson-num">2.1</span> Self-attention from first principles</a>
+          <p>Queries, keys and values as learned projections; scores, scaling, softmax, causal masking and the weighted sum of values.</p>
+        </li>
+        <li>
+          <a href="lesson-2.html" data-lesson="2"><span class="lesson-num">2.2</span> Multi-head attention</a>
+          <p>Splitting <var>d</var><sub>model</sub> into heads, per-head attention, concatenation and the output projection, with every reshape spelled out.</p>
+        </li>
+        <li>
+          <a href="lesson-3.html" data-lesson="3"><span class="lesson-num">2.3</span> MHA vs MQA vs GQA</a>
+          <p>How many key/value heads each query head shares, and what that does to KV-cache size and decode-time reads.</p>
+        </li>
+        <li>
+          <a href="lesson-4.html" data-lesson="4"><span class="lesson-num">2.4</span> KV-cache internals</a>
+          <p>What is cached, its conceptual shape, how prefill builds it and how each decode step reads and appends to it.</p>
+        </li>
+        <li>
+          <a href="lesson-5.html" data-lesson="5"><span class="lesson-num">2.5</span> KV-cache memory &amp; performance</a>
+          <p>Derive the memory formula, size real configurations, see linear growth with context and why decode is often bandwidth-sensitive.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="prerequisites" aria-labelledby="prerequisites-title">
+      <h2 id="prerequisites-title">Prerequisites</h2>
+      <ul>
+        <li>Matrix multiplication, transposes and dot products.</li>
+        <li>The exponential function and what a probability distribution is.</li>
+        <li>The prefill/decode picture from <a href="../inference/">Module 1</a>, or equivalent familiarity with autoregressive generation.</li>
+      </ul>
+    </section>
+
+    <section id="notation" aria-labelledby="notation-title">
+      <h2 id="notation-title">Notation and colour key</h2>
+      <p>Each tensor role keeps the same letter, border style and shade across every lesson. The letter is always shown, so nothing depends on colour alone.</p>
+      <div class="table-scroll">
+        <table class="key-table">
+          <caption>Tensor roles</caption>
+          <thead><tr><th scope="col">Marker</th><th scope="col">Tensor</th><th scope="col">Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tensor-tag t-q">Q</span></td><td>Queries</td><td>What each position is looking for.</td></tr>
+            <tr><td><span class="tensor-tag t-k">K</span></td><td>Keys</td><td>What each position offers to be matched against.</td></tr>
+            <tr><td><span class="tensor-tag t-v">V</span></td><td>Values</td><td>The content that gets mixed into the output.</td></tr>
+            <tr><td><span class="tensor-tag t-w">A</span></td><td>Attention weights</td><td>Softmax of the (scaled, masked) scores; each row sums to 1.</td></tr>
+            <tr><td><span class="tensor-tag t-o">O</span></td><td>Output</td><td>Weighted sum of value vectors.</td></tr>
+            <tr><td><span class="tensor-tag t-mask">M</span></td><td>Mask</td><td>0 where attention is allowed, −∞ where it is blocked.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="table-scroll">
+        <table class="key-table">
+          <caption>Symbols</caption>
+          <thead><tr><th scope="col">Symbol</th><th scope="col">Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><var>T</var></td><td>Sequence length (number of token positions)</td></tr>
+            <tr><td><var>d</var><sub>model</sub></td><td>Model (hidden) width</td></tr>
+            <tr><td><var>d</var><sub>k</sub>, <var>d</var><sub>v</sub></td><td>Key/query width and value width of one head</td></tr>
+            <tr><td><var>H</var>, <var>H</var><sub>KV</sub></td><td>Query heads and key/value heads</td></tr>
+            <tr><td><var>D</var></td><td>Head dimension used in KV-memory formulas</td></tr>
+            <tr><td><var>L</var></td><td>Number of attention layers</td></tr>
+            <tr><td><var>B</var></td><td>Bytes per stored element (2 for BF16/FP16)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Conventions used throughout: row vectors (a sequence is <var>X</var> ∈ ℝ<sup><var>T</var>×<var>d</var><sub>model</sub></sup> and projections are <var>X</var><var>W</var>); biases omitted; no batch dimension; contiguous logical tensors; equal head dimensions. Numbers in examples are invented toy values unless a source is given. Memory figures count raw KV storage only.</p>
+    </section>
+
+    <section id="references" aria-labelledby="references-title">
+      <h2 id="references-title">References</h2>
+      <ul class="references">
+        <li>Vaswani et al., <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a> (2017) — scaled dot-product and multi-head attention.</li>
+        <li>Shazeer, <a href="https://arxiv.org/abs/1911.02150">Fast Transformer Decoding: One Write-Head is All You Need</a> (2019) — multi-query attention.</li>
+        <li>Ainslie et al., <a href="https://arxiv.org/abs/2305.13245">GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints</a> (2023) — grouped-query attention and uptraining.</li>
+        <li>Dao et al., <a href="https://arxiv.org/abs/2205.14135">FlashAttention</a> (2022) — IO-aware exact attention; mentioned for context, not covered here.</li>
+        <li><a href="https://docs.vllm.ai/">vLLM documentation</a> — a production serving engine’s view of KV-cache management.</li>
+      </ul>
+      <p class="small">These pages are my own study notes and simplified models built from the sources above; they do not run a real model or measure performance.</p>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <span>Module 2 of <a href="../llm-systems/">Learning LLM Systems</a>.</span>
+    <a href="../../">Back to the journal</a>
+  </footer>
+</body>
+</html>

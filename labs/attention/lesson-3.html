@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Module 2, Lesson 2.3: MHA vs MQA vs GQA. Part of an interactive study of attention mechanisms and KV-cache internals.">
+  <title>2.3 MHA vs MQA vs GQA — Module 2</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="site.js"></script>
+  <script type="module" src="lesson-3.js"></script>
+</head>
+<body data-lesson="3">
+  <a class="skip-link" href="#main">Skip to lesson content</a>
+  <header class="site-header">
+    <a class="wordmark" href="../../">surya<span> / journal</span></a>
+    <nav aria-label="Site">
+      <a href="../llm-systems/">Learning LLM Systems</a>
+      <a href="../inference/">Module 1</a>
+      <a href="./">Module 2</a>
+    </nav>
+  </header>
+  <div class="lesson-layout">
+    <aside class="sidebar">
+      <nav class="lesson-nav" aria-label="Module 2 lessons">
+        <p class="nav-title"><a href="./">Module 2 overview</a></p>
+        <ol>
+          <li><a href="lesson-1.html" data-lesson="1"><span class="lesson-num">2.1</span> Self-attention from first principles</a></li>
+          <li><a href="lesson-2.html" data-lesson="2"><span class="lesson-num">2.2</span> Multi-head attention</a></li>
+          <li><a href="lesson-3.html" data-lesson="3" aria-current="page"><span class="lesson-num">2.3</span> MHA vs MQA vs GQA</a></li>
+          <li><a href="lesson-4.html" data-lesson="4"><span class="lesson-num">2.4</span> KV-cache internals</a></li>
+          <li><a href="lesson-5.html" data-lesson="5"><span class="lesson-num">2.5</span> KV-cache memory &amp; performance</a></li>
+        </ol>
+      </nav>
+      <nav class="toc" aria-label="On this page">
+        <details class="toc-details" open>
+          <summary class="nav-title">On this page</summary>
+          <ol>
+          <li><a href="#s2-3-1">2.3.1 Sharing key/value heads</a></li>
+          <li><a href="#s2-3-2">2.3.2 GQA generalises MHA and MQA</a></li>
+          <li><a href="#s2-3-3">2.3.3 Comparison tool</a></li>
+          <li><a href="#s2-3-4">2.3.4 Why fewer KV heads matter</a></li>
+          <li><a href="#s2-3-5">2.3.5 Limits and trade-offs</a></li>
+          <li><a href="#s2-3-check">Knowledge check</a></li>
+          </ol>
+        </details>
+      </nav>
+    </aside>
+    <main id="main">
+      <header class="lesson-header">
+        <p class="eyebrow">Module 2 · Lesson 2.3 of 2.5</p>
+        <h1>MHA vs MQA vs GQA</h1>
+        <!-- LESSON CONTENT: lesson agent fills (learning goal and lesson intro) -->
+      </header>
+
+      <section id="s2-3-1" aria-labelledby="s2-3-1-title">
+        <h2 id="s2-3-1-title">2.3.1 Three ways to share key/value heads</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-3-2" aria-labelledby="s2-3-2-title">
+        <h2 id="s2-3-2-title">2.3.2 GQA generalises MHA and MQA</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-3-3" aria-labelledby="s2-3-3-title">
+        <h2 id="s2-3-3-title">2.3.3 Comparing head layouts and KV memory</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-3-4" aria-labelledby="s2-3-4-title">
+        <h2 id="s2-3-4-title">2.3.4 Why fewer KV heads matter during decode</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-3-5" aria-labelledby="s2-3-5-title">
+        <h2 id="s2-3-5-title">2.3.5 Limits and trade-offs</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <section id="s2-3-check" aria-labelledby="s2-3-check-title">
+        <h2 id="s2-3-check-title">Knowledge check</h2>
+        <!-- LESSON CONTENT: lesson agent fills -->
+      </section>
+
+      <nav class="pager" aria-label="Previous and next lesson">
+        <a class="pager-prev" href="lesson-2.html" rel="prev"><span>Previous</span> 2.2 Multi-head attention</a>
+        <a class="pager-next" href="lesson-4.html" rel="next"><span>Next</span> 2.4 KV-cache internals</a>
+      </nav>
+    </main>
+  </div>
+  <footer class="site-footer">
+    <span>Module 2 of <a href="../llm-systems/">Learning LLM Systems</a>. Simplified models with invented toy numbers unless stated otherwise.</span>
+    <a href="../../">Back to the journal</a>
+  </footer>
+</body>
+</html>
