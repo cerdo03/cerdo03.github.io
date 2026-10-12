@@ -9,7 +9,7 @@ const node=(title,body,explanation='')=>`<div class="mechanism-node"><strong>${t
 const arrow=(label='')=>`<div class="connector" ><span aria-hidden="true">↓</span> ${label}</div>`;
 const bars=(names,weights)=>names.map((name,i)=>`<div class="prob-row"><span>${name}</span><div class="prob-track"><span style="width:${weights[i]*100}%"></span></div><span>${n(weights[i]*100)}%</span></div>`).join('');
 const events=(event,max)=>`<div class="event-controls"><button data-action="back" ${event===0?'disabled':''}>← Back in diagram</button><span>Event ${event+1} / ${max+1}</span><button data-action="forward" ${event===max?'disabled':''}>Advance diagram →</button></div>`;
-const embeddingEditor=(rows)=>`<details id="embedding-editor"><summary>Experiment: lesson-wide embeddings</summary><p>Edit these invented vectors, then apply them to the whole lesson. Sections 1–7 use this same set for lookup, Q/K/V and attention. Later layers and answer probabilities remain illustrative; this does not run a full LLM.</p><div class="embedding-controls">${P.map((token,i)=>`<div><strong>${token}</strong>${rows[i].map((value,j)=>`<label for="embedding-${i}-${j}">Component ${j+1}</label><input id="embedding-${i}-${j}" data-embedding required type="number" min="-4" max="4" step="any" value="${value}">`).join('')}</div>`).join('')}</div><div class="actions"><button data-action="apply-embeddings">Apply to whole lesson</button><button data-action="default-embeddings">Use default embeddings</button></div></details>`;
+const embeddingEditor=(rows)=>`<details id="embedding-editor"><summary>Experiment: lesson-wide embeddings</summary><p>Edit these invented vectors, then apply them to the whole lesson. Sections 1–7 and 9 use this same set for lookup, Q/K/V and attention. Later layers and answer probabilities remain illustrative; this does not run a full LLM.</p><div class="embedding-controls">${P.map((token,i)=>`<div><strong>${token}</strong>${rows[i].map((value,j)=>`<label for="embedding-${i}-${j}">Component ${j+1}</label><input id="embedding-${i}-${j}" data-embedding required type="number" min="-4" max="4" step="any" value="${value}">`).join('')}</div>`).join('')}</div><div class="actions"><button data-action="apply-embeddings">Apply to whole lesson</button><button data-action="default-embeddings">Use default embeddings</button></div></details>`;
 const location=(phase,position='all prompt positions',layer='model')=>`<div class="location"><span>${phase}</span><span>${layer}</span><span>${position}</span></div>`;
 const mixingExample=(embeddings)=>{
  const shares=[.5,.2,.3],values=attentionState(2,undefined,embeddings).values,parts=values.map((x,i)=>x.map(c=>c*shares[i])),sum=[0,1].map(d=>parts.reduce((a,p)=>a+p[d],0));
@@ -23,7 +23,8 @@ export function diagramHTML(id,s={}){
  <div class="position-grid"><span></span>${P.map(t=>`<strong>${t}</strong>`).join('')}<span>Input vectors</span>${embeddings.map(x=>`<span class="grid-cell active">${v(x)}</span>`).join('')}${[1,2].map(l=>`<span>Layer ${l}</span>${P.map((_,i)=>`<span class="grid-cell ${event>=l?'active':''}">${event>=l?'Updated vector':'Waiting'}<small>${event>=l?`Mixes in: ${P.map((t,j)=>`<span class="${j<=i?'seen':'hidden-token'}">${t}</span>`).join(' ')}`:'needs previous layer'}</small></span>`).join('')}`).join('')}</div>
  <p class="diagram-note">Each layer updates every word’s vector by mixing in information from other words (attention). A word can mix in itself and earlier words, but can never use later words (faded). So “The” sees only itself, while “is” sees the whole prompt — which is why the last position predicts the next word.</p>${mixingExample(embeddings)}<p class="diagram-note">Each row needs the row above it to finish first. Words within a row are updated at the same time.</p>
  ${event>=2?`${arrow('final position → vocabulary projection')}${node('Next-token probabilities',bars(toyPrediction.tokens,toyPrediction.probabilities))}`:'<p class="pending">No next-token scores yet.</p>'}${event>=3?node('Chosen first answer token',chips(['blue']),'Choosing “blue” does not process it. The next decode pass will do that.'):''}${events(event,3)}<p class="sub">Two layers shown for space; probability values invented.</p>`;
- if(['decode','cache','recap'].includes(id))return requestHTML(s,id==='cache');
+ if(id==='cache')return cacheRowsHTML(s,embeddings);
+ if(['decode','recap'].includes(id))return requestHTML(s,false);
  if(id==='attention')return originHTML(event,embeddings);
  if(['qkv','scores','mix'].includes(id)){
  const inputStatus=`<p class="sub">First-layer input x is the shared starting embedding ${v(embeddings[pos])}, also shown in sections 1–4.</p>${JSON.stringify(embeddings)!==JSON.stringify(representations)?'<p class="sub">Lesson-wide experiment active. <button data-action="open-embeddings">Edit embeddings in section 1</button></p>':''}`;
@@ -65,6 +66,27 @@ export function diagramHTML(id,s={}){
  }
  return '';
 }
+function cacheRowsHTML(s,embeddings){
+ const position=s.position??2,event=Math.min(4,s.event||0),a=attentionState(position,undefined,embeddings),count=position+(event>=2?1:0),index=position+1,word=P[position];
+ const titles=['Earlier rows are ready','Create this token’s Q, K and V','Keep its K and V as new rows','Compare its Q with every allowed K','Mix V rows to produce an attention result'];
+ const captions=[position===0?'No earlier positions exist. “The” has not supplied its K/V row yet.':`The ${position} earlier position${position===1?'':'s'} already supplied K/V. “${word}” has not supplied its row yet.`,
+ 'The fixed learned matrices transform the incoming x. Earlier rows are not used to calculate this layer’s new K or V.',
+ 'The new K/V rows join the earlier rows. Earlier rows keep their original values. The current token can attend to itself too.',
+ 'Each dot product gives one score. Divide by √2, then softmax turns the scores into weights over positions.',
+ 'Multiply each V by its weight, then add component by component. This result does not replace the cached K/V; it continues through output projection, residual addition and feed-forward processing.'];
+ const rows=(vectors,prefix)=>count?P.slice(0,count).map((token,i)=>`<p><strong>${prefix}${i+1} · ${token}</strong> ${v(vectors[i])}<small>${i===position?'New row':'Earlier row · unchanged'}</small></p>`).join(''):'<p>No rows yet.</p>';
+ return `${location('Inside prefill',`position ${index}: ${word}`,'toy first layer · one head')}
+ <p>We isolate one prompt position to inspect the math. Prefill can calculate prompt positions together; these steps explain dependencies, not a sequential GPU schedule. Decode uses the same row creation and attention operations for its one new position.</p>
+ <label for="position">Inspect token position</label><select id="position">${P.map((token,i)=>`<option value="${i}" ${i===position?'selected':''}>${i+1}: ${token}</option>`).join('')}</select>
+ ${node(titles[event],`<p role="status">${captions[event]}</p>`)}
+ ${node(`Incoming x for “${word}”`,v(a.x))}
+ ${event>=1?`${arrow('same fixed projection matrices used at every position')}<div class="node-grid">${node(`Q${index} = ${v(a.q)}`,'x × WQ · used for attention, not cached')}${node(`K${['₁','₂','₃'][position]} = ${v(a.keys[position])}`,'x × WK · becomes a cache row')}${node(`V${['₁','₂','₃'][position]} = ${v(a.values[position])}`,'x × WV · becomes a cache row')}</div>`:'<p class="pending">Current Q/K/V not calculated yet.</p>'}
+ ${event>=2?arrow('store current K and V; retain earlier rows'):''}
+ <p><strong>${count} row${count===1?'':'s'} in each cache</strong> · each row has 2 components in this toy head.</p><div class="node-grid">${node('K cache',rows(a.keys,'K'))}${node('V cache',rows(a.values,'V'))}</div>
+ ${event>=3?`${arrow(`Q${index} reads all ${index} allowed keys`)}<div class="node-grid">${P.slice(0,index).map((token,i)=>node(token,`Q${index} · K${i+1} / √2 ≈ ${n(a.scores[i])}<p>Weight ≈ ${n(a.weights[i]*100)}%</p>`)).join('')}</div>`:''}
+ ${event>=4?`${arrow('read V rows; multiply, then add')}${node('Attention result',`${a.values.slice(0,index).map((value,i)=>`${n(a.weights[i])} × ${v(value)}`).join(' + ')} ≈ ${v(a.output)}<p>The caches above stay unchanged.</p><small>Displayed numbers rounded; calculations use full precision.</small>`)}`:''}
+ ${events(event,4)}<details><summary>What is shared between heads and layers?</summary><p>Each layer has its own cache. Standard multi-head attention has separate K/V for each head. GQA lets a group of query heads share exactly the same K/V rows; MQA lets all query heads share one set. Different queries can still produce different attention weights and results. WQ/WK/WV are learned matrices fixed during inference; the cached K/V are vectors calculated for processed tokens. Old Q vectors are not needed by future positions.</p></details>`;
+}
 function requestHTML(s,internal){
  const e=s.event??(internal?3:2),t=traceState(e);
  const captions=['New input is ready; this pass has not processed it.','The pass finished. Scores exist; the next token has not been chosen.','A token was chosen. It has not been processed yet.'];
@@ -77,4 +99,4 @@ function requestHTML(s,internal){
  ${t.stage===2?`${arrow('choose')}${node('Newly chosen token',chips([t.next]),'This is output text now, but is not yet processed or cached.')}`:''}
  <p class="event-caption" role="status">${captions[t.stage]}</p>${events(e,8)}<p class="sub">Invented probabilities. At the final event, “.” remains unprocessed if generation stops.</p>`;
 }
-export const eventLimits={tokens:1,prefill:3,decode:8,attention:2,qkv:3,scores:2,mix:2,handoff:8,cache:8,recap:8};
+export const eventLimits={tokens:1,prefill:3,decode:8,attention:2,qkv:3,scores:2,mix:2,handoff:8,cache:4,recap:8};

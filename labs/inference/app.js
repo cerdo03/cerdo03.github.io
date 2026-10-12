@@ -24,9 +24,9 @@ function render(){
 function navigate(index){current=Math.max(0,Math.min(guide.length-1,index));render();$('h1').focus();window.scrollTo(0,0)}
 function draw(focus){
  const id=guide[current].id;
- const version=['attention','handoff'].includes(id)?2:1;
+ const version=['attention','handoff','cache'].includes(id)?2:1;
  if(saved.scenes[id]?.version!==version)saved.scenes[id]=null;
- if(!saved.scenes[id])saved.scenes[id]={event:['decode','cache','recap'].includes(id)?(id==='decode'?2:3):0,version};
+ if(!saved.scenes[id])saved.scenes[id]={event:['decode','recap'].includes(id)?(id==='decode'?2:3):0,version};
  const state=saved.scenes[id],root=$('#scene');
  if(['qkv','scores','mix'].includes(id)){delete state.first;state.position=saved.attention?.position??state.position??2;saved.attention={position:state.position};}
  const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));
@@ -50,6 +50,7 @@ function draw(focus){
  focus=`#${input.id}`;
  const key=input.id;
  state[key]=Number(input.value);
+ if(id==='cache'&&key==='position')state.event=0;
   if(['qkv','scores','mix'].includes(id))saved.attention={position:state.position??2};
  change();
  };
