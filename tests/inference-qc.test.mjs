@@ -2,13 +2,13 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {diagramHTML,layerFlowHTML} from '../labs/inference/course-visuals.js';
 import {attentionState,representations,traceState} from '../labs/inference/guide-model.js';
-test('saved experimental x is explicitly distinguished from the unchanged starting embedding',()=>{
+test('old saved input edits cannot change the fixed lesson vectors',()=>{
  for(const id of ['qkv','scores','mix']){
-  const html=diagramHTML(id,{event:2,position:2,first:2});
-  assert.ok(html.includes('Modified toy input'));
-  assert.ok(html.includes('Starting embedding: [1, 2]'));
-  assert.ok(html.includes('Current x: [2, 2]'));
-  assert.ok(html.includes('Restore starting input'));
+  const html=diagramHTML(id,{event:3,position:2,first:1.5});
+  assert.ok(html.includes('starting embedding [1, 2]'));
+  assert.ok(!html.includes('manually change input'));
+  assert.ok(!html.includes('type="range"'));
+  assert.ok(!html.includes('[1.5, 2]'));
  }
  assert.deepEqual(representations[2],[1,2]);
 });

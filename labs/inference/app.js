@@ -1,6 +1,5 @@
 import {guide} from './guide-content.js';
 import {diagramHTML,eventLimits} from './course-visuals.js';
-import {representations} from './guide-model.js';
 const $=selector=>document.querySelector(selector);
 const storageKey='inference-course-v4';
 let saved={concept:'tokens',scenes:{},checks:{}};
@@ -27,7 +26,7 @@ function draw(focus){
  if(saved.scenes[id]?.version!==version)saved.scenes[id]=null;
  if(!saved.scenes[id])saved.scenes[id]={event:['decode','cache','recap'].includes(id)?(id==='decode'?2:3):0,version};
  const state=saved.scenes[id],root=$('#scene');
- if(['qkv','scores','mix'].includes(id))Object.assign(state,saved.attention||{});
+ if(['qkv','scores','mix'].includes(id)){delete state.first;state.position=saved.attention?.position??state.position??2;saved.attention={position:state.position};}
  const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));
  root.innerHTML=diagramHTML(id,state);
  root.querySelectorAll('details').forEach(d=>{if(expanded.has(d.querySelector('summary').textContent))d.open=true});
@@ -38,16 +37,14 @@ function draw(focus){
  if(b.dataset.action==='back')state.event=Math.max(0,(state.event||0)-1);
  if(b.dataset.action==='append')state.changed=false;
  if(b.dataset.action==='edit')state.changed=true;
- if(b.dataset.action==='restore'){state.first=representations[state.position??2][0];saved.attention={position:state.position??2,first:state.first}}
  change();
  });
  root.querySelectorAll('input,select').forEach(input=>{
  input[input.type==='range'?'onchange':'oninput']=()=>{
  focus=`#${input.id}`;
- const key={component:'first'}[input.id]||input.id;
+ const key=input.id;
  state[key]=Number(input.value);
- if(key==='position')state.first=representations[state.position][0];
- if(['qkv','scores','mix'].includes(id))saved.attention={position:state.position??2,first:state.first??1};
+  if(['qkv','scores','mix'].includes(id))saved.attention={position:state.position??2};
  change();
  };
  });

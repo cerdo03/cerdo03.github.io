@@ -10,7 +10,7 @@ test('prefill reveals probability bars after processing and before selection',()
 });
 test('projection visual reveals operations without prematurely showing attention outputs',()=>{
  const initial=diagramHTML('qkv',{event:0});assert.ok(!initial.includes('Attention output'));assert.ok(initial.includes('Q not calculated yet'));
- const live=diagramHTML('qkv',{event:3,position:1,first:4});assert.ok(live.includes('Q = [4, 1]'));assert.ok(live.includes('K = [1, 4]'));assert.ok(live.includes('V = [8, 1]'));
+ const live=diagramHTML('qkv',{event:3,position:1,first:4});assert.ok(live.includes('Q = [0, 1]'));assert.ok(live.includes('K = [1, 0]'));assert.ok(live.includes('V = [0, 1]'));
 });
 test('prefill cells name the words each position mixes and the later words it cannot see',()=>{
  const html=diagramHTML('prefill',{event:1});
