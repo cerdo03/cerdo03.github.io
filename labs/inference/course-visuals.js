@@ -47,11 +47,10 @@ export function diagramHTML(id,s={}){
  <div class="actions"><button data-action="append" aria-pressed="${!changed}">Append “blue”</button><button data-action="edit" aria-pressed="${changed}">Edit “The” → “Our”</button></div>`;
  }
  if(id==='prefix'){
- const p=prefixState(s.changed||false,s.block||1);
- return `${location('Two compatible requests','exact shared beginning')}${node('Request A · already processed',chips(p.a))}${arrow('reuse only identical prefix K/V')}${node('Request B · new',p.b.map((t,i)=>`<span class="token">${t}<small>${i<p.reused?'Reuse K/V':'Compute new K/V'}</small></span>`).join(' '))}
- <p><strong>${p.reused} positions reused; ${p.b.length-p.reused} positions computed.</strong> ${p.reused?'The suffix query still reads the shared prefix K/V for context.':'No reusable complete prefix under this policy.'}</p>
- <div class="actions"><button data-action="append" aria-pressed="${!s.changed}">Same beginning</button><button data-action="edit" aria-pressed="${!!s.changed}">Change first token</button></div>
- <details><summary>Full-block reuse policy</summary><label for="block">Token slots per reusable block</label><select id="block">${[1,2,3].map(b=>`<option ${b===(s.block||1)?'selected':''}>${b}</option>`).join('')}</select><p>${p.match} tokens match exactly; only complete groups of ${s.block||1} are reused.</p></details>`;
+ const p=prefixState(s.changed||false,1);
+ return `${location('Two compatible requests','token-level illustration')}${node('Request A · already processed',chips(p.a))}${arrow('reuse only identical prefix K/V')}${node('Request B · new',p.b.map((t,i)=>`<span class="token">${t}<small>${i<p.reused?'Reuse K/V':'Compute new K/V'}</small></span>`).join(' '))}
+ <p><strong>${p.reused} positions reused; ${p.b.length-p.reused} position${p.b.length-p.reused===1?'':'s'} computed.</strong> ${p.reused?'The suffix query still reads the shared prefix K/V for context.':'The first token differs, so no prefix K/V can be reused.'}</p>
+ <div class="actions"><button data-action="append" aria-pressed="${!s.changed}">Same beginning</button><button data-action="edit" aria-pressed="${!!s.changed}">Change first token</button></div>`;
  }
  if(id==='memory'){
  const length=s.length||1024,batch=s.batch||1,heads=s.heads||8,bytes=s.bytes||2,total=kvBytes(length,32,heads,128,bytes,batch),base=kvBytes(1,32,heads,128,bytes);
