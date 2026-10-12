@@ -23,7 +23,9 @@ function render(){
 function navigate(index){current=Math.max(0,Math.min(guide.length-1,index));render();$('h1').focus();window.scrollTo(0,0)}
 function draw(focus){
  const id=guide[current].id;
- if(!saved.scenes[id])saved.scenes[id]={event:['decode','cache','recap'].includes(id)?(id==='decode'?2:3):0};
+ const version=['attention','handoff'].includes(id)?2:1;
+ if(saved.scenes[id]?.version!==version)saved.scenes[id]=null;
+ if(!saved.scenes[id])saved.scenes[id]={event:['decode','cache','recap'].includes(id)?(id==='decode'?2:3):0,version};
  const state=saved.scenes[id],root=$('#scene');
  if(['qkv','scores','mix'].includes(id))Object.assign(state,saved.attention||{});
  const expanded=[...root.querySelectorAll('details')].map(d=>d.open);
