@@ -56,7 +56,6 @@ export function diagramHTML(id,s={}){
  const length=s.length||1024,batch=s.batch||1,heads=s.heads||8,bytes=s.bytes||2,total=kvBytes(length,32,heads,128,bytes,batch),base=kvBytes(1,32,heads,128,bytes);
  return `${location('KV memory','processed positions across requests')}
  <label for="length">Cached positions per request: ${length.toLocaleString()}</label><input id="length" type="range" min="256" max="16384" step="256" value="${length}">
- <div class="memory-ruler"><div style="width:${length/16384*100}%"></div></div><p class="sub">Context length: 0 → 16,384 positions. Bar is not GPU utilization.</p>
  ${node('K/V storage',`${n(total/2**30)} GiB <small>(${total.toLocaleString()} bytes)</small>`)}
  <details><summary>Add concurrent requests</summary><label for="batch">Requests with this context length</label><select id="batch">${[1,2,4,8,16].map(x=>`<option ${x===batch?'selected':''}>${x}</option>`).join('')}</select><p>Each independent request adds its own cache here. Shared prefixes are not counted as shared in this estimate.</p></details>
  <details><summary>Change KV architecture and precision</summary><label for="heads">KV heads per layer</label><select id="heads">${[1,8,32].map(x=>`<option ${x===heads?'selected':''}>${x}</option>`).join('')}</select><label for="bytes">Bytes per cached element</label><select id="bytes">${[1,2,4].map(x=>`<option ${x===bytes?'selected':''}>${x}</option>`).join('')}</select><p>Fixed here: 32 layers, head dimension 128. One-byte formats may need extra scaling metadata, excluded here.</p></details>
