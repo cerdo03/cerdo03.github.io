@@ -8,8 +8,8 @@ export function attentionWeights(scores){const max=Math.max(...scores);const e=s
 export const promptTokens=['The','sky','is'];
 export const answerTokens=['blue','today','.'];
 export const representations=[[2,0],[0,1],[1,2]];
-export function attentionState(position=2,first=representations[position][0]){
- const rows=representations.map(x=>[...x]);rows[position][0]=first;
+export function attentionState(position=2,first,embeddings=representations){
+ const rows=embeddings.map(x=>[...x]);if(first!==undefined)rows[position][0]=first;
  const keys=rows.map(([a,b])=>[b,a]),values=rows.map(([a,b])=>[2*a,b]);
  const q=[...rows[position]];
  const scores=keys.map((k,i)=>i<=position?(q[0]*k[0]+q[1]*k[1])/Math.sqrt(2):-Infinity);

@@ -1,9 +1,11 @@
+import {representations} from './guide-model.js';
 import {guide} from './guide-content.js';
 import {diagramHTML,eventLimits} from './course-visuals.js';
 const $=selector=>document.querySelector(selector);
 const storageKey='inference-course-v4';
 let saved={concept:'tokens',scenes:{},checks:{}};
 try{const raw=JSON.parse(localStorage.getItem(storageKey)||'null');if(raw&&typeof raw.scenes==='object'&&raw.scenes&&typeof raw.checks==='object'&&raw.checks)saved={...saved,...raw}}catch{/* Storage is optional. */}
+if(!Array.isArray(saved.embeddings)||saved.embeddings.length!==3||!saved.embeddings.every(row=>Array.isArray(row)&&row.length===2&&row.every(x=>Number.isFinite(x)&&Math.abs(x)<=4)))saved.embeddings=representations.map(row=>[...row]);
 let current=guide.findIndex(x=>x.id===saved.concept);if(current<0)current=0;
 const persist=()=>{try{localStorage.setItem(storageKey,JSON.stringify(saved))}catch{/* Storage is optional. */}};
 function render(){
@@ -28,11 +30,14 @@ function draw(focus){
  const state=saved.scenes[id],root=$('#scene');
  if(['qkv','scores','mix'].includes(id)){delete state.first;state.position=saved.attention?.position??state.position??2;saved.attention={position:state.position};}
  const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));
- root.innerHTML=diagramHTML(id,state);
+ root.innerHTML=diagramHTML(id,{...state,embeddings:saved.embeddings});
  root.querySelectorAll('details').forEach(d=>{if(expanded.has(d.querySelector('summary').textContent))d.open=true});
  const change=()=>{persist();draw(focus)};
  root.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{
  focus=`[data-action="${b.dataset.action}"]`;
+ if(b.dataset.action==='open-embeddings'){navigate(0);$('#embedding-editor').open=true;$('#embedding-editor summary').focus();return}
+ if(b.dataset.action==='apply-embeddings'){const inputs=[...root.querySelectorAll('[data-embedding]')];if(inputs.some(input=>!input.checkValidity()||!Number.isFinite(input.valueAsNumber))){inputs.find(input=>!input.checkValidity()||!Number.isFinite(input.valueAsNumber)).reportValidity();return}saved.embeddings=representations.map((_,i)=>inputs.slice(i*2,i*2+2).map(input=>input.valueAsNumber))}
+ if(b.dataset.action==='default-embeddings')saved.embeddings=representations.map(row=>[...row]);
  if(b.dataset.action==='forward')state.event=Math.min(eventLimits[id]||0,(state.event||0)+1);
  if(b.dataset.action==='back')state.event=Math.max(0,(state.event||0)-1);
  if(b.dataset.action==='append')state.changed=false;
@@ -40,6 +45,7 @@ function draw(focus){
  change();
  });
  root.querySelectorAll('input,select').forEach(input=>{
+ if(input.hasAttribute('data-embedding'))return;
  input[input.type==='range'?'onchange':'oninput']=()=>{
  focus=`#${input.id}`;
  const key=input.id;
