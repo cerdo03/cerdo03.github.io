@@ -2,6 +2,8 @@
 // Progress is an optional per-browser convenience stored in localStorage; every access is
 // wrapped so the pages work normally when storage is unavailable. No points or scores.
 
+import './symbols.js';
+
 const STORAGE_KEY = 'attention-module-progress-v1';
 
 function readProgress() {

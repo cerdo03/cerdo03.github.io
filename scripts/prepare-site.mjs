@@ -20,7 +20,7 @@ function versionAssets(directory) {
       source = source.replace(/(href|src)=(['"])([^'"?#]+\.(?:css|js))(?:\?[^'"#]*)?\2/g,
         (match, attribute, quote, url) => /^(?:https?:|\/\/)/.test(url) ? match : `${attribute}=${quote}${url}?v=${revision}${quote}`);
     } else {
-      source = source.replace(/((?:from\s+|import\(\s*)['"])(\.\.?\/[^'"?]+\.js)(?:\?[^'"]*)?(['"])/g,
+      source = source.replace(/((?:from\s+|import\s+|import\(\s*)['"])(\.\.?\/[^'"?]+\.js)(?:\?[^'"]*)?(['"])/g,
         (_, prefix, url, quote) => `${prefix}${url}?v=${revision}${quote}`);
     }
     writeFileSync(path, source);
