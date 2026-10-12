@@ -1,0 +1,38 @@
+/* Lesson 2.4 layout for the decode tracer. Shared theme tokens only. */
+
+.decode-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 12px;
+  margin: 0 0 12px;
+}
+
+.decode-status > div {
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+}
+
+.decode-status dt {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.decode-status dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.decode-stages {
+  display: grid;
+  gap: 10px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.decode-stages > li {
+  padding: 8px 12px;
+  border-left: 3px solid var(--line);
+}
