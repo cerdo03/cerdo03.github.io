@@ -30,7 +30,7 @@ function draw(focus){
  if(['qkv','scores','mix'].includes(id))Object.assign(state,saved.attention||{});
  const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));
  root.innerHTML=diagramHTML(id,state);
- root.querySelectorAll('details').forEach(d=>{d.open=expanded.has(d.querySelector('summary').textContent)});
+ root.querySelectorAll('details').forEach(d=>{if(expanded.has(d.querySelector('summary').textContent))d.open=true});
  const change=()=>{persist();draw(focus)};
  root.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>{
  focus=`[data-action="${b.dataset.action}"]`;
@@ -51,6 +51,6 @@ function draw(focus){
  change();
  };
  });
- if(focus){const target=root.querySelector(focus);if(target&&!target.disabled)target.focus({preventScroll:true});else root.querySelector('[data-action="back"]:not(:disabled),[data-action="forward"]:not(:disabled)')?.focus({preventScroll:true})}
+ if(focus){const target=root.querySelector(focus);if(target&&!target.disabled){if(target.getClientRects().length)target.focus({preventScroll:true});else target.closest('details')?.querySelector('summary')?.focus({preventScroll:true});}else root.querySelector('[data-action="back"]:not(:disabled),[data-action="forward"]:not(:disabled)')?.focus({preventScroll:true})}
 }
 render();
