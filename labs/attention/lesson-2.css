@@ -1,0 +1,141 @@
+/* Lesson 2.2 layout only. Colours and type come from shared theme tokens. */
+
+.mha-stages {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  counter-reset: mha-stage;
+  max-width: none;
+}
+
+.mha-stage {
+  counter-increment: mha-stage;
+  display: grid;
+  grid-template-columns: minmax(10em, 14em) minmax(0, 1fr) max-content;
+  gap: 4px 16px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+}
+
+.mha-stage + .mha-stage {
+  margin-top: 6px;
+}
+
+.mha-stage-step {
+  font-weight: 650;
+}
+
+.mha-stage-step::before {
+  content: counter(mha-stage) ". ";
+  color: var(--muted);
+}
+
+.mha-stage-op {
+  color: var(--muted);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.mha-stage-shapes {
+  text-align: right;
+  font-weight: 650;
+}
+
+.mha-stage-sym {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.mha-stage[data-stage="scores"] {
+  border-style: double;
+  border-width: 3px;
+}
+
+.mha-stage .mha-partition {
+  grid-column: 1 / -1;
+}
+
+.mha-partition-svg {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  color: var(--ink);
+}
+
+.mha-slice {
+  fill: var(--accent-soft);
+  stroke: var(--ink);
+  stroke-width: 1;
+}
+
+.mha-slice-alt {
+  fill: var(--surface-alt);
+  stroke-dasharray: 4 3;
+}
+
+.mha-slice-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.mha-axis-label {
+  font-size: 12px;
+}
+
+.mha-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14em, 1fr));
+  gap: 10px 20px;
+  margin: 0 0 10px;
+  max-width: none;
+}
+
+.mha-stats dt {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.mha-stats dd {
+  margin: 2px 0 0;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.is-invalid .mha-stages,
+.is-invalid .lab-output {
+  opacity: 0.5;
+}
+
+.toy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13em, 1fr));
+  gap: 4px 20px;
+  align-items: start;
+}
+
+.toy-grid-heads {
+  grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
+}
+
+.lab-body h4 {
+  margin: 16px 0 4px;
+}
+
+.lab-body h4:first-of-type {
+  margin-top: 0;
+}
+
+@media (width <= 640px) {
+  .mha-stage {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mha-stage-shapes {
+    text-align: left;
+  }
+}

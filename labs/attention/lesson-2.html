@@ -7,6 +7,7 @@
   <title>2.2 Multi-Head Attention — Module 2</title>
   <link rel="stylesheet" href="../../assets/theme.css">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="lesson-2.css">
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-2.js"></script>
@@ -52,42 +53,241 @@
       <header class="lesson-header">
         <p class="eyebrow">Module 2 · Lesson 2.2 of 2.5</p>
         <h1>Multi-Head Attention</h1>
-        <!-- LESSON CONTENT: lesson agent fills (learning goal and lesson intro) -->
+        <p class="lede">Lesson 2.1 built one attention operation: one set of queries, keys and values, one softmax per query, one output. Real transformer layers run several of these in parallel on smaller slices of the model width and then recombine them. This lesson traces exactly how that works, tensor by tensor.</p>
+        <div class="callout">
+          <p><span class="callout-label">Learning goal.</span> By the end you should be able to write the multi-head attention equations with every dimension, trace the shapes from <span class="shape">[<var>T</var>, d<sub>model</sub>]</span> through the head split and back, compute d<sub>head</sub>, score-tensor sizes and projection parameter counts for any configuration, and explain what changing the head count does and does not change.</p>
+          <p><span class="callout-label">Builds on.</span> The single-head equation from <a href="lesson-1.html#s2-1-8">2.1.8</a>: Attention(<var>Q</var>, <var>K</var>, <var>V</var>) = softmax(<var>QK</var><sup>T</sup> / √<var>d</var><sub>k</sub> + <var>M</var>)<var>V</var>, with the row-vector convention (each row is one token position), the causal mask from <a href="lesson-1.html#s2-1-6">2.1.6</a> and learned projections from <a href="lesson-1.html#s2-1-2">2.1.2</a>. Those steps are not repeated here.</p>
+          <p><span class="callout-label">Simplifications.</span> One layer, one sequence (no batch dimension), biases omitted, contiguous logical tensors, every head the same size. Toy numbers are labelled as such.</p>
+        </div>
       </header>
 
       <section id="s2-2-1" aria-labelledby="s2-2-1-title">
         <h2 id="s2-2-1-title">2.2.1 Why multiple heads?</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <h3>The limitation of one head</h3>
+        <p>In single-head attention each query position produces <em>one</em> row of weights: a single probability distribution over the positions it may attend to. Its output is one weighted average of value vectors, all living in the same <var>d</var><sub>v</sub>-dimensional space. Suppose a position would benefit from two different pieces of context, found at different positions, that matter for different reasons. One distribution must split its weight between them, and the two contributions are blended into a single averaged vector. The scores that decide the split are also computed from one comparison <var>q</var>·<var>k</var>: one notion of "relevant" per layer.</p>
+        <h3>What multiple heads change</h3>
+        <p>Multi-head attention gives the layer <var>H</var> independent attention operations. Each head has its own learned projections into a smaller space of width d<sub>head</sub>, its own scores, its own softmax and its own weighted sum. A position can therefore put most of one head's weight on one position and most of another head's weight on a different position, and the two results are kept apart until the output projection combines them. Vaswani et al. describe this as letting the model attend jointly to information from different <em>representation subspaces</em> at different positions, and note that a single head's averaging works against this (<a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need, 2017, §3.2.2</a>).</p>
+        <p>The benefit is representational flexibility: the layer <em>can</em> learn several different ways of comparing and mixing positions. Nothing in the equations forces it to, and nothing assigns a role to a head.</p>
+        <div class="callout limit">
+          <p><span class="callout-label">What heads do not guarantee.</span> Heads are not designed modules. A trained head is not "the grammar head" or "the coreference head" by construction; any such description is an after-the-fact interpretation of one trained model, and attention weights alone do not explain a model's reasoning. Heads can also be redundant: for example, <a href="https://arxiv.org/abs/1905.10650">Michel et al. (2019)</a> report that many heads in trained models can be removed at test time with little loss on the tasks they measured. Treat "different subspaces" as a capacity the architecture offers, not a description of what each head does.</p>
+        </div>
       </section>
 
       <section id="s2-2-2" aria-labelledby="s2-2-2-title">
         <h2 id="s2-2-2-title">2.2.2 Splitting d<sub>model</sub> into heads</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <h3>Two widths: d<sub>model</sub> and d<sub>head</sub></h3>
+        <dl class="eq-vars">
+          <dt>d<sub>model</sub></dt><dd>The model width: the length of the vector each token carries between layers (the residual stream). The input to attention is <var>X</var> ∈ ℝ<sup><var>T</var>×d<sub>model</sub></sup>, and the layer must return the same shape so it can be added back and the next layer can consume it.</dd>
+          <dt>d<sub>head</sub></dt><dd>The width of one head's query, key and value vectors. In Lesson 2.1's notation each head has <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub> = d<sub>head</sub>. Every head here uses the same d<sub>head</sub> for Q, K and V.</dd>
+          <dt><var>H</var></dt><dd>The number of heads.</dd>
+          <dt><var>T</var></dt><dd>The number of token positions in the sequence.</dd>
+        </dl>
+        <p>The common choice, and the one in the original Transformer, is an <strong>equal partition</strong> of the model width:</p>
+        <div class="eq eq-boxed" role="math" aria-label="d head equals d model divided by H">d<sub>head</sub> = d<sub>model</sub> / <var>H</var></div>
+        <p>With the base Transformer's d<sub>model</sub> = 512 and <var>H</var> = 8, each head works in d<sub>head</sub> = 512 / 8 = 64 dimensions. The heads together use all 512 columns: 8 × 64 = 512. Section <a href="#s2-2-6">2.2.6</a> covers architectures that choose d<sub>head</sub> independently.</p>
+        <h3>One big projection, then a reshape</h3>
+        <p>Conceptually each head <var>i</var> has its own matrices <var>W</var><sub><var>i</var></sub><sup>Q</sup>, <var>W</var><sub><var>i</var></sub><sup>K</sup>, <var>W</var><sub><var>i</var></sub><sup>V</sup> ∈ ℝ<sup>d<sub>model</sub>×d<sub>head</sub></sup>. Placing the <var>H</var> query matrices side by side gives one matrix:</p>
+        <div class="eq" role="math" aria-label="W Q equals the column-wise concatenation of W 1 Q through W H Q, a d model by H times d head matrix">W<sub>Q</sub> = [ <var>W</var><sub>1</sub><sup>Q</sup> | <var>W</var><sub>2</sub><sup>Q</sup> | … | <var>W</var><sub><var>H</var></sub><sup>Q</sup> ] ∈ ℝ<sup>d<sub>model</sub>×(<var>H</var>·d<sub>head</sub>)</sup></div>
+        <p>Because matrix multiplication works column by column, <var>Q</var> = <var>X</var>W<sub>Q</sub> computes all heads' queries at once: columns 0–63 of <var>Q</var> are exactly <var>X</var><var>W</var><sub>1</sub><sup>Q</sup>, columns 64–127 are <var>X</var><var>W</var><sub>2</sub><sup>Q</sup>, and so on. The same holds for <var>K</var> and <var>V</var>. Implementations therefore run three large matrix multiplications (or one fused one) rather than 3<var>H</var> small ones, then split the result:</p>
+        <figure class="diagram">
+          <ol class="flow-steps">
+            <li><var>Q</var> = <var>X</var>W<sub>Q</sub>: [<var>T</var>, 512]</li>
+            <li>reshape: [<var>T</var>, 8, 64]</li>
+            <li>transpose: [8, <var>T</var>, 64]</li>
+          </ol>
+          <figcaption>The split for d<sub>model</sub> = 512, <var>H</var> = 8. Reshape reinterprets each row of 512 numbers as 8 groups of 64; for a contiguous row-major tensor this moves no data. Transpose swaps the token and head axes so that each head becomes an independent [<var>T</var>, 64] matrix. The same split applies to <var>K</var> and <var>V</var>.</figcaption>
+        </figure>
+        <details>
+          <summary>Advanced: what reshape and transpose cost in memory</summary>
+          <p>In a row-major [<var>T</var>, 512] tensor, the 512 numbers of a row are adjacent, so viewing them as [<var>T</var>, 8, 64] only changes the indexing arithmetic. The transpose to [8, <var>T</var>, 64] is usually also a <em>view</em> with different strides: element (<var>h</var>, <var>t</var>, <var>c</var>) is still at offset <var>t</var>·512 + <var>h</var>·64 + <var>c</var>. Whether a kernel copies it into a head-major contiguous layout, or reads the strided view directly, is an implementation choice. Frameworks and attention kernels differ here; the logical shapes in this lesson are the same either way.</p>
+        </details>
       </section>
 
       <section id="s2-2-3" aria-labelledby="s2-2-3-title">
         <h2 id="s2-2-3-title">2.2.3 Attention inside each head</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>Each head runs exactly the scaled dot-product attention of Lesson 2.1 on its own slices:</p>
+        <div class="eq eq-boxed" role="math" aria-label="head i equals Attention of X W i Q, X W i K, X W i V, which equals softmax of Q i K i transpose over square root of d head plus M, times V i">head<sub><var>i</var></sub> = Attention(<var>X</var><var>W</var><sub><var>i</var></sub><sup>Q</sup>, <var>X</var><var>W</var><sub><var>i</var></sub><sup>K</sup>, <var>X</var><var>W</var><sub><var>i</var></sub><sup>V</sup>) = softmax(<var>Q</var><sub><var>i</var></sub><var>K</var><sub><var>i</var></sub><sup>T</sup> / √d<sub>head</sub> + <var>M</var>) <var>V</var><sub><var>i</var></sub></div>
+        <dl class="eq-vars">
+          <dt><var>Q</var><sub><var>i</var></sub>, <var>K</var><sub><var>i</var></sub>, <var>V</var><sub><var>i</var></sub></dt><dd>Head <var>i</var>'s queries, keys and values, each <span class="shape">[<var>T</var>, d<sub>head</sub>]</span>: the <var>i</var>-th column slice of <var>Q</var>, <var>K</var>, <var>V</var>.</dd>
+          <dt><var>Q</var><sub><var>i</var></sub><var>K</var><sub><var>i</var></sub><sup>T</sup></dt><dd>Head <var>i</var>'s raw scores, <span class="shape">[<var>T</var>, <var>T</var>]</span>. Across all heads the score tensor is <span class="shape">[<var>H</var>, <var>T</var>, <var>T</var>]</span>.</dd>
+          <dt>√d<sub>head</sub></dt><dd>The scale uses the head width, because each dot product sums d<sub>head</sub> terms (the variance argument of <a href="lesson-1.html#s2-1-4">2.1.4</a>). For d<sub>head</sub> = 64 the scale is 1/8.</dd>
+          <dt><var>M</var></dt><dd>The same <span class="shape">[<var>T</var>, <var>T</var>]</span> causal mask for every head in a decoder.</dd>
+          <dt>head<sub><var>i</var></sub></dt><dd>Head <var>i</var>'s output, <span class="shape">[<var>T</var>, d<sub>head</sub>]</span>. All heads together: <span class="shape">[<var>H</var>, <var>T</var>, d<sub>head</sub>]</span>.</dd>
+        </dl>
+        <p>The heads do not exchange information: head 3's softmax never sees head 5's scores. That independence is why the head axis is moved to the front. A [<var>H</var>, <var>T</var>, d<sub>head</sub>] tensor is a batch of <var>H</var> separate matrix problems, which GPUs run as one batched matrix multiplication.</p>
+        <h3>The compute does not grow with <var>H</var></h3>
+        <p>Computing one head's scores costs <var>T</var> · <var>T</var> · d<sub>head</sub> multiply-adds (<var>T</var><sup>2</sup> dot products of length d<sub>head</sub>). All heads: <var>H</var> · <var>T</var><sup>2</sup> · d<sub>head</sub> = <var>T</var><sup>2</sup> · d<sub>model</sub> under equal partition, the same as one head of width d<sub>model</sub>. The same holds for <var>A</var><sub><var>i</var></sub><var>V</var><sub><var>i</var></sub>. This is the paper's point that the total cost is similar to single-head attention at full width. What <em>does</em> grow with <var>H</var> is the number of score elements, <var>H</var> · <var>T</var><sup>2</sup>, and so the softmax work and the memory needed if the score tensor is stored in full. The explorer in <a href="#s2-2-5">2.2.5</a> shows both numbers.</p>
+
+        <div class="lab" id="toy-heads" role="group" aria-labelledby="toy-heads-title">
+          <div class="lab-header">
+            <h3 id="toy-heads-title">Two heads, one input: a toy example</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>Causal two-head attention computed from the same <var>X</var>, with d<sub>model</sub> = 4, <var>H</var> = 2, d<sub>head</sub> = 2. Head 1 uses columns h1·0–h1·1 of <var>Q</var>, <var>K</var>, <var>V</var>; head 2 uses h2·0–h2·1.</dd></div>
+              <div><dt>Try</dt><dd>Choose query position t2, then t1 and t0, and compare the two heads' weight rows.</dd></div>
+              <div><dt>What to notice</dt><dd>For t2 the heads spread their weight differently, because each computes scores from different columns. For t0 the causal mask leaves one choice, so both heads give weight 1 to t0.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls">
+            <label class="field"><span>Query position</span>
+              <select id="toy-query">
+                <option value="0">t0</option>
+                <option value="1">t1</option>
+                <option value="2" selected>t2</option>
+              </select>
+            </label>
+          </div>
+          <div class="lab-body">
+            <h4>Step 1: one projection each for Q, K and V, then split by columns</h4>
+            <div class="toy-grid">
+              <div id="toy-x"></div>
+              <div id="toy-q"></div>
+              <div id="toy-k"></div>
+              <div id="toy-v"></div>
+            </div>
+            <h4>Step 2: each head runs its own scaled, causally masked softmax (scale 1/√2; entries above the diagonal are masked, so their weight is exactly 0)</h4>
+            <div class="toy-grid toy-grid-heads">
+              <div>
+                <div id="toy-a1"></div>
+                <div id="toy-bars1"></div>
+                <div id="toy-o1"></div>
+              </div>
+              <div>
+                <div id="toy-a2"></div>
+                <div id="toy-bars2"></div>
+                <div id="toy-o2"></div>
+              </div>
+            </div>
+            <h4>Step 3: concatenate the head outputs, then multiply by W<sub>O</sub></h4>
+            <div class="toy-grid">
+              <div id="toy-concat"></div>
+              <div id="toy-out"></div>
+            </div>
+          </div>
+          <div class="lab-output" aria-live="polite"><p id="toy-summary"></p></div>
+          <p class="lab-assumptions">Assumptions: hand-picked toy numbers, not learned weights. <var>X</var> = [[1, 0, 0, 1], [0, 1, 1, 0], [1, 0, 1, 0]]; W<sub>K</sub> and W<sub>V</sub> are identity matrices and W<sub>Q</sub> = 2·<var>I</var>, so head 1 only reads input features f0–f1 and head 2 only f2–f3. W<sub>O</sub> = [[0.5, 0, 0.5, 0], [0, 0.5, 0, 0.5], [0.5, 0, −0.5, 0], [0, 0.5, 0, −0.5]]. Learned projections mix every feature into every head. Weights and outputs are rounded to 3 decimals.</p>
+        </div>
       </section>
 
       <section id="s2-2-4" aria-labelledby="s2-2-4-title">
         <h2 id="s2-2-4-title">2.2.4 Concatenation and the output projection W<sub>O</sub></h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>After attention, the <var>H</var> head outputs are put back side by side and multiplied by one more learned matrix:</p>
+        <div class="eq eq-boxed" role="math" aria-label="MHA of X equals Concat of head 1 through head H, times W O">MHA(<var>X</var>) = Concat(head<sub>1</sub>, …, head<sub><var>H</var></sub>) W<sub>O</sub></div>
+        <dl class="eq-vars">
+          <dt>Concat(…)</dt><dd><span class="shape">[<var>T</var>, <var>H</var>·d<sub>head</sub>]</span>: row <var>t</var> is head<sub>1</sub>'s row <var>t</var>, then head<sub>2</sub>'s, and so on. In tensor terms: transpose [<var>H</var>, <var>T</var>, d<sub>head</sub>] back to [<var>T</var>, <var>H</var>, d<sub>head</sub>] and merge the last two axes.</dd>
+          <dt>W<sub>O</sub></dt><dd>The output projection, ∈ ℝ<sup>(<var>H</var>·d<sub>head</sub>)×d<sub>model</sub></sup>. Under equal partition it is [d<sub>model</sub>, d<sub>model</sub>], e.g. [512, 512].</dd>
+          <dt>MHA(<var>X</var>)</dt><dd><span class="shape">[<var>T</var>, d<sub>model</sub>]</span>, the same shape as <var>X</var>, so it can be added to the residual stream.</dd>
+        </dl>
+        <h3>Why W<sub>O</sub> is needed</h3>
+        <p>Without W<sub>O</sub>, output columns 0–63 would come only from head 1, columns 64–127 only from head 2, and so on: each head would own a fixed block of the residual stream. W<sub>O</sub> lets every output dimension draw on every head. It also maps back to d<sub>model</sub> when <var>H</var>·d<sub>head</sub> ≠ d<sub>model</sub>.</p>
+        <details>
+          <summary>Advanced: concatenate-then-project equals a sum over heads</summary>
+          <p>Split W<sub>O</sub> by rows into <var>H</var> blocks <var>W</var><sub>O</sub><sup>(<var>i</var>)</sup> ∈ ℝ<sup>d<sub>head</sub>×d<sub>model</sub></sup> (block <var>i</var> is the rows that multiply head <var>i</var>'s columns). Block matrix multiplication gives</p>
+          <div class="eq" role="math" aria-label="Concat of heads times W O equals the sum over i of head i times W O block i">Concat(head<sub>1</sub>, …, head<sub><var>H</var></sub>) W<sub>O</sub> = Σ<sub><var>i</var>=1…<var>H</var></sub> head<sub><var>i</var></sub> <var>W</var><sub>O</sub><sup>(<var>i</var>)</sup></div>
+          <p>So each head writes its own <span class="shape">[<var>T</var>, d<sub>model</sub>]</span> contribution and the layer adds them. Implementations still use the single concatenated matmul because one large multiplication is more efficient than <var>H</var> small ones plus a sum.</p>
+        </details>
+        <h3>Parameter count</h3>
+        <p>Without biases, the four projection matrices hold</p>
+        <div class="eq eq-boxed" role="math" aria-label="parameters equal 3 times d model times H d head for W Q W K W V, plus H d head times d model for W O, which is 4 d model squared under equal partition">3 · d<sub>model</sub> · (<var>H</var>·d<sub>head</sub>) + (<var>H</var>·d<sub>head</sub>) · d<sub>model</sub> = 4 · d<sub>model</sub><sup>2</sup> &nbsp;(when <var>H</var>·d<sub>head</sub> = d<sub>model</sub>)</div>
+        <p>For d<sub>model</sub> = 512: 4 × 512<sup>2</sup> = 4 × 262,144 = <span class="num">1,048,576</span> parameters per attention layer. <var>H</var> does not appear: splitting the same 512 columns into 1, 8 or 64 heads only regroups them. Choosing heads under equal partition is therefore not a parameter-count decision.</p>
       </section>
 
       <section id="s2-2-5" aria-labelledby="s2-2-5-title">
         <h2 id="s2-2-5-title">2.2.5 Tensor shapes end to end</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>The explorer below lists every stage of one multi-head attention layer with its symbolic and concrete shape. It starts at the Transformer base configuration: d<sub>model</sub> = 512, <var>H</var> = 8, d<sub>head</sub> = 64. The list is the diagram; each row reads as text.</p>
+
+        <div class="lab" id="mha-explorer" role="group" aria-labelledby="mha-explorer-title">
+          <div class="lab-header">
+            <h3 id="mha-explorer-title">Head-count shape explorer</h3>
+            <dl class="lab-guide">
+              <div><dt>What this shows</dt><dd>How each tensor's shape, the head width, the score-tensor size, the score compute and the projection parameter count follow from d<sub>model</sub>, <var>H</var>, <var>T</var> and d<sub>head</sub>.</dd></div>
+              <div><dt>Try</dt><dd>Move <var>H</var> from 1 to 64 with d<sub>model</sub> fixed at 512. Then double <var>T</var>. Then switch to an independent d<sub>head</sub> and pick one where <var>H</var>·d<sub>head</sub> ≠ 512.</dd></div>
+              <div><dt>What to notice</dt><dd>More heads means narrower heads and more <var>T</var>×<var>T</var> score matrices, while the projection parameters and QK<sup>T</sup> multiply-adds stay fixed. Doubling <var>T</var> quadruples the score tensor.</dd></div>
+            </dl>
+          </div>
+          <div class="lab-controls">
+            <fieldset class="segmented">
+              <legend>Heads <var>H</var> (divisors of 512)</legend>
+              <label><input type="radio" name="mha-heads" value="1">1</label>
+              <label><input type="radio" name="mha-heads" value="2">2</label>
+              <label><input type="radio" name="mha-heads" value="4">4</label>
+              <label><input type="radio" name="mha-heads" value="8" checked>8</label>
+              <label><input type="radio" name="mha-heads" value="16">16</label>
+              <label><input type="radio" name="mha-heads" value="32">32</label>
+              <label><input type="radio" name="mha-heads" value="64">64</label>
+            </fieldset>
+            <label class="field"><span>Sequence length <var>T</var></span>
+              <input id="mha-t" type="number" min="1" max="8192" step="1" value="1024">
+            </label>
+            <fieldset class="segmented">
+              <legend>Head dimension</legend>
+              <label><input type="radio" name="mha-dhead-mode" value="equal" checked>d<sub>model</sub> / <var>H</var></label>
+              <label><input type="radio" name="mha-dhead-mode" value="independent">Independent</label>
+            </fieldset>
+            <label class="field"><span>d<sub>head</sub> (independent)</span>
+              <input id="mha-dhead" type="number" min="1" max="1024" step="1" value="128" disabled>
+            </label>
+          </div>
+          <div class="lab-body">
+            <p id="mha-error" class="lab-error" role="alert" hidden></p>
+            <h4 id="mha-stages-title">Stages of one layer (d<sub>model</sub> = 512)</h4>
+            <ol id="mha-stages" class="mha-stages" aria-labelledby="mha-stages-title"></ol>
+            <div class="mha-partition">
+              <svg id="mha-partition" class="mha-partition-svg" role="img" aria-labelledby="mha-partition-text" viewBox="0 0 640 74"></svg>
+              <p id="mha-partition-text" class="small"></p>
+            </div>
+          </div>
+          <div class="lab-output" aria-live="polite">
+            <dl class="mha-stats">
+              <div><dt>d<sub>head</sub></dt><dd id="mha-out-dhead"></dd></div>
+              <div><dt>Projected width <var>H</var>·d<sub>head</sub></dt><dd id="mha-out-inner"></dd></div>
+              <div><dt>One head's Q, K or V</dt><dd id="mha-out-qhead"></dd></div>
+              <div><dt>Score tensor [<var>H</var>, <var>T</var>, <var>T</var>]</dt><dd id="mha-out-scores"></dd></div>
+              <div><dt>Score tensor size if stored in FP16/BF16</dt><dd id="mha-out-scorebytes"></dd></div>
+              <div><dt>QK<sup>T</sup> multiply-adds, all heads</dt><dd id="mha-out-macs"></dd></div>
+              <div><dt>Projection parameters (no biases)</dt><dd id="mha-out-params"></dd></div>
+              <div><dt>W<sub>O</sub> shape</dt><dd id="mha-out-wo"></dd></div>
+            </dl>
+            <p id="mha-out-note"></p>
+          </div>
+          <p class="lab-assumptions">Assumptions: one layer, one sequence (no batch dimension), biases omitted, equal-sized heads, the same d<sub>head</sub> for Q, K and V. "Size if stored" assumes the full score tensor is materialized at 2 bytes per element; fused kernels such as FlashAttention (<a href="https://arxiv.org/abs/2205.14135">Dao et al., 2022</a>) avoid storing it, so this is not a measured memory footprint. Multiply-adds count only Q<sub><var>i</var></sub>K<sub><var>i</var></sub><sup>T</sup>; <var>A</var><sub><var>i</var></sub><var>V</var><sub><var>i</var></sub> costs the same again.</p>
+        </div>
+        <p>With the defaults (<var>T</var> = 1024, <var>H</var> = 8), the score tensor holds 8 × 1024 × 1024 = 8,388,608 elements. At <var>H</var> = 64 it holds 67,108,864, eight times more, while the QK<sup>T</sup> multiply-adds stay at 1024<sup>2</sup> × 512 = 536,870,912. The head count trades fewer, wider comparisons for more, narrower ones; it does not change the matmul budget.</p>
       </section>
 
       <section id="s2-2-6" aria-labelledby="s2-2-6-title">
         <h2 id="s2-2-6-title">2.2.6 Head count, head dimension and what heads do not tell us</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <h3>More heads is not automatically better</h3>
+        <p>Under equal partition, raising <var>H</var> leaves parameters and matmul compute unchanged but makes each head narrower. A narrower head has two costs:</p>
+        <ul>
+          <li><strong>Lower-dimensional comparisons.</strong> Head <var>i</var>'s score matrix <var>Q</var><sub><var>i</var></sub><var>K</var><sub><var>i</var></sub><sup>T</sup> is a product of a [<var>T</var>, d<sub>head</sub>] and a [d<sub>head</sub>, <var>T</var>] matrix, so its rank is at most d<sub>head</sub>. At <var>H</var> = 64 with d<sub>model</sub> = 512, each head compares positions using only 8 numbers per vector.</li>
+          <li><strong>More score matrices.</strong> <var>H</var>·<var>T</var><sup>2</sup> score elements and <var>H</var> softmaxes per query position. Very small heads also tend to use GPU matrix units less efficiently; attention kernels are commonly tuned for head widths such as 64 or 128.</li>
+        </ul>
+        <p>Fewer, wider heads have the opposite trade-off: fewer independent attention patterns per layer. The original paper's ablation (Table 3, English–German translation development set) varied the head count while keeping compute constant: single-head attention was clearly worse than the best setting, and quality also dropped with too many heads. Head count is a tuned hyperparameter, and results from one model and task do not transfer as a rule. <strong>More heads does not mean better quality.</strong></p>
+        <h3>d<sub>head</sub> does not have to equal d<sub>model</sub> / <var>H</var></h3>
+        <p>Equal partition is a convention, not a requirement. Some architectures set d<sub>head</sub> directly, so <var>H</var>·d<sub>head</sub> can be larger or smaller than d<sub>model</sub> (model configuration files often expose a separate head-dimension field for this). The equations are unchanged; only the widths move:</p>
+        <ul>
+          <li>W<sub>Q</sub>, W<sub>K</sub>, W<sub>V</sub> ∈ ℝ<sup>d<sub>model</sub>×(<var>H</var>·d<sub>head</sub>)</sup> and the concatenation is [<var>T</var>, <var>H</var>·d<sub>head</sub>].</li>
+          <li>W<sub>O</sub> ∈ ℝ<sup>(<var>H</var>·d<sub>head</sub>)×d<sub>model</sub></sup> maps back to the model width, so the output is still [<var>T</var>, d<sub>model</sub>].</li>
+          <li>Parameters become 4 · d<sub>model</sub> · <var>H</var> · d<sub>head</sub> and the score multiply-adds <var>T</var><sup>2</sup> · <var>H</var> · d<sub>head</sub>; now they do depend on the choice.</li>
+        </ul>
+        <p>Switch the explorer to <em>Independent</em> to see W<sub>O</sub> change shape. For example, d<sub>model</sub> = 512, <var>H</var> = 8, d<sub>head</sub> = 128 gives W<sub>Q</sub> = [512, 1024], a [<var>T</var>, 1024] concatenation and W<sub>O</sub> = [1024, 512], with 4 × 512 × 1024 = 2,097,152 projection parameters.</p>
+        <h3>Engineering implication: heads shape the KV cache</h3>
+        <p>During decoding the model stores each processed position's keys and values for every head. In the multi-head attention described here, every head has its own K and V, so each token adds 2 · <var>H</var> · d<sub>head</sub> numbers per layer, which is 2 · d<sub>model</sub> under equal partition. Lesson <a href="lesson-3.html">2.3</a> shows how multi-query and grouped-query attention keep all the query heads while sharing fewer K/V heads, and Lessons 2.4–2.5 turn this into bytes.</p>
       </section>
 
       <section id="s2-2-check" aria-labelledby="s2-2-check-title">
         <h2 id="s2-2-check-title">Knowledge check</h2>
-        <!-- LESSON CONTENT: lesson agent fills -->
+        <p>These use a different configuration from the lesson, d<sub>model</sub> = 4096, <var>H</var> = 32 and <var>T</var> = 10, so you have to apply the rules rather than recall 512/8/64. Work each one on paper first; the feedback shows the full set of shapes.</p>
+        <div id="check-dhead"></div>
+        <div id="check-scores"></div>
+        <div id="check-params"></div>
+        <div id="check-double"></div>
+        <h3>References</h3>
+        <ul class="references">
+          <li>Vaswani, A. et al. (2017). <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>. arXiv:1706.03762. Multi-head attention (§3.2.2), base configuration d<sub>model</sub> = 512, <var>h</var> = 8, <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub> = 64, head-count ablation (Table 3).</li>
+          <li>Michel, P., Levy, O. and Neubig, G. (2019). <a href="https://arxiv.org/abs/1905.10650">Are Sixteen Heads Really Better than One?</a> arXiv:1905.10650. Head pruning in trained models.</li>
+          <li>Dao, T. et al. (2022). <a href="https://arxiv.org/abs/2205.14135">FlashAttention</a>. arXiv:2205.14135. Mentioned only for not materializing the score tensor.</li>
+        </ul>
       </section>
 
       <nav class="pager" aria-label="Previous and next lesson">
