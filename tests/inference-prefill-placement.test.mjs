@@ -15,8 +15,8 @@ test('projection visual reveals operations without prematurely showing attention
 test('prefill cells name the words each position mixes and the later words it cannot see',()=>{
  const html=diagramHTML('prefill',{event:1});
  assert.ok(!html.includes('reads position'));
- assert.ok(html.includes('Mixes in: <span class="seen">Explain</span> <span class="hidden-token">KV</span> <span class="hidden-token">caching</span>'));
- assert.ok(html.includes('Mixes in: <span class="seen">Explain</span> <span class="seen">KV</span> <span class="seen">caching</span>'));
+ assert.ok(html.includes('Mixes in: <span class="seen">The</span> <span class="hidden-token">sky</span> <span class="hidden-token">is</span>'));
+ assert.ok(html.includes('Mixes in: <span class="seen">The</span> <span class="seen">sky</span> <span class="seen">is</span>'));
  assert.ok(html.includes('can never use later words'));
 });
 test('prefill explains mixing with a worked weighted sum before attention lessons',()=>{

@@ -13,5 +13,5 @@ test('layer flow reveals head results before forwarding a model-width updated re
 });
 test('incoming representations remain per-position through the layer stack',()=>{
  const initial=visuals.diagramHTML('attention',{event:0});assert.ok(initial.includes('Embedding lookup'));assert.ok(initial.includes('One vector per position'));
- const later=visuals.diagramHTML('attention',{event:2});assert.ok(later.includes('Layer 2 input'));assert.ok(later.includes('Layer 1 output'));assert.ok(later.includes('Explain'));assert.ok(later.includes('caching'));
+ const later=visuals.diagramHTML('attention',{event:2});assert.ok(later.includes('Layer 2 input'));assert.ok(later.includes('Layer 1 output'));assert.ok(later.includes('The'));assert.ok(later.includes('is'));
 });

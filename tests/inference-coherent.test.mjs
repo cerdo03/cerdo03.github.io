@@ -12,8 +12,8 @@ test('live projections, masks and mixed values share the selected input',()=>{
 });
 test('chosen output is distinct from processed and cached tokens across passes',()=>{
  assert.equal(typeof model.traceState,'function');
- const first=model.traceState(2);assert.deepEqual(first.answer,['It']);assert.equal(first.cache.length,3);assert.deepEqual(first.input,['Explain','KV','caching']);
- const next=model.traceState(3);assert.deepEqual(next.input,['It']);assert.equal(next.cache.length,3);assert.equal(next.answer.length,1);
+ const first=model.traceState(2);assert.deepEqual(first.answer,['blue']);assert.equal(first.cache.length,3);assert.deepEqual(first.input,['The','sky','is']);
+ const next=model.traceState(3);assert.deepEqual(next.input,['blue']);assert.equal(next.cache.length,3);assert.equal(next.answer.length,1);
  const processed=model.traceState(4);assert.equal(processed.cache.length,4);assert.equal(processed.answer.length,1);
  const last=model.traceState(8);assert.equal(last.cache.length,5);assert.equal(last.answer.length,3);
 });
