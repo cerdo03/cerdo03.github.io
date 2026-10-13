@@ -1,0 +1,20 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
+test('vector routing keeps context, layer and head origins separate',async()=>{
+ const file=new URL('../labs/attention/vector-routes.js',import.meta.url);
+ assert.ok(existsSync(file),'inline vector route diagram is missing');
+ const {routeState}=await import(file);
+ const first=routeState(1,1,2);
+ assert.deepEqual(first.inputs.map(row=>row.context),[[0],[1],[2]]);
+ const later=routeState(2,1,2);
+ assert.deepEqual(later.inputs.map(row=>row.context),[[0],[0,1],[0,1,2]]);
+ assert.equal(later.inputs[1].sourceLayer,1);
+ assert.deepEqual(later.allowed,[0,1,2]);
+ assert.ok(later.rows.every(row=>row.layer===2&&row.head===1));
+ const other=routeState(2,2,2);
+ assert.deepEqual(other.inputs,later.inputs);
+ assert.ok(other.rows.every(row=>row.head===2));
+ assert.deepEqual(routeState(2,1,1).allowed,[0,1]);
+ assert.deepEqual(routeState(2,1,1).rows,later.rows);
+});

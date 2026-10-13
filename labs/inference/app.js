@@ -1,3 +1,4 @@
+import {mountVectorRoutes} from '../attention/vector-routes.js';
 import {representations} from './guide-model.js';
 import {guide} from './guide-content.js';
 import {diagramHTML,eventLimits} from './course-visuals.js';
@@ -28,6 +29,7 @@ function draw(focus){
  if(saved.scenes[id]?.version!==version)saved.scenes[id]=null;
  if(!saved.scenes[id])saved.scenes[id]={event:['decode','recap'].includes(id)?(id==='decode'?2:3):0,version};
  const state=saved.scenes[id],root=$('#scene');
+ if(id==='attention'){root.replaceChildren();mountVectorRoutes(root);return;}
  if(['qkv','scores','mix'].includes(id)){delete state.first;state.position=saved.attention?.position??state.position??2;saved.attention={position:state.position};}
  const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));
  root.innerHTML=diagramHTML(id,{...state,embeddings:saved.embeddings});
