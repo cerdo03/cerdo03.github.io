@@ -50,15 +50,27 @@ function annotate(root) {
     if (!key) continue;
     node.dataset.symbol = key;
     node.classList.add('sym');
-    node.tabIndex = 0;
+    node.tabIndex = -1;
     node.removeAttribute('title');
     node.setAttribute('aria-describedby', `sym-${key}`);
   }
 }
 
-annotate(document.body);
+function refreshFocus() {
+  const seen = new Map();
+  for (const node of document.querySelectorAll('[data-symbol]')) {
+    node.tabIndex = -1;
+    if (!node.getClientRects().length) continue;
+    const section = node.closest('section') || document.body;
+    if (!seen.has(section)) seen.set(section, new Set());
+    const symbols = seen.get(section);
+    if (!symbols.has(node.dataset.symbol)) { node.tabIndex = 0;symbols.add(node.dataset.symbol); }
+  }
+}
+annotate(document.body);refreshFocus();
 new MutationObserver((records) => {
   for (const record of records) for (const node of record.addedNodes) if (node.nodeType === 1) annotate(node.parentNode || node);
+  refreshFocus();
 }).observe(document.querySelector('main') || document.body, { childList: true, subtree: true });
 
 const symbolAt = (target) => target.closest?.('[data-symbol]');
@@ -90,3 +102,6 @@ document.addEventListener('keydown', (event) => {
 });
 window.addEventListener('scroll', () => { if (active) show(active); }, { passive: true });
 window.addEventListener('resize', hide);
+
+document.addEventListener('course:section', refreshFocus);
+document.addEventListener('toggle', refreshFocus, true);

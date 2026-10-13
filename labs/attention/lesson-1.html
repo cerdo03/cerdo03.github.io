@@ -10,7 +10,7 @@
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-1.js"></script>
-</head>
+<link rel="stylesheet" href="../llm-systems/course.css"><script type="module" src="../llm-systems/course-shell.js"></script><script type="module" src="continuous-attention.js"></script></head>
 <body data-lesson="1">
   <a class="skip-link" href="#main">Skip to lesson content</a>
   <header class="site-header">
@@ -56,16 +56,16 @@
         <h1>Self-Attention From First Principles</h1>
         <p class="lede">One attention layer takes a sequence of vectors and returns a new sequence of the same length, where each output row is a weighted mix of information from the other positions. This lesson derives that operation one step at a time, with numbers small enough to check by hand.</p>
         <div class="callout">
-          <p><span class="callout-label">Learning goal.</span> By the end you should be able to write Attention(<var>Q</var>, <var>K</var>, <var>V</var>) = softmax(<var>QK</var><sup>T</sup> / √<var>d</var><sub>k</sub> + <var>M</var>)<var>V</var> from memory, give the shape of every intermediate tensor, explain why the √<var>d</var><sub>k</sub> scale and the causal mask exist, and compute a small example by hand.</p>
+          <p><span class="callout-label">Learning goal.</span> By the end you should be able to trace an input vector through projections, scores, weights and a weighted value mixture, give the shape of every intermediate tensor, explain why the √<var>d</var><sub>k</sub> scale and the causal mask exist, and compute a small example by hand.</p>
           <p><span class="callout-label">Builds on.</span> <a href="../inference/">Module 1</a> treated attention as a black box inside prefill and decode. Here we open the box. The KV cache comes back in Lessons 2.4 and 2.5, once we know exactly what K and V are.</p>
-          <p><span class="callout-label">Conventions and simplifications.</span> Row-vector convention: a sequence is a matrix whose rows are token positions, and projections are written <var>XW</var>. One attention head, one sequence (no batch dimension), biases omitted, word-level tokens. All matrices and embeddings in the examples are invented toy values with <var>d</var> = 2, chosen so the arithmetic is readable; they do not come from a trained model.</p>
+          <p><span class="callout-label">Conventions and simplifications.</span> Row-vector convention: a sequence is a matrix whose rows are token positions, and projections are written <var>XW</var>. One attention head, one sequence (no batch dimension), biases omitted, word-level tokens. The main “The sky is” example uses invented 2-component vectors and the same toy projections as Module 1. Detailed panels contain separate worked examples and explicitly wider vectors; none come from a trained model.</p>
         </div>
         <p class="small">Primary source: Vaswani et al., <a href="https://arxiv.org/abs/1706.03762">“Attention Is All You Need”</a> (2017), Section 3.2. The derivations and examples below are written for this site.</p>
       </header>
 
       <section id="s2-1-1" aria-labelledby="s2-1-1-title">
         <h2 id="s2-1-1-title">2.1.1 Why attention?</h2>
-        <p>Consider the sentence <q>The animal was tired because it had been running.</q> A language model builds one vector per position, layer by layer. To build a useful vector for <q>it</q>, the model needs information that lives at other positions: which earlier noun <q>it</q> could refer to, what state that noun was in, and so on. The question this section answers is mechanical: <em>how does a position get information from other positions at all?</em></p>
+        <p>Consider the prompt “The sky is”. Each token position carries a vector. Attention lets the current position draw information from earlier positions and itself, so its vector can reflect the allowed context. First inspect which positions are available; later we calculate how much each one contributes.</p>
         <p>Before transformers, the common answer was a recurrent network. It reads tokens in order and keeps one fixed-size state vector, updated once per token. Information about <q>animal</q> (position 2) reaches <q>it</q> (position 6) only by surviving four sequential state updates, and those updates cannot run in parallel across positions during training. A convolution reaches only a fixed window of neighbours per layer.</p>
         <p>Self-attention takes a different route. Every position computes a weighted average over the vectors of all positions it is allowed to see, in one step. The weights are computed from the content of the vectors themselves, so the same layer can draw mostly from position 2 for one sentence and from position 9 for another. The path between any two visible positions is one step long, regardless of distance. The price is that every position is compared with every visible position: <var>T</var> positions produce on the order of <var>T</var><sup>2</sup> comparisons.</p>
         <div class="lab" id="lab-context" role="group" aria-labelledby="lab-context-title">
@@ -150,14 +150,14 @@
           <div data-part="error"></div>
           <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. The worked example above gives the same numbers for <var>q</var><sub>3</sub>.</p></noscript></div>
           <div class="lab-output" data-part="output" aria-live="polite"></div>
-          <p class="lab-assumptions">Assumptions: toy keys from 2.1.2; the query can be edited only within [−4, 4] in steps of 0.5, and invalid entries are rejected rather than computed. In a real model the query comes from <var>x</var><sub>i</sub><var>W</var><sub>Q</sub>; editing it here is a what-if probe.</p>
+          <p class="lab-assumptions">Assumptions: this alternate example uses fixed query rows from its own projection matrices. Selecting a row inspects it; it does not edit Q. Shared starting embeddings are changed only in the main projection step.</p>
         </div>
         <p><strong>Engineering implication.</strong> <var>S</var> has <var>T</var><sup>2</sup> entries per head and costs <var>T</var><sup>2</sup>·<var>d</var><sub>k</sub> multiply-adds. At <var>T</var> = 8,192 that is about 67 million scores per head per layer. Storing <var>S</var> in GPU memory and reading it back is expensive, which is why fused kernels such as FlashAttention (Dao et al., <a href="https://arxiv.org/abs/2205.14135">arXiv 2205.14135</a>) compute it in tiles without materialising the full matrix. The mathematics is unchanged.</p>
       </section>
 
       <section id="s2-1-4" aria-labelledby="s2-1-4-title">
         <h2 id="s2-1-4-title">2.1.4 Scaling by √<var>d</var><sub>k</sub></h2>
-        <p>Raw scores have a size problem that grows with <var>d</var><sub>k</sub>. Softmax (2.1.5) is sensitive to the <em>differences</em> between scores, and the typical size of a dot product grows with the number of terms it sums. The Transformer divides every score by √<var>d</var><sub>k</sub>.</p>
+        <p>A dot product adds one product per component. Wider query/key vectors can produce larger score variations. Before turning scores into weights, attention divides each score by the square root of their width. Our vectors have 2 components, so the divisor is √2.</p>
         <div class="eq eq-boxed" role="math" aria-label="scaled scores equal Q K transpose divided by the square root of d k">
           <var>S</var><sub>scaled</sub> = <var>Q</var><var>K</var><sup>T</sup> / √<var>d</var><sub>k</sub>
         </div>

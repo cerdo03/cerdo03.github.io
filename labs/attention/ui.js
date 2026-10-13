@@ -27,6 +27,11 @@ export function fmtNumber(x, digits = 2) {
 }
 
 /** Format a vector as "[1, −0.5]". */
+export function fmtWeight(x, digits = 3) {
+  if (x > 0 && x < 10 ** -digits) return `<${10 ** -digits}`;
+  return fmtNumber(x, digits);
+}
+
 export function fmtVector(v, digits = 2) {
   return `[${v.map((x) => fmtNumber(x, digits)).join(', ')}]`;
 }
@@ -99,7 +104,7 @@ export function renderMatrix(container, M, options = {}) {
       if (j === highlightCol) classes.push('is-highlight');
       const extra = cellClass?.(value, i, j);
       if (extra) classes.push(extra);
-      const td = el(doc, 'td', { className: classes.join(' ') || undefined, text: fmtNumber(value, digits) });
+      const td = el(doc, 'td', { className: classes.join(' ') || undefined, text: role === 'w' ? fmtWeight(value, digits) : fmtNumber(value, digits) });
       if (value === -Infinity) td.append(el(doc, 'span', { className: 'visually-hidden', text: ' masked' }));
       tr.append(td);
     });
@@ -132,7 +137,7 @@ export function renderBars(container, values, labels, options = {}) {
     const li = el(doc, 'li', { className: i === highlightIndex ? 'is-highlight' : undefined }, [
       el(doc, 'span', { className: 'bar-label', text: String(labels[i]) }),
       el(doc, 'span', { className: 'bar-track', attrs: { 'aria-hidden': 'true' } }, [bar]),
-      el(doc, 'span', { className: 'bar-value', text: format(value) }),
+      el(doc, 'span', { className: 'bar-value', text: role === 'w' && value > 0 && Number(format(value)) === 0 ? fmtWeight(value) : format(value) }),
     ]);
     if (i === highlightIndex) li.append(el(doc, 'span', { className: 'visually-hidden', text: ' (selected)' }));
     list.append(li);

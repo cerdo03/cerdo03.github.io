@@ -11,7 +11,7 @@
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-2.js"></script>
-</head>
+<link rel="stylesheet" href="../llm-systems/course.css"><script type="module" src="../llm-systems/course-shell.js"></script></head>
 <body data-lesson="2">
   <a class="skip-link" href="#main">Skip to lesson content</a>
   <header class="site-header">
@@ -130,9 +130,9 @@
           <div class="lab-controls">
             <label class="field"><span>Query position</span>
               <select id="toy-query">
-                <option value="0">t0</option>
-                <option value="1">t1</option>
-                <option value="2" selected>t2</option>
+                <option value="0">1: The</option>
+                <option value="1">2: sky</option>
+                <option value="2" selected>3: is</option>
               </select>
             </label>
           </div>
@@ -257,7 +257,7 @@
       <section id="s2-2-6" aria-labelledby="s2-2-6-title">
         <h2 id="s2-2-6-title">2.2.6 Head count, head dimension and what heads do not tell us</h2>
         <h3>More heads is not automatically better</h3>
-        <p>Under equal partition, raising <var>H</var> leaves parameters and matmul compute unchanged but makes each head narrower. A narrower head has two costs:</p>
+        <p>With a fixed model width and equally sized heads, more heads means fewer components per head. Each head has less space for its comparisons, while the layer calculates more separate attention patterns. More heads therefore does not automatically improve quality.</p>
         <ul>
           <li><strong>Lower-dimensional comparisons.</strong> Head <var>i</var>'s score matrix <var>Q</var><sub><var>i</var></sub><var>K</var><sub><var>i</var></sub><sup>T</sup> is a product of a [<var>T</var>, d<sub>head</sub>] and a [d<sub>head</sub>, <var>T</var>] matrix, so its rank is at most d<sub>head</sub>. At <var>H</var> = 64 with d<sub>model</sub> = 512, each head compares positions using only 8 numbers per vector.</li>
           <li><strong>More score matrices.</strong> <var>H</var>·<var>T</var><sup>2</sup> score elements and <var>H</var> softmaxes per query position. Very small heads also tend to use GPU matrix units less efficiently; attention kernels are commonly tuned for head widths such as 64 or 128.</li>

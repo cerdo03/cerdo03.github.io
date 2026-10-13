@@ -289,7 +289,7 @@ function mountProjections(root) {
 function mountScoreExplorer(root, softRoot) {
   const doc = root.ownerDocument;
   const { Q, K } = projections();
-  const state = { query: 2, q: [...Q[2]], edited: false };
+  const state = { query: 2, q: [...Q[2]] };
   const controls = root.querySelector('[data-part="controls"]');
   const body = root.querySelector('[data-part="body"]');
   const output = root.querySelector('[data-part="output"]');
@@ -304,18 +304,8 @@ function mountScoreExplorer(root, softRoot) {
   };
   const select = makeSelect('l1-score-query');
   const softSelect = softRoot ? makeSelect('l1-soft-query') : null;
-  const inputs = [0, 1].map((c) => ui.el(doc, 'input', { attrs: { type: 'number', id: `l1-q${c}`, min: String(-QUERY_LIMIT), max: String(QUERY_LIMIT), step: String(QUERY_STEP), inputmode: 'decimal' } }));
-  const reset = ui.el(doc, 'button', { className: 'button-secondary', text: 'Reset query', attrs: { type: 'button' } });
-  const error = ui.el(doc, 'p', { className: 'lab-error', attrs: { role: 'alert' } });
-  error.hidden = true;
-  controls.replaceChildren(
-    ui.el(doc, 'label', { className: 'field', attrs: { for: 'l1-score-query' } }, [ui.el(doc, 'span', { text: 'Query row' }), select]),
-    ...inputs.map((input, c) => ui.el(doc, 'label', { className: 'field', attrs: { for: input.id } }, [ui.el(doc, 'span', { text: `q component ${c + 1} (−4 to 4, step 0.5)` }), input])),
-    reset,
-  );
-  root.querySelector('[data-part="error"]').replaceChildren(error);
-  if (softControls) softControls.replaceChildren(ui.el(doc, 'label', { className: 'field', attrs: { for: 'l1-soft-query' } }, [ui.el(doc, 'span', { text: 'Query row (shared with the explorer in 2.1.3)' }), softSelect]));
-
+  controls.replaceChildren(ui.el(doc, 'label', {className: 'field', attrs: {for: 'l1-score-query'}}, [ui.el(doc, 'span', {text: 'Inspect fixed query row'}), select]));
+  if (softControls) softControls.replaceChildren(ui.el(doc, 'label', {className: 'field', attrs: {for: 'l1-soft-query'}}, [ui.el(doc, 'span', {text: 'Inspect fixed query row (same example)'}), softSelect]));
   const scoreTable = ui.el(doc, 'div');
   const scoreBars = ui.el(doc, 'div');
   body.replaceChildren(scoreTable, ui.el(doc, 'h4', { text: 'Raw scores sⱼ = q · kⱼ' }), scoreBars);
@@ -324,13 +314,12 @@ function mountScoreExplorer(root, softRoot) {
   softBody?.replaceChildren(softTable, ui.el(doc, 'h4', { text: 'Attention weights aⱼ (sum to 1)' }), softBars);
 
   function syncInputs() {
-    inputs.forEach((input, c) => { input.value = String(state.q[c]); });
     select.value = String(state.query);
     if (softSelect) softSelect.value = String(state.query);
   }
 
   function render() {
-    const qLabel = `${state.edited ? 'edited q' : `q${ROLE_SUB[state.query]} (${TOY.tokens[state.query]})`} = ${ui.fmtVector(state.q)}`;
+    const qLabel = `q${ROLE_SUB[state.query]} (${TOY.tokens[state.query]}) = ${ui.fmtVector(state.q)}`;
     const br = scoreBreakdown(state.q, K);
     const scores = br.rows.map((r) => r.score);
     scoreTable.replaceChildren(simpleTable(doc, {
@@ -357,44 +346,26 @@ function mountScoreExplorer(root, softRoot) {
         caption: `Softmax of ${qLabel}; scale 1/√2 ≈ ${ui.fmtNumber(sm.scale, 3)}, m = max zⱼ = ${ui.fmtNumber(sm.max, 3)}`,
         head: ['Key', 'Raw sⱼ', 'zⱼ = sⱼ/√2', 'zⱼ − m', 'exp(zⱼ − m)', 'aⱼ = exp / Σ'],
         rows: [
-          ...scores.map((s, j) => ({ cells: [`k${ROLE_SUB[j]} (${TOY.tokens[j]})`, ui.fmtNumber(s), ui.fmtNumber(sm.scaled[j], 3), ui.fmtNumber(sm.shifted[j], 3), ui.fmtNumber(sm.exps[j], 3), ui.fmtNumber(sm.weights[j], 3)] })),
+          ...scores.map((s, j) => ({ cells: [`k${ROLE_SUB[j]} (${TOY.tokens[j]})`, ui.fmtNumber(s), ui.fmtNumber(sm.scaled[j], 3), ui.fmtNumber(sm.shifted[j], 3), ui.fmtNumber(sm.exps[j], 3), ui.fmtWeight(sm.weights[j], 3)] })),
           { cells: ['Σ', '', '', '', ui.fmtNumber(sm.sum, 3), ui.fmtNumber(sm.weights.reduce((a, b) => a + b, 0), 3)] },
         ],
       }));
       const wTop = sm.weights.indexOf(Math.max(...sm.weights));
       ui.renderBars(softBars, sm.weights, TOY.tokens.map((t, j) => `a${ROLE_SUB[j]} ${t}`), { format: (x) => ui.fmtNumber(x, 3), max: 1, highlightIndex: wTop, label: 'Attention weights', role: 'w' });
       const minW = Math.min(...sm.weights);
-      softOutput.replaceChildren(para(doc, `Largest weight ${ui.fmtNumber(sm.weights[wTop], 3)} on ${TOY.tokens[wTop]}; smallest ${ui.fmtNumber(minW, 3)}. Every weight is positive: softmax never assigns exactly 0 to a finite score. The ordering of the weights matches the ordering of the raw scores.`));
+      softOutput.replaceChildren(para(doc, `Largest weight ${ui.fmtWeight(sm.weights[wTop], 3)} on ${TOY.tokens[wTop]}; smallest ${ui.fmtWeight(minW, 3)}. Every weight is positive: softmax never assigns exactly 0 to a finite score. The ordering of the weights matches the ordering of the raw scores.`));
     }
   }
 
   function chooseQuery(i) {
     state.query = i;
     state.q = [...Q[i]];
-    state.edited = false;
-    error.hidden = true;
     syncInputs();
     render();
   }
 
   select.addEventListener('change', () => chooseQuery(Number(select.value)));
   softSelect?.addEventListener('change', () => chooseQuery(Number(softSelect.value)));
-  reset.addEventListener('click', () => chooseQuery(state.query));
-  inputs.forEach((input, c) => input.addEventListener('input', () => {
-    const parsed = parseQueryComponent(input.value);
-    if (!parsed.ok) {
-      error.textContent = `q component ${c + 1}: ${parsed.error} The tables still show the last valid query.`;
-      error.hidden = false;
-      input.setAttribute('aria-invalid', 'true');
-      return;
-    }
-    input.removeAttribute('aria-invalid');
-    const other = parseQueryComponent(inputs[1 - c].value);
-    error.hidden = other.ok;
-    state.q[c] = parsed.value;
-    state.edited = state.q.some((x, k) => x !== Q[state.query][k]);
-    render();
-  }));
   syncInputs();
   render();
 }

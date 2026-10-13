@@ -11,7 +11,7 @@
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-3.js"></script>
-</head>
+<link rel="stylesheet" href="../llm-systems/course.css"><script type="module" src="../llm-systems/course-shell.js"></script></head>
 <body data-lesson="3">
   <a class="skip-link" href="#main">Skip to lesson content</a>
   <header class="site-header">
@@ -82,7 +82,7 @@
 
       <section id="s2-3-2" aria-labelledby="s2-3-2-title">
         <h2 id="s2-3-2-title">2.3.2 GQA generalises MHA and MQA</h2>
-        <p><strong>Problem it solves:</strong> one rule should tell us which key/value head every query head reads, for any valid layout.</p>
+        <p>In grouped-query attention, each KV head serves a fixed group of query heads. With 16 query heads and 4 KV heads, each group contains 4 query heads. They ask different questions using their own Q vectors, but read the same K/V rows. The architecture defines these groups; the input tokens do not choose them.</p>
         <div class="eq eq-boxed" role="math" aria-label="G equals H q over H K V. g of i equals floor of i over G. head i equals Attention of X W Q i, X W K g of i, X W V g of i.">
           <var>G</var> = <var>H</var><sub>q</sub> / <var>H</var><sub>KV</sub><br><var>g</var>(<var>i</var>) = ⌊<var>i</var> / <var>G</var>⌋<br>head<sub><var>i</var></sub> = Attention(<var>X</var><var>W</var><sup>Q</sup><sub><var>i</var></sub>, <var>X</var><var>W</var><sup>K</sup><sub><var>g</var>(<var>i</var>)</sub>, <var>X</var><var>W</var><sup>V</sup><sub><var>g</var>(<var>i</var>)</sub>)
         </div>
@@ -206,6 +206,7 @@ for i in range(H_q):
 
       <section id="s2-3-5" aria-labelledby="s2-3-5-title">
         <h2 id="s2-3-5-title">2.3.5 Limits and trade-offs</h2>
+        <p>Fewer KV heads reduce raw cache memory when the other dimensions stay fixed. All query heads still calculate their attention results. Less cache memory does not guarantee an equally large speedup or unchanged answer quality; changing a trained model’s head layout generally requires adaptation or retraining.</p>
         <div class="callout limit">
           <p><span class="callout-label">What the arithmetic does not tell you</span></p>
           <ul>

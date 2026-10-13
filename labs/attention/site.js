@@ -81,3 +81,5 @@ if (sections.length && 'IntersectionObserver' in window) {
   }, { rootMargin: '0px 0px -60% 0px' });
   sections.forEach((s) => observer.observe(s));
 }
+
+document.addEventListener('course:section', event => { const section = document.getElementById(event.detail);if (section) setCurrent(section); });

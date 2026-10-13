@@ -1,6 +1,6 @@
-// Single source for inline symbol explanations across Module 2 (see AGENTS.md).
+// Single source for inline symbol explanations across the LLM Systems collection (see AGENTS.md).
 // Keys are the symbol text, with a subscript joined by "_" (<var>H</var><sub>KV</sub> → "H_KV").
-// Context-dependent letters (i, j, p, q, k, v, x, …) are deliberately absent: their meaning
+// Context-dependent letters (i, j, p, q, k, v, …) are deliberately absent: their meaning
 // changes between lessons, so the surrounding prose defines them instead.
 
 export const glossary = {
@@ -17,6 +17,7 @@ export const glossary = {
   L: 'Number of attention layers',
   B: 'Bytes per stored element (2 for BF16/FP16)',
   N: 'Number of concurrent sequences',
+  x: 'Current vector for one token position: an embedding at the first layer, an updated representation at later layers',
   X: 'Input token representations, one row per position [T × d_model]',
   Q: 'Queries: what each position is looking for',
   K: 'Keys: what each position offers to be matched against',

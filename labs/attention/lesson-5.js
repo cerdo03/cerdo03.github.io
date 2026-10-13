@@ -220,6 +220,7 @@ function mountCalculator(doc) {
     errorBox.replaceChildren();
     table.classList.remove('is-stale');
     const c = result.config;
+    doc.dispatchEvent(new CustomEvent('kv:config', {detail: c}));
     const m = computeKvMemory(c);
     tbody.replaceChildren(...calculatorRows(c, m).map((row) => {
       const d = describeBytes(row.bytes);
@@ -364,9 +365,9 @@ function mountChart(doc) {
       if (error) { errors.push(error); return null; }
       return r.value;
     };
-    const kvHeads = parse(inputs.kvHeads, 'kvHeads', 'KV heads (H_KV)', 128);
+    const kvHeads = parse(inputs.kvHeads, 'kvHeads', 'KV heads (H_KV)', LIMITS.kvHeads.max);
     const referenceKvHeads = parse(inputs.referenceKvHeads, 'kvHeads', 'Reference KV heads', 128);
-    const sequences = parse(inputs.sequences, 'sequences', 'Concurrent sequences (N)', 1024);
+    const sequences = parse(inputs.sequences, 'sequences', 'Concurrent sequences (N)', LIMITS.sequences.max);
     const maxContext = Number(inputs.maxContext.value);
     if (errors.length) {
       errorBox.hidden = false;
@@ -374,7 +375,12 @@ function mountChart(doc) {
       return;
     }
     errorBox.hidden = true;
-    const data = chartData({ ...CHART_DEFAULTS, kvHeads, referenceKvHeads, maxContext, sequences });
+    const shared = validateConfig({layers: doc.getElementById('calc-layers').value, kvHeads: doc.getElementById('calc-kv-heads').value, headDim: doc.getElementById('calc-head-dim').value, seqLen: doc.getElementById('calc-seq-len').value, bytesPerElem: doc.getElementById('calc-bytes').value, sequences: doc.getElementById('calc-sequences').value});
+    if (!shared.ok) { errorBox.hidden = false;errorBox.textContent = 'Chart paused: correct the model configuration in the calculator.';return; }
+    const config = shared.config;
+    let data;
+    try { data = chartData({ ...config, kvHeads: config.kvHeads, referenceKvHeads, maxContext, sequences: config.sequences }); } catch { errorBox.hidden = false;errorBox.textContent = 'Chart paused: this range exceeds exact integer arithmetic. Reduce the model size, concurrency or chart range.';svgEl.hidden = true;return; }
+    svgEl.hidden = false;
     drawChart(doc, svgEl, data, maxContext);
     const [cur, ref] = data.series;
     const endCur = cur.points.at(-1);
@@ -386,7 +392,7 @@ function mountChart(doc) {
       : `At every context length the reference needs ${fmtNumber(ratio, 3)}× the memory of H_KV = ${kvHeads}, because memory is proportional to H_KV.`;
     const desc = `Both lines are straight and start at zero. At T = ${fmtInt(maxContext)} for ${nText}: H_KV = ${kvHeads} needs ${formatBytes(endCur.bytes)}; reference H_KV = ${referenceKvHeads} needs ${formatBytes(endRef.bytes)}.`;
     svgEl.querySelector('desc').textContent = desc;
-    const slope = kvBytesTotal({ ...CHART_DEFAULTS, kvHeads, sequences, seqLen: 1 });
+    const slope = kvBytesTotal({ ...config, seqLen: 1 });
     output.replaceChildren(
       el(doc, 'p', { text: desc }),
       el(doc, 'p', { text: `Slope: every additional cached token ${sequences === 1 ? '' : `in each of the ${nText} `}adds ${fmtInt(slope)} B = ${formatBytes(slope)} for H_KV = ${kvHeads}. ${comparison}` }),
@@ -399,18 +405,23 @@ function mountChart(doc) {
       el(doc, 'td', { className: 'num', text: `${formatBytes(ref.points[i].bytes)} (${fmtInt(ref.points[i].bytes)} B)` }),
     ])));
   }
+  const sync = () => { inputs.kvHeads.value = doc.getElementById('calc-kv-heads').value;inputs.sequences.value = doc.getElementById('calc-sequences').value;render(); };
+  inputs.kvHeads.closest('label').hidden = true;inputs.sequences.closest('label').hidden = true;
   root.addEventListener('input', render);
   root.addEventListener('change', render);
+  doc.addEventListener('kv:config', sync);
+  doc.addEventListener('course:section', sync);
+  sync();
   let lastWidth = svgEl.parentElement.clientWidth;
   doc.defaultView?.addEventListener('resize', () => {
     const w = svgEl.parentElement.clientWidth;
     if (Math.abs(w - lastWidth) > 20) { lastWidth = w; render(); }
   });
   doc.getElementById('chart-reset').addEventListener('click', () => {
-    inputs.kvHeads.value = CHART_DEFAULTS.kvHeads;
+    inputs.kvHeads.value = doc.getElementById('calc-kv-heads').value;
     inputs.referenceKvHeads.value = CHART_DEFAULTS.referenceKvHeads;
     inputs.maxContext.value = CHART_DEFAULTS.maxContext;
-    inputs.sequences.value = CHART_DEFAULTS.sequences;
+    inputs.sequences.value = doc.getElementById('calc-sequences').value;
     render();
   });
   render();

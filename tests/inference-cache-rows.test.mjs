@@ -4,7 +4,7 @@ import {diagramHTML} from '../labs/inference/course-visuals.js';
 test('cache row creation stays distinct from the attention result, using shared embeddings',()=>{
  const embeddings=[[2,0],[0,1],[3,4]];
  const before=diagramHTML('cache',{event:0,position:2,embeddings});
- const projected=diagramHTML('cache',{event:1,position:2,embeddings});
+ const projected=diagramHTML('cache',{event:1,position:2,embeddings}).replace(/<[^>]*>/g,'');
  const after=diagramHTML('cache',{event:4,position:2,embeddings});
  assert.ok(before.includes('2 rows in each cache'));
  assert.ok(projected.includes('K₃ = [4, 3]'));

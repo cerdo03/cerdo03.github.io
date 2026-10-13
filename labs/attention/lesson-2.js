@@ -85,7 +85,7 @@ export function describePartition(heads, headDim) {
  * and head 2 only features 2–3. Real learned projections mix all features.
  */
 export const TOY = Object.freeze({
-  tokens: ['t0', 't1', 't2'],
+  tokens: ['The', 'sky', 'is'],
   heads: 2,
   X: [[1, 0, 0, 1], [0, 1, 1, 0], [1, 0, 1, 0]],
   WQ: [[2, 0, 0, 0], [0, 2, 0, 0], [0, 0, 2, 0], [0, 0, 0, 2]],
@@ -256,6 +256,8 @@ function mountToyDemo(doc) {
   if (!root) return;
   const result = toyMultiHead();
   const tokens = TOY.tokens;
+  const explanation = ui.el(doc, 'p', {text: 'Same sentence, wider toy: 4-component inputs, two 2-component heads and new projection matrices. This is a separate model from the 2-component example. Its intentionally sparse matrices select particular features; real learned projections can mix all input features into every head.'});
+  doc.getElementById('toy-query').closest('.lab-controls').before(explanation);
   const featureCols = ['f0', 'f1', 'f2', 'f3'];
   const headCols = ['h1·0', 'h1·1', 'h2·0', 'h2·1'];
   ui.renderMatrix(doc.getElementById('toy-x'), TOY.X, { label: 'X [3, 4] (toy input)', rowLabels: tokens, colLabels: featureCols, digits: 0 });
@@ -281,7 +283,7 @@ function mountToyDemo(doc) {
     summary.textContent = `Query ${tokens[i]}: head 1 weights ${fmt(w1)}; head 2 weights ${fmt(w2)}. `
       + (same
         ? (i === 0
-          ? 'Under the causal mask t0 can only attend to itself, so every head gives it weight 1. Its outputs still differ because each head reads a different slice of V.'
+          ? 'Under the causal mask The can only attend to itself, so every head gives it weight 1. Its outputs still differ because each head reads a different slice of V.'
           : 'Here both heads happen to produce the same weights, because each head’s query and key slices give the same score pattern. Their outputs still differ because each head reads its own V slice.')
         : 'Same input X, different weights: each head computes scores from its own slice of Q and K, and runs its own softmax.');
   }

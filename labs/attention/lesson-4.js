@@ -5,8 +5,10 @@
 import * as math from './attention-math.js';
 import * as ui from './ui.js';
 import * as kvSim from './kv-sim.js';
+import {representations} from '../inference/guide-model.js';
+function sharedEmbeddings() { try { const rows = JSON.parse(localStorage.getItem('inference-course-v4'))?.embeddings;if (Array.isArray(rows) && rows.length === 3 && rows.every(row=>Array.isArray(row)&&row.length===2&&row.every(x=>Number.isFinite(x)&&Math.abs(x)<=4))) return rows; } catch { /* Optional storage. */ }return representations.map(row=>[...row]); }
 
-const { fmtNumber, fmtVector, fmtInt, fmtShape, el, tensorTag, renderBars, createKnowledgeCheck } = ui;
+const { fmtNumber, fmtWeight, fmtVector, fmtInt, fmtShape, el, tensorTag, renderBars, createKnowledgeCheck } = ui;
 const { createKvSim, toyCacheValue, SIM_ASSUMPTIONS } = kvSim;
 
 export const lesson = Object.freeze({ number: 4, math, ui, kvSim });
@@ -74,8 +76,8 @@ export function decodeView(snapshot) {
   else if (!isDecode) summary = `Prefill complete: cache length ${snapshot.cacheLength}. Sampled "${pending?.token ?? 'nothing'}" waits outside the cache until the next pass processes it.`;
   else {
     const p = newPosition;
-    summary = `Decode step ${pass.index}: processed "${pass.inputTokens[0]}" at position ${p}, read ${pass.cacheReads} cached K/V entries, scored ${pass.keysAttended} keys, appended 1 entry, cache length ${snapshot.cacheLength}. `
-      + (pending ? `Sampled "${pending.token}" (position ${pending.position}), not yet cached.` : 'End of the toy continuation: nothing more to process.');
+    summary = `Decode step ${pass.index}: processed "${pass.inputTokens[0]}" at position ${p + 1}, read ${pass.cacheReads} cached K/V entries, scored ${pass.keysAttended} keys, appended 1 entry, cache length ${snapshot.cacheLength}. `
+      + (pending ? `Sampled "${pending.token}" (position ${pending.position + 1}), not yet cached.` : 'End of the toy continuation: nothing more to process.');
   }
   return Object.freeze({
     phase: snapshot.phase,
@@ -99,9 +101,9 @@ export function subscript(n) {
 
 function decodeStages(pass, cache) {
   const p = pass.positions[0];
-  const sp = subscript(p);
+  const sp = subscript(p + 1);
   const token = pass.inputTokens[0];
-  const range = p === 1 ? 'position 0' : `positions 0–${p - 1}`;
+  const range = p === 1 ? 'position 1' : `positions 1–${p}`;
   const weights = pass.attention.weights.map((w, j) => Object.freeze({
     position: j,
     token: cache[j].token,
@@ -110,18 +112,18 @@ function decodeStages(pass, cache) {
     source: j === p ? 'new' : 'reused',
   }));
   return [
-    { id: 'input', title: '1. Input token and position', text: `"${token}" at position ${p}. It was sampled at the end of the previous pass and has no K/V yet.` },
+    { id: 'input', title: '1. Input token and position', text: `"${token}" at position ${p + 1}. It was sampled at the end of the previous pass and has no K/V yet.` },
     { id: 'query', title: '2. Its query', role: 'q', vector: pass.query, text: `q${sp} = x${sp}·W_Q = ${fmtVector(pass.query, 3)}. Used only in this pass; queries are never cached.` },
     { id: 'new-kv', title: '3. New key and value (new)', text: `k${sp} = ${fmtVector(pass.newKey, 3)}, v${sp} = ${fmtVector(pass.newValue, 3)}. Exactly 1 position is projected.` },
     { id: 'read', title: '4. Read previous K/V (reused)', text: `${pass.cacheReads} cached entries for ${range} are read, not recomputed.` },
     { id: 'attend', title: '5. Attention over previous + current keys', weights, text: `q${sp} scores ${pass.keysAttended} keys (${pass.cacheReads} reused + 1 new), scaled by 1/√2, softmax gives weights; output o${sp} = ${fmtVector(pass.attention.output, 3)}.` },
-    { id: 'append', title: '6. Append to the cache', text: `k${sp}, v${sp} are stored at position ${p}. Cache length becomes ${pass.cacheLengthAfter}.` },
+    { id: 'append', title: '6. Append to the cache', text: `k${sp}, v${sp} are stored at position ${p + 1}. Cache length becomes ${pass.cacheLengthAfter}.` },
     {
       id: 'predict',
       title: '7. Next-token prediction',
       text: pass.sampled === null
         ? `o${sp} would continue to next-token logits, but the fixed toy continuation has ended, so nothing more is sampled.`
-        : `o${sp} continues through the rest of the model to next-token logits (not modelled; the toy uses a fixed continuation). Sampled "${pass.sampled}" for position ${p + 1}: not yet cached.`,
+        : `o${sp} continues through the rest of the model to next-token logits (not modelled; the toy uses a fixed continuation). Sampled "${pass.sampled}" for position ${p + 2}: not yet cached.`,
     },
   ].map((s) => Object.freeze(s));
 }
@@ -230,7 +232,7 @@ function cacheTable(doc, rows, { caption, withStatus = true }) {
   for (const row of rows) {
     const cls = row.status === 'new' ? 'is-new' : row.status === 'reused' ? 'is-reused' : undefined;
     body.append(el(doc, 'tr', { className: cls }, [
-      el(doc, 'th', { text: String(row.position), attrs: { scope: 'row' } }),
+      el(doc, 'th', { text: String(row.position + 1), attrs: { scope: 'row' } }),
       el(doc, 'td', { text: row.token }),
       el(doc, 'td', { className: 'num', text: fmtVector(row.k, 3) }),
       el(doc, 'td', { className: 'num', text: fmtVector(row.v, 3) }),
@@ -280,18 +282,18 @@ function mountPrefill(doc) {
   const maskEl = doc.getElementById('prefill-mask');
   const cacheEl = doc.getElementById('prefill-cache');
   if (!maskEl || !cacheEl) return;
-  const snap = createKvSim().prefill();
+  const snap = createKvSim({embeddings: sharedEmbeddings()}).prefill();
   const pass = snap.lastPass;
   const T = pass.positions.length;
   const mask = math.causalMask(T);
   const head = el(doc, 'tr', {}, [el(doc, 'td', { className: 'matrix-corner' }),
-    ...pass.inputTokens.map((t, j) => el(doc, 'th', { text: `k${subscript(j)} "${t}"`, attrs: { scope: 'col' } }))]);
+    ...pass.inputTokens.map((t, j) => el(doc, 'th', { text: `k${subscript(j + 1)} "${t}"`, attrs: { scope: 'col' } }))]);
   const body = el(doc, 'tbody');
   pass.inputTokens.forEach((t, i) => {
-    const tr = el(doc, 'tr', {}, [el(doc, 'th', { text: `q${subscript(i)} "${t}"`, attrs: { scope: 'row' } })]);
+    const tr = el(doc, 'tr', {}, [el(doc, 'th', { text: `q${subscript(i + 1)} "${t}"`, attrs: { scope: 'row' } })]);
     for (let j = 0; j < T; j += 1) {
       if (mask[i][j] === -Infinity) tr.append(el(doc, 'td', { className: 'is-masked', text: 'masked (0)' }));
-      else tr.append(el(doc, 'td', { className: 'num', text: fmtNumber(pass.attention[i].weights[j], 3) }));
+      else tr.append(el(doc, 'td', { className: 'num', text: fmtWeight(pass.attention[i].weights[j], 3) }));
     }
     body.append(tr);
   });
@@ -301,71 +303,60 @@ function mountPrefill(doc) {
   cacheEl.replaceChildren(cacheTable(doc, decodeView(snap).rows, { caption: `Cache after prefill: ${snap.cacheLength} entries (toy values, 1 layer, 1 KV head, d = 2)`, withStatus: false }));
   const pendingEl = doc.getElementById('prefill-pending');
   if (pendingEl && snap.pending) {
-    pendingEl.textContent = `Sampled first output token: "${snap.pending.token}" (it will be position ${snap.pending.position}). It is pending: sampled, not yet cached. The first decode pass will compute its K/V.`;
+    pendingEl.textContent = `Sampled first output token: "${snap.pending.token}" (it will be position ${snap.pending.position + 1}). It is pending: sampled, not yet cached. The first decode pass will compute its K/V.`;
   }
 }
 
 function mountDecode(doc, onChange) {
-  const stepBtn = doc.getElementById('decode-step');
-  const resetBtn = doc.getElementById('decode-reset');
+  const stepBtn = doc.getElementById('decode-step'), resetBtn = doc.getElementById('decode-reset');
   if (!stepBtn || !resetBtn) return;
-  const statusEl = doc.getElementById('decode-status');
-  const cacheEl = doc.getElementById('decode-cache');
-  const stagesEl = doc.getElementById('decode-stages');
-  const out = doc.getElementById('decode-output');
-  const assumptions = doc.getElementById('decode-assumptions');
-  if (assumptions) assumptions.textContent = `Assumptions: ${SIM_ASSUMPTIONS.join(' ')}`;
-  const sim = createKvSim();
-  let snap = sim.prefill();
-
-  const pair = (term, detail) => el(doc, 'div', {}, [el(doc, 'dt', { text: term }), el(doc, 'dd', { text: detail })]);
-
+  const statusEl = doc.getElementById('decode-status'), cacheEl = doc.getElementById('decode-cache'), stagesEl = doc.getElementById('decode-stages'), out = doc.getElementById('decode-output');
+  doc.getElementById('decode-assumptions').textContent = `Assumptions: ${SIM_ASSUMPTIONS.join(' ')}`;
+  const back = el(doc, 'button', {text: '← Previous operation', attrs: {type: 'button'}});stepBtn.before(back);
+  let rows = sharedEmbeddings(), sim = createKvSim({embeddings: rows}), snap = sim.prefill(), preview = null, stage = -1;
   function render() {
-    const view = decodeView(snap);
+    const shown = preview && stage >= 5 ? preview : snap;
+    const view = decodeView(shown), stages = preview ? decodeView(preview).stages : [];
     statusEl.replaceChildren(
-      pair('Cache length (positions processed)', String(view.cacheLength)),
-      pair('Sampled, not yet cached', view.pending ? `"${view.pending.token}" (will be position ${view.pending.position})` : 'none: end of toy continuation'),
-      pair('Tokens sampled so far', view.sampled.map((t) => `"${t}"`).join(', ')),
+      el(doc, 'div', {}, [el(doc, 'dt', {text: 'Cached positions'}), el(doc, 'dd', {text: String(shown.cacheLength)})]),
+      el(doc, 'div', {}, [el(doc, 'dt', {text: 'Current input'}), el(doc, 'dd', {text: snap.pending?.token || 'End of continuation'})]),
+      el(doc, 'div', {}, [el(doc, 'dt', {text: 'Operation'}), el(doc, 'dd', {text: stage < 0 ? 'Ready' : `${stage + 1} / 7`})]),
+      el(doc, 'div', {}, [el(doc, 'dt', {text: 'Next chosen token'}), el(doc, 'dd', {text: stage === 6 ? (preview.pending ? `${preview.pending.token} · not cached` : 'End of toy continuation') : 'Not chosen in this pass yet'})]),
     );
-    const caption = view.step === 0 ? 'Cache after prefill (toy values)' : `Cache after decode step ${view.step} (toy values)`;
-    cacheEl.replaceChildren(cacheTable(doc, view.rows, { caption }));
-    if (view.stages.length === 0) {
-      stagesEl.replaceChildren(el(doc, 'li', { text: `No decode pass yet. Prefill wrote positions 0–${view.cacheLength - 1}. Press "Next decoding step" to process "${view.pending?.token}".` }));
+    cacheEl.replaceChildren(cacheTable(doc, view.rows, {caption: stage >= 5 ? 'Cache after appending the new K/V row' : 'Earlier K/V rows: unchanged'}));
+    if (stage < 0) {
+      stagesEl.replaceChildren(el(doc, 'li', {text: `Prefill cached ${snap.cacheLength} positions. “${snap.pending?.token}” was chosen, but has no K/V yet. Start its decode pass.`}));
     } else {
-      stagesEl.replaceChildren(...view.stages.map((stage) => {
-        const li = el(doc, 'li', {}, [el(doc, 'strong', { text: stage.title }), el(doc, 'br')]);
-        if (stage.role) li.append(tensorTag(doc, stage.role), doc.createTextNode(' '));
-        li.append(doc.createTextNode(stage.text));
-        if (stage.weights) {
+      stagesEl.replaceChildren(...stages.slice(0, stage + 1).map((item, i) => {
+        const li = el(doc, 'li', {className: i === stage ? 'is-highlight' : undefined}, [el(doc, 'strong', {text: item.title}), el(doc, 'p', {text: item.text})]);
+        if (i === 0) li.append(el(doc, 'p', {text: `Incoming x = ${fmtVector(kvSim.toyEmbedding(snap.pending.token, snap.pending.position, rows), 3)}. The fixed WQ, WK and WV create Q/K/V from this x.`}));
+        if (item.weights) {
           const holder = el(doc, 'div');
-          renderBars(holder, stage.weights.map((w) => w.weight), stage.weights.map((w) => `${w.position} "${w.token}" (${w.source})`), {
-            label: 'Attention weights of the new query (toy values)',
-            role: 'w',
-            max: 1,
-            highlightIndex: stage.weights.length - 1,
-          });
-          li.append(holder);
+          renderBars(holder, item.weights.map(w => w.weight), item.weights.map(w => `${w.position + 1} “${w.token}”`), {label: 'Attention weights', role: 'w', max: 1});li.append(holder);
+          li.append(el(doc, 'p', {text: 'Compare Q with each K, divide by √2, then softmax. Multiply each corresponding V by its weight and add the contribution vectors. The result does not replace any cached K/V row.'}));
         }
         return li;
       }));
     }
-    out.textContent = view.summary;
-    stepBtn.disabled = !view.canStep;
-    stepBtn.textContent = view.done ? 'End of toy continuation' : 'Next decoding step';
-    onChange?.(snap);
+    out.textContent = stage < 0 ? 'No decode operations performed yet.' : stages[stage].text;
+    if (stage === 6 && !preview.canStep) out.textContent += ' This trace deliberately processes the final toy token; real generation can stop immediately after choosing a stop token, without caching it.';
+    back.disabled = stage <= 0;
+    stepBtn.disabled = (!snap.canStep && !preview) || (stage === 6 && !preview.canStep);
+    stepBtn.textContent = stage === 6 && !preview.canStep ? 'End of toy continuation' : preview && stage < 6 ? 'Next operation →' : snap.canStep ? 'Start next decode pass →' : 'End of toy continuation';
   }
-
-  stepBtn.addEventListener('click', () => {
-    if (!snap.canStep) return;
-    snap = sim.step();
+  back.onclick = () => { if (stage > 0) { stage--;render(); } };
+  stepBtn.onclick = () => {
+    if (preview && stage < 6) stage++;
+    else {
+      if (preview) { snap = preview;preview = null;onChange?.(snap); }
+      if (!snap.canStep) { stage = -1;render();return; }
+      preview = sim.step();stage = 0;
+    }
     render();
-    if (!snap.canStep) resetBtn.focus();
-  });
-  resetBtn.addEventListener('click', () => {
-    sim.reset();
-    snap = sim.prefill();
-    render();
-  });
+    if (stage === 6) onChange?.(preview);
+  };
+  resetBtn.onclick = () => { sim.reset();snap = sim.prefill();preview = null;stage = -1;render();onChange?.(snap); };
+  doc.defaultView.addEventListener('storage', event => { if (event.key !== 'inference-course-v4') return;const next = sharedEmbeddings();if (JSON.stringify(next) === JSON.stringify(rows)) return;rows = next;sim = createKvSim({embeddings: rows});snap = sim.prefill();preview = null;stage = -1;mountPrefill(doc);render();out.textContent = 'Starting embeddings changed. Earlier K/V were recomputed with prefill.'; });
   render();
 }
 

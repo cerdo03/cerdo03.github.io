@@ -69,3 +69,16 @@ One visual language, two levels of interaction. The homepage is a quiet director
 - assets/learning-catalog.js is the source for project/site metadata. siteTags merges inherited project tags with site tags, deduplicating them. assets/learning-tags.js displays those tags.
 - New sites register in the catalog and appear on their collection page. Update the published count; never present planned lessons as available websites.
 - Describe scope honestly, credit primary sources, distinguish simulations from measurements, and keep personal study budgets/career plans out of public lesson guidance.
+
+## LLM Systems collection design contract
+
+Applies only to the Learning LLM Systems collection (`labs/llm-systems/`, `labs/inference/`, `labs/attention/` and future member sites), not unrelated learning collections.
+
+- Load `labs/llm-systems/course.css` and `course-shell.js` after topic styles. These own the shared header, module navigation, concept navigation, content width, mobile behavior, and Previous/Next pattern. Topic files own diagrams and calculations. Preserve existing URLs.
+- Use Module 1’s one-concept-at-a-time flow with Module 2’s precise mathematics available in expandable technical details. Keep a brief intuition, the relevant inline illustration, and its consequence on the main path. Do not add slogans, decorative motion, dashboards, notes boxes or progression gates.
+- Use the simple “The sky is” running example where appropriate. Label a wider-vector model or alternate mathematical example explicitly; do not silently change vector meanings or position numbering.
+- Put optional input experiments at the start and share their state through all dependent main diagrams. Do not edit an intermediate Q or x locally as if it were an upstream embedding change. A calculator and its chart share one model configuration.
+- Show what the current token is, whether it is being processed or merely sampled, and which operation is active. Show newly created K/V separately from old cache rows and from attention output. Operation stepping reveals meaningful computation; it is not a claim about GPU scheduling.
+- Keep numerical calculations at full precision; round only display. Use approximately-equal notation for displayed arithmetic. Distinguish tiny positive attention weights from exact causal-mask zeros.
+- Retain shared accessible symbol help, without making every repeated occurrence a separate Tab stop. All controls and diagrams must work with keyboard, touch, narrow layouts, light/dark themes and reduced motion.
+- Future collection members register their module/lesson names and routes in the shared shell, then reuse its layout and navigation rather than inventing another layout. Keep collection-specific rules here; private learner history stays outside this public repository.

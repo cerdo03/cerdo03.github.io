@@ -26,26 +26,26 @@
 //   remove this attention work; it only avoids recomputing old K/V projections.
 
 import { dot, matmul, stableSoftmax } from './attention-math.js';
+import {representations, promptTokens} from '../inference/guide-model.js';
 
 export const SIM_ASSUMPTIONS = Object.freeze([
   'One attention layer, one KV head, head dimension 2, no batch dimension.',
   'Embeddings and projection matrices are invented toy values, not a trained model.',
-  'Position enters as a small additive toy offset; RoPE is not modelled.',
+  'Same first-layer toy projections as Module 1 and Lesson 2.1; normalization and positional encoding are omitted.',
   'Sampled tokens come from a fixed toy continuation, not from model probabilities.',
 ]);
 
 /** Fixed toy projection matrices, shape [d_model = 2, d = 2]. */
 export const TOY_WEIGHTS = Object.freeze({
-  wq: Object.freeze([Object.freeze([1, 0]), Object.freeze([0.5, 1])]),
-  wk: Object.freeze([Object.freeze([0.5, 1]), Object.freeze([1, 0])]),
-  wv: Object.freeze([Object.freeze([1, 0.5]), Object.freeze([0, 1])]),
+  wq: Object.freeze([Object.freeze([1, 0]), Object.freeze([0, 1])]),
+  wk: Object.freeze([Object.freeze([0, 1]), Object.freeze([1, 0])]),
+  wv: Object.freeze([Object.freeze([2, 0]), Object.freeze([0, 1])]),
 });
 
-export const DEFAULT_PROMPT = Object.freeze(['The', 'cache', 'stores', 'keys']);
-export const DEFAULT_CONTINUATION = Object.freeze(['and', 'values', 'for', 'reuse', '.']);
+export const DEFAULT_PROMPT = Object.freeze(['The', 'sky', 'is', 'blue']);
+export const DEFAULT_CONTINUATION = Object.freeze(['and', 'the', 'sun', 'shines', '.']);
 
-const round = (x) => Math.round(x * 1000) / 1000;
-const freezeVec = (v) => Object.freeze(v.map(round));
+const freezeVec = (v) => Object.freeze([...v]);
 
 function tokenCode(token) {
   let h = 0;
@@ -53,17 +53,19 @@ function tokenCode(token) {
   return h;
 }
 
-/** Deterministic toy embedding for a token at a position (2 dims, rounded). */
-export function toyEmbedding(token, position) {
+/** Deterministic toy lookup (2 dims): shared prompt embeddings, fixed invented rows for other tokens. */
+export function toyEmbedding(token, position, embeddings = representations) {
   if (typeof token !== 'string' || token.length === 0) throw new Error('Token must be a non-empty string.');
   if (!Number.isInteger(position) || position < 0) throw new Error(`Position must be a non-negative integer (got ${String(position)}).`);
+  const known = promptTokens.indexOf(token);
+  if (known >= 0) return freezeVec(embeddings[known]);
   const h = tokenCode(token);
-  return freezeVec([((h % 5) - 2) * 0.5 + 0.1 * position, ((h % 3) - 1) * 0.5 - 0.05 * position]);
+  return freezeVec([((h % 5) - 2) * 0.5, ((h % 3) - 1) * 0.5]);
 }
 
 /** Toy q, k, v for one position (row-vector convention: x · W). */
-export function toyProjections(token, position) {
-  const x = toyEmbedding(token, position);
+export function toyProjections(token, position, embeddings = representations) {
+  const x = toyEmbedding(token, position, embeddings);
   const [q] = matmul([x], TOY_WEIGHTS.wq);
   const [k] = matmul([x], TOY_WEIGHTS.wk);
   const [v] = matmul([x], TOY_WEIGHTS.wv);
@@ -85,9 +87,9 @@ export function toyCacheValue(kind, layer, position, head, dim) {
 
 function attendOver(q, keys, values) {
   const scale = 1 / Math.sqrt(q.length);
-  const scores = keys.map((k) => round(dot(q, k) * scale));
-  const weights = stableSoftmax(scores).map(round);
-  const output = values[0].map((_, c) => round(values.reduce((sum, v, j) => sum + weights[j] * v[c], 0)));
+  const scores = keys.map((k) => dot(q, k) * scale);
+  const weights = stableSoftmax(scores);
+  const output = values[0].map((_, c) => values.reduce((sum, v, j) => sum + weights[j] * v[c], 0));
   return { scores: Object.freeze(scores), weights: Object.freeze(weights), output: Object.freeze(output) };
 }
 
@@ -103,7 +105,8 @@ function deepFreeze(value) {
  * Create a toy KV-cache decode simulation.
  * @param {{ continuation?: string[] }} [options] fixed toy "sampled" sequence.
  */
-export function createKvSim({ continuation = DEFAULT_CONTINUATION } = {}) {
+export function createKvSim({ continuation = DEFAULT_CONTINUATION, embeddings = representations } = {}) {
+  const embeddingRows = embeddings.map(row => [...row]);
   if (!Array.isArray(continuation) || continuation.length === 0) throw new Error('continuation must be a non-empty array of tokens.');
   continuation.forEach((t, i) => {
     if (typeof t !== 'string' || t.length === 0) throw new Error(`continuation[${i}] must be a non-empty string.`);
@@ -128,7 +131,7 @@ export function createKvSim({ continuation = DEFAULT_CONTINUATION } = {}) {
     promptTokens.forEach((t, i) => {
       if (typeof t !== 'string' || t.length === 0) throw new Error(`prompt[${i}] must be a non-empty string.`);
     });
-    const projections = promptTokens.map((token, position) => ({ token, position, ...toyProjections(token, position) }));
+    const projections = promptTokens.map((token, position) => ({ token, position, ...toyProjections(token, position, embeddingRows) }));
     const keys = projections.map((p) => p.k);
     const values = projections.map((p) => p.v);
     // Causal: position i attends to positions 0..i only.
@@ -161,7 +164,7 @@ export function createKvSim({ continuation = DEFAULT_CONTINUATION } = {}) {
     if (!state.pending) throw new Error('No pending token: the fixed toy continuation is exhausted. Call reset().');
     const { token, position } = state.pending;
     const p = state.cache.length;
-    const proj = toyProjections(token, position);
+    const proj = toyProjections(token, position, embeddingRows);
     const keys = [...state.cache.map((e) => e.k), proj.k];
     const values = [...state.cache.map((e) => e.v), proj.v];
     const result = attendOver(proj.q, keys, values);

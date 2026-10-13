@@ -986,31 +986,3 @@ details[open] > summary {
     animation: none !important;
   }
 }
-
-/* Inline symbol explanations (symbols.js): hover, focus or tap a symbol. */
-.sym {
-  cursor: help;
-  text-decoration: underline dotted var(--muted);
-  text-underline-offset: 3px;
-}
-
-.tensor-tag.sym {
-  text-decoration: none;
-}
-
-.symbol-tip {
-  position: fixed;
-  z-index: 20;
-  max-width: min(320px, calc(100vw - 16px));
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--card);
-  color: var(--ink);
-  font-family: var(--body-font);
-  font-size: 0.875rem;
-  font-style: normal;
-  font-weight: 400;
-  line-height: 1.4;
-  pointer-events: none;
-}

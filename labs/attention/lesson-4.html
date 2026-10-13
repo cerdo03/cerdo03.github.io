@@ -11,7 +11,7 @@
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-4.js"></script>
-</head>
+<link rel="stylesheet" href="../llm-systems/course.css"><script type="module" src="../llm-systems/course-shell.js"></script></head>
 <body data-lesson="4">
   <a class="skip-link" href="#main">Skip to lesson content</a>
   <header class="site-header">
@@ -54,28 +54,30 @@
         <h1>KV-Cache Internals</h1>
         <p class="lede">Module 1 showed <em>why</em> a KV cache saves work during generation. This lesson opens the cache: which tensors it holds, what shape they have, when each entry is written, and which computation it removes (and which it does not).</p>
         <p><strong>Learning goal:</strong> after this lesson you can state exactly what a KV cache stores per layer and position, write its conceptual shape, trace one decode step from input token to appended cache entry, and count the projection work a cache avoids while attention work still grows.</p>
-        <p><strong>Running example:</strong> the 4-token prompt <q>The cache stores keys</q>, followed by a fixed toy continuation <q>and values for reuse .</q>. All numbers are invented toy values from a 1-layer, 1-head model with head dimension 2.</p>
+        <p><strong>Running example:</strong> the 4-token prompt <q>The sky is blue</q>, followed by a fixed toy continuation <q>and the sun shines .</q>. Here “blue” is already part of the supplied prompt, so it is cached during prefill. The first new answer token is “and”. The trace uses the shared 2-component starting embeddings for The/sky/is and the same projection matrices as Lessons 1 and 2.1; other token embeddings are fixed invented values. This is a 1-layer, 1-head toy.</p>
       </header>
 
       <section id="s2-4-1" aria-labelledby="s2-4-1-title">
         <h2 id="s2-4-1-title">2.4.1 What exactly is cached?</h2>
-        <p>Recall from Lesson 2.1 that every position <var>i</var> in an attention layer turns its input vector <var>x</var><sub><var>i</var></sub> into three projections: a query <var>q</var><sub><var>i</var></sub> = <var>x</var><sub><var>i</var></sub><var>W</var><sub>Q</sub>, a key <var>k</var><sub><var>i</var></sub> = <var>x</var><sub><var>i</var></sub><var>W</var><sub>K</sub> and a value <var>v</var><sub><var>i</var></sub> = <var>x</var><sub><var>i</var></sub><var>W</var><sub>V</sub>. With a causal mask, position <var>i</var> only attends to keys and values at positions 0…<var>i</var>.</p>
+        <p>The KV cache stores each processed position’s key and value vectors, separately for every layer and KV head. Later tokens read these stored vectors instead of recalculating them. The current query is used to calculate the current attention result; old queries and attention weights are not stored in the KV cache.</p>
         <h3>The cache holds keys and values, per layer, per position</h3>
         <ul>
           <li><strong>K and V for every processed position, in every attention layer.</strong> Each layer has its own <var>W</var><sub>K</sub>, <var>W</var><sub>V</sub> and its own input <var>x</var>, so each layer has its own cache entries. With grouped-query attention (Lesson 2.3) each entry has <var>H</var><sub>KV</sub> key heads and <var>H</var><sub>KV</sub> value heads.</li>
           <li><strong>Queries are not cached.</strong> In causal decoding a new token is always appended at the end. Later tokens never ask an old position to attend again, so a past query <var>q</var><sub><var>i</var></sub> is never needed after its own forward pass. Old keys and values, in contrast, are read by <em>every</em> later query.</li>
           <li><strong>Numeric tensors, not token IDs.</strong> An entry is a block of floating-point numbers (for example fp16/bf16), the output of a projection. Storing token IDs would force the model to recompute every layer to get K and V back, which is the work the cache exists to avoid.</li>
-          <li><strong>Tied to position and the entire prefix.</strong> In layer 0, <var>x</var><sub><var>i</var></sub> depends on the token and its position. In every deeper layer, <var>x</var><sub><var>i</var></sub> is the output of earlier attention over the whole prefix 0…<var>i</var>. The same token in a different context therefore produces different K/V in layers above 0. A cache entry is only valid for the exact prefix that produced it.</li>
-          <li><strong>Old entries are never recomputed when appending.</strong> Under a causal mask, appending token <var>p</var> cannot change any earlier position's inputs, so <var>k</var><sub>0</sub>…<var>k</var><sub><var>p</var>−1</sub> and <var>v</var><sub>0</sub>…<var>v</var><sub><var>p</var>−1</sub> stay exactly as computed.</li>
+          <li><strong>Tied to position and the entire prefix.</strong> In layer 0, <var>x</var><sub><var>i</var></sub> depends on the token and its position. In every deeper layer, <var>x</var><sub><var>i</var></sub> is the output of earlier attention over the whole prefix 1…<var>i</var>. The same token in a different context therefore produces different K/V in layers above 0. A cache entry is only valid for the exact prefix that produced it.</li>
+          <li><strong>Old entries are never recomputed when appending.</strong> Under a causal mask, appending token <var>p</var> cannot change any earlier position's inputs, so <var>k</var><sub>1</sub>…<var>k</var><sub><var>p</var>−1</sub> and <var>v</var><sub>1</sub>…<var>v</var><sub><var>p</var>−1</sub> stay exactly as computed.</li>
         </ul>
         <figure class="diagram">
-          <ol class="flow-steps">
-            <li>Input <var>x</var><sub><var>p</var></sub> (layer ℓ)</li>
-            <li><span class="tensor-tag t-q">Q</span> <var>q</var><sub><var>p</var></sub>: used once, discarded</li>
-            <li><span class="tensor-tag t-k">K</span> <var>k</var><sub><var>p</var></sub> and <span class="tensor-tag t-v">V</span> <var>v</var><sub><var>p</var></sub>: appended to layer ℓ's cache</li>
-            <li>Attention output → next layer</li>
-          </ol>
-          <figcaption>What happens to the three projections of one position in one layer. Only K and V outlive the forward pass.</figcaption>
+          <div class="mechanism-node"><strong>Current input <var>x</var></strong>This token’s vector at this layer</div>
+          <div class="connector">↓ three learned projections from the same input</div>
+          <div class="node-grid">
+            <div class="mechanism-node"><strong><var>Q</var></strong>Used for this token’s comparisons; not kept in the KV cache</div>
+            <div class="mechanism-node"><strong><var>K</var> and <var>V</var></strong>One new row of each is appended to this layer’s cache</div>
+          </div>
+          <div class="connector">↓ current query reads allowed cached keys and values, including this token’s row</div>
+          <div class="mechanism-node"><strong>Attention result</strong>Then output projection, residual and feed-forward processing → updated vector for the next layer</div>
+          <figcaption>Q compares with the allowed K rows; the resulting weights mix the corresponding V rows. K/V stay in this layer’s cache. The completed block’s updated token vector goes to the next layer.</figcaption>
         </figure>
         <div class="callout">
           <p><span class="callout-label">RoPE (deeper topic).</span> Many current models use rotary position embeddings: <var>q</var> and <var>k</var> are rotated by angles that depend on their positions just before the dot product, so their score depends on the relative offset. Values are not rotated. Implementations typically cache keys <em>after</em> rotation, so old keys never need re-rotating. Details vary by implementation and are outside this lesson; the toy model below does not model RoPE.</p>
@@ -96,18 +98,18 @@
         </dl>
         <p>Read it as a hierarchy: the KV cache → one layer → its keys or values → one token position → an <var>H</var><sub>KV</sub> × <var>D</var> slice. That slice is everything one position contributes to one layer's keys (or values).</p>
         <div class="callout limit">
-          <p><span class="callout-label">Conceptual, not physical.</span> This order is a way to reason about contents, not a universal memory layout. Hugging Face-style caches typically keep one tensor per layer shaped [<var>B</var>, <var>H</var><sub>KV</sub>, <var>T</var>, <var>D</var>]; serving engines such as <a href="https://docs.vllm.ai/">vLLM</a> store K/V in fixed-size blocks (paged layouts), and attention kernels may require their own orderings. Module 3 covers physical layouts. The element count is the same either way.</p>
+          <p><span class="callout-label">Conceptual, not physical.</span> This order is a way to reason about contents, not a universal memory layout. Hugging Face-style caches typically keep one tensor per layer shaped [<var>B</var>, <var>H</var><sub>KV</sub>, <var>T</var>, <var>D</var>]; serving engines such as <a href="https://docs.vllm.ai/">vLLM</a> store K/V in fixed-size blocks (paged layouts), and attention kernels may require their own orderings. The planned Module 3 covers physical layouts. The element count is the same either way.</p>
         </div>
         <div class="lab" role="group" aria-labelledby="lab-hierarchy">
-          <div class="lab-header"><h3 id="lab-hierarchy">Cache hierarchy explorer</h3>
+          <div class="lab-header"><h3 id="lab-hierarchy">Cache hierarchy explorer</h3><p>Structural example: 4 layers, 2 KV heads and 4 components per head. Tensor indices start at 0; the numbers are placeholders for indexing. The numerical trace below uses the shared 2-component toy and counts token positions from 1.</p>
             <dl class="lab-guide">
               <div><dt>What this shows</dt><dd>A toy cache with <var>L</var> = 4, <var>T</var> = 4, <var>H</var><sub>KV</sub> = 2, <var>D</var> = 4. Picking a layer, a position and K or V indexes the 4-D tensor down to one [<var>H</var><sub>KV</sub>, <var>D</var>] slice.</dd></div>
               <div><dt>Try</dt><dd>Change the layer while keeping the position fixed, then switch K to V.</dd></div>
               <div><dt>What to notice</dt><dd>Every (layer, position) pair owns a separate slice of the same shape. The slice size depends only on <var>H</var><sub>KV</sub> and <var>D</var>, never on how long the sequence is.</dd></div>
             </dl></div>
           <div class="lab-controls">
-            <label class="field"><span>Layer ℓ</span><select id="hier-layer"></select></label>
-            <label class="field"><span>Position t</span><select id="hier-position"></select></label>
+            <label class="field"><span>Layer index ℓ (starts at 0)</span><select id="hier-layer"></select></label>
+            <label class="field"><span>Token index t (starts at 0)</span><select id="hier-position"></select></label>
             <fieldset class="segmented"><legend>Tensor</legend>
               <label><input type="radio" name="hier-kind" value="k" checked>Keys (K)</label>
               <label><input type="radio" name="hier-kind" value="v">Values (V)</label>
@@ -124,10 +126,10 @@
 
       <section id="s2-4-3" aria-labelledby="s2-4-3-title">
         <h2 id="s2-4-3-title">2.4.3 Building the cache during prefill</h2>
-        <p>The prompt is fully known before generation starts, so prefill processes all of its positions in <strong>one parallel forward pass</strong>: <var>K</var> = <var>X</var><var>W</var><sub>K</sub> and <var>V</var> = <var>X</var><var>W</var><sub>V</sub> are single matrix multiplications over all 4 rows of <var>X</var>. The causal mask still applies inside that pass: position <var>i</var> scores only keys 0…<var>i</var>.</p>
-        <div id="prefill-mask"></div>
-        <div id="prefill-cache"></div>
-        <ol>
+        <p>The prompt is fully known before generation starts, so prefill processes all of its positions in <strong>one parallel forward pass</strong>: <var>K</var> = <var>X</var><var>W</var><sub>K</sub> and <var>V</var> = <var>X</var><var>W</var><sub>V</sub> are single matrix multiplications over all 4 rows of <var>X</var>. The causal mask still applies inside that pass: position <var>i</var> scores only keys 1…<var>i</var>.</p>
+        <div id="prefill-mask" class="course-core"></div>
+        <div id="prefill-cache" class="course-core"></div>
+        <ol class="course-core">
           <li>All 4 positions compute <var>q</var>, <var>k</var>, <var>v</var> together; 4 key rows and 4 value rows are written to the cache.</li>
           <li>Each position attends under the causal mask (table above), giving 1 + 2 + 3 + 4 = 10 query–key scores.</li>
           <li>Only the <em>last</em> position's output goes on to the model head as next-token logits. Sampling from them gives the first output token.</li>
@@ -146,7 +148,7 @@
           <var>o</var><sub><var>p</var></sub> = softmax(<var>q</var><sub><var>p</var></sub> <var>K</var><sub>0:<var>p</var></sub><sup>T</sup> / √<var>d</var>) <var>V</var><sub>0:<var>p</var></sub>,   <var>K</var><sub>0:<var>p</var></sub> = [<var>K</var><sub>cache</sub>; <var>k</var><sub><var>p</var></sub>]
         </div>
         <dl class="eq-vars">
-          <dt><var>p</var></dt><dd>position being processed; equals the cache length before this pass</dd>
+          <dt><var>p</var></dt><dd>zero-based index in these equations; equals the cache length before this pass. The tracer labels token positions starting at 1, so its label is p + 1</dd>
           <dt><var>K</var><sub>cache</sub>, <var>V</var><sub>cache</sub></dt><dd>the <var>p</var> cached rows for positions 0…<var>p</var>−1, read, not recomputed</dd>
           <dt><var>K</var><sub>0:<var>p</var></sub>, <var>V</var><sub>0:<var>p</var></sub></dt><dd>cached rows plus the new row: <var>p</var> + 1 keys and values</dd>
           <dt><var>d</var></dt><dd>head dimension (2 in the toy)</dd>
@@ -155,8 +157,8 @@
         <div class="lab" role="group" aria-labelledby="lab-decode">
           <div class="lab-header"><h3 id="lab-decode">Decode step tracer</h3>
             <dl class="lab-guide">
-              <div><dt>What this shows</dt><dd>The cache right after prefill of <q>The cache stores keys</q>. Each press runs one decode forward pass and lists its seven stages with toy numbers.</dd></div>
-              <div><dt>Try</dt><dd>Press <strong>Next decoding step</strong> a few times. Before each press, predict the cache length afterwards and how many keys the new query will score.</dd></div>
+              <div><dt>What this shows</dt><dd>The cache right after prefill of <q>The sky is blue</q>. Advance one operation at a time to see the current token’s projections, attention calculation and new cache row.</dd></div>
+              <div><dt>Try</dt><dd>Press <strong>Next operation</strong> a few times. Before each press, predict the cache length afterwards and how many keys the new query will score.</dd></div>
               <div><dt>What to notice</dt><dd>Rows marked <q>reused</q> are read, never recomputed; one row per step is marked <q>new</q>. The cache length counts processed positions; the token just sampled waits outside the cache until the next pass.</dd></div>
             </dl></div>
           <div class="lab-controls">

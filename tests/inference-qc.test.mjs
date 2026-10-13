@@ -19,7 +19,7 @@ test('first-token probabilities agree across prefill, trace and final-layer expl
 });
 test('mixing example uses value vectors and labels head result separately from layer output',()=>{
  const html=diagramHTML('prefill',{event:1});
- assert.ok(html.includes('0.5 × [4, 0] = [2, 0]'));
+ assert.ok(html.includes('0.5 × [4, 0] ≈ [2, 0]'));
  assert.ok(html.includes('= [2.6, 0.8]'));
  assert.ok(html.includes('attention result'));
  assert.ok(!html.includes('← new vector'));

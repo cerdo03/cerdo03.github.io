@@ -11,7 +11,7 @@
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-5.js"></script>
-</head>
+<link rel="stylesheet" href="../llm-systems/course.css"><script type="module" src="../llm-systems/course-shell.js"></script></head>
 <body data-lesson="5">
   <a class="skip-link" href="#main">Skip to lesson content</a>
   <header class="site-header">
@@ -54,7 +54,7 @@
         <p class="lede">Lesson 2.4 showed <em>what</em> the KV cache holds. This lesson asks <em>how big</em> it is and <em>what it costs</em> to read during decode.</p>
         <div class="callout">
           <p><span class="callout-label">Learning goal.</span> Derive the raw KV-cache size from a model’s attention configuration, compute it for real-looking configurations in correct units, see how it grows with context length and concurrency, and explain why reading it can dominate decode-time memory traffic.</p>
-          <p><span class="callout-label">Concrete example used throughout.</span> A hypothetical decoder with <var>L</var> = 32 layers, <var>H</var><sub>KV</sub> = 8 KV heads, head dimension <var>D</var> = 128, cache stored in BF16, holding a 4,096-token context. Its cache is exactly 536,870,912 bytes = 512 MiB.</p>
+          <p><span class="callout-label">Default worked example.</span> A hypothetical decoder with <var>L</var> = 32 layers, <var>H</var><sub>KV</sub> = 8 KV heads, head dimension <var>D</var> = 128, cache stored in BF16, holding a 4,096-token context. Its cache is exactly 536,870,912 bytes = 512 MiB.</p>
           <p><span class="callout-label">Builds on.</span> <a href="lesson-3.html#s2-3-3">2.3 KV heads (MHA/MQA/GQA)</a> and <a href="lesson-4.html#s2-4-2">2.4 cache shape</a>.</p>
         </div>
       </header>
@@ -178,7 +178,7 @@
 
       <section id="s2-5-3" aria-labelledby="s2-5-3-title">
         <h2 id="s2-5-3-title">2.5.3 Memory versus context length</h2>
-        <p>The formula says memory is proportional to <var>T</var>: a straight line through zero whose slope is the per-token cost times <var>N</var>. The chart makes the two levers visible together: context length moves you along a line; KV-head count changes the line’s slope.</p>
+        <p>The formula says memory is proportional to <var>T</var>: a straight line through zero whose slope is the per-token cost times <var>N</var>. The chart uses the model configuration from the calculator. Context length moves along a line; the reference KV-head count changes the comparison line’s slope.</p>
 
         <div class="lab" role="group" aria-labelledby="chart-title" id="kv-chart-lab">
           <div class="lab-header"><h3 id="chart-title">Raw KV memory versus context length</h3>
@@ -224,7 +224,7 @@
 
         <h3>Real allocators grow in steps</h3>
         <p>Serving engines rarely grow one token at a time. A common design reserves KV memory in fixed-size <em>blocks</em> of tokens; vLLM, for example, exposes a <code>block_size</code> setting, the “size of a contiguous cache block in number of tokens” (<a href="https://docs.vllm.ai/en/latest/configuration/engine_args.html">vLLM engine arguments</a>); 16 tokens is a commonly used value and is used in the example below. With 16-token blocks, a sequence of <var>T</var> tokens reserves ⌈<var>T</var> / 16⌉ × 16 token slots, so the true curve is a staircase that sits on or slightly above the straight line.</p>
-        <p>Example (worked-example config): <var>T</var> = 4,097 needs ⌈4,097 / 16⌉ = 257 blocks = 4,112 slots. The 15 unused slots cost 15 × 131,072 B = 1,966,080 B ≈ 1.88 MiB. The waste per sequence is at most one partly filled block, so it matters most for many short sequences and little for a few long ones. How blocks are allocated, shared and freed is the subject of Module 3 (PagedAttention); here, just remember that the linear formula is a lower bound for what an allocator reserves.</p>
+        <p>Example (worked-example config): <var>T</var> = 4,097 needs ⌈4,097 / 16⌉ = 257 blocks = 4,112 slots. The 15 unused slots cost 15 × 131,072 B = 1,966,080 B ≈ 1.88 MiB. The waste per sequence is at most one partly filled block, so it matters most for many short sequences and little for a few long ones. How blocks are allocated, shared and freed is the subject of the planned Module 3 (PagedAttention); here, just remember that the linear formula is a lower bound for what an allocator reserves.</p>
       </section>
 
       <section id="s2-5-4" aria-labelledby="s2-5-4-title">
@@ -263,7 +263,7 @@
       <section id="s2-5-5" aria-labelledby="s2-5-5-title">
         <h2 id="s2-5-5-title">2.5.5 Exercise: sizing a deployment’s KV cache</h2>
         <p>Use the boxed formula (or work by hand, then check with the calculator) to size a deployment’s cache. Choose the unit you computed in; GB and GiB are graded as different units.</p>
-        <div id="kv-exercise"></div>
+        <div id="kv-exercise" class="course-core"></div>
 
         <h3>Why this number alone cannot decide a deployment</h3>
         <p>Knowing the raw KV total is necessary but not sufficient to say whether a GPU deployment works:</p>
