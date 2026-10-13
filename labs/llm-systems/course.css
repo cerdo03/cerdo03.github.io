@@ -103,7 +103,7 @@
 }
 
 .llm-course .lab-guide { display: none; }
-.llm-course .site-footer { margin-left: 260px; padding: 20px 48px; }
+.llm-course footer { margin-left: 260px; padding: 20px 48px; }
 .llm-course .course-detail { margin: 20px 0; padding: 14px 0; border-top: 1px solid var(--line); }
 .llm-course .course-detail > summary { cursor: pointer; font-size: 15px; }
 .llm-course .course-detail > div { padding-top: 12px; }
@@ -114,7 +114,7 @@
   .llm-course .course-sidebar nav { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
   .llm-course main { margin: 0; padding: 24px 20px 40px; }
   .llm-course .course-header { margin-left: 0; padding: 16px 20px; }
-  .llm-course .site-footer { margin-left: 0; padding: 20px; }
+  .llm-course footer { margin-left: 0; padding: 20px; }
   .llm-course .lab, .llm-course .experiment { padding: 16px; }
 }
 
@@ -182,3 +182,10 @@
 .llm-course button { padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); cursor: pointer; font-size: 14px; }
 .llm-course button:disabled { opacity: 0.45; cursor: default; }
 .llm-course button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+
+/* One module hierarchy on collection, overview and lesson pages. */
+.llm-course .page { max-width: none; margin: 0; padding: 0; }
+.llm-course .course-modules ul { list-style: none; margin: 0; padding: 0; }
+.llm-course .course-modules ul ul { margin: 4px 0 0 16px; padding-left: 8px; border-left: 1px solid var(--line); }
+.llm-course .course-modules li { margin: 0 0 4px; }
+.llm-course .course-modules [aria-current="page"] { color: var(--ink); background: var(--accent-soft); border-color: var(--line); }

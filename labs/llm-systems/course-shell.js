@@ -24,27 +24,36 @@ if (typeof document !== 'undefined') {
   const inference = !!document.getElementById('curriculum');
   const number = Number(document.body.dataset.lesson);
   const sections = number ? [...document.querySelectorAll('main > section[id]')] : [];
-  const sidebar = document.querySelector('aside');
+  let sidebar = document.querySelector('aside');
+  if (!sidebar) { sidebar = document.createElement('aside');document.querySelector('main').before(sidebar); }
   document.body.classList.add('llm-course');
   if (!document.querySelector('.skip-link')) { const skip = document.createElement('a');skip.className = 'skip-link';skip.href = '#main';skip.textContent = 'Skip to lesson content';document.body.prepend(skip);document.querySelector('main').id ||= 'main'; }
   document.querySelector('.skip-link').onclick = event => { event.preventDefault();const main = document.querySelector('main');main.tabIndex = -1;main.focus();window.scrollTo(0, 0); };
   if (sidebar) {
     sidebar.className = 'course-sidebar';
+    let nav;
+    const curriculum = document.getElementById('curriculum');
+    sidebar.replaceChildren();
+    if (inference || sections.length) {
     const current = document.createElement('details');
     current.open = !window.matchMedia('(max-width: 900px)').matches;
     const summary = document.createElement('summary');
     summary.textContent = inference ? '1. Inference fundamentals' : `2.${number} ${lessons[number - 1]}`;
     current.append(summary);
-    const nav = inference ? document.getElementById('curriculum') : document.createElement('nav');
+    nav = inference ? curriculum : document.createElement('nav');
     if (!inference) nav.setAttribute('aria-label', 'Concepts');
     current.append(nav);
-    sidebar.replaceChildren(current);
+    sidebar.append(current);
+    }
     const modules = document.createElement('details');
     modules.className = 'course-modules';
+    modules.open = !inference && !number && !window.matchMedia('(max-width: 900px)').matches;
     const title = document.createElement('summary');title.textContent = 'Modules';modules.append(title);
     const links = document.createElement('nav');links.setAttribute('aria-label', 'Modules');
-    links.innerHTML = '<a href="../inference/">1. Inference fundamentals</a><a href="../attention/">2. Attention and KV cache</a>' + lessons.map((text, i) => `<a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a>`).join('');
-    modules.append(links);sidebar.append(modules);
+    links.innerHTML = '<ul><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';
+    const active = inference ? '../inference/' : number ? `../attention/lesson-${number}.html` : !location.pathname.includes('llm-systems') ? '../attention/' : null;
+    if (active) links.querySelector(`a[href="${active}"]`).setAttribute('aria-current', 'page');
+    modules.append(links);sidebar.prepend(modules);
     if (sections.length) {
       const main = document.querySelector('main');
       const hero = main.querySelector(':scope > header');
@@ -122,7 +131,6 @@ if (typeof document !== 'undefined') {
       show(index, false);
     }
   }
-  if (!sidebar) document.body.classList.add('course-overview');
   for (const link of document.querySelectorAll('footer a')) { if (/Back to the journal/i.test(link.textContent)) link.href = 'https://cerdo03.github.io/';if (/Back to learning sites/i.test(link.textContent)) link.href = 'https://cerdo03.github.io/#sites'; }
   if (!number && !inference && !location.pathname.includes('llm-systems')) {
     for (const id of ['goal', 'prerequisites', 'notation', 'references']) {
