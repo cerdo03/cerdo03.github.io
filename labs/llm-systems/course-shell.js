@@ -24,6 +24,14 @@ if (typeof document !== 'undefined') {
   const inference = !!document.getElementById('curriculum');
   const number = Number(document.body.dataset.lesson);
   const sections = number ? [...document.querySelectorAll('main > section[id]')] : [];
+  const navigationKey = 'llm-course-navigation-v1';
+  let navigation = {};
+  try { navigation = JSON.parse(localStorage.getItem(navigationKey)) || {}; } catch { /* Optional storage. */ }
+  const rememberDisclosure = (detail, key, fallback) => {
+    const initial = typeof navigation[key] === 'boolean' ? navigation[key] : fallback;
+    detail.open = initial;
+    detail.addEventListener('toggle', () => { if (detail.open === initial && typeof navigation[key] !== 'boolean') return;navigation[key] = detail.open;try { localStorage.setItem(navigationKey, JSON.stringify(navigation)); } catch { /* Optional storage. */ } });
+  };
   let sidebar = document.querySelector('aside');
   if (!sidebar) { sidebar = document.createElement('aside');document.querySelector('main').before(sidebar); }
   document.body.classList.add('llm-course');
@@ -36,9 +44,9 @@ if (typeof document !== 'undefined') {
     sidebar.replaceChildren();
     if (inference || sections.length) {
     const current = document.createElement('details');
-    current.open = !window.matchMedia('(max-width: 900px)').matches;
+    rememberDisclosure(current, 'concepts', !window.matchMedia('(max-width: 900px)').matches);
     const summary = document.createElement('summary');
-    summary.textContent = inference ? '1. Inference fundamentals' : `2.${number} ${lessons[number - 1]}`;
+    summary.textContent = 'Concepts';
     current.append(summary);
     nav = inference ? curriculum : document.createElement('nav');
     if (!inference) nav.setAttribute('aria-label', 'Concepts');
@@ -47,7 +55,7 @@ if (typeof document !== 'undefined') {
     }
     const modules = document.createElement('details');
     modules.className = 'course-modules';
-    modules.open = !inference && !number && !window.matchMedia('(max-width: 900px)').matches;
+    rememberDisclosure(modules, 'modules', false);
     const title = document.createElement('summary');title.textContent = 'Modules';modules.append(title);
     const links = document.createElement('nav');links.setAttribute('aria-label', 'Modules');
     links.innerHTML = '<ul><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';
@@ -99,7 +107,7 @@ if (typeof document !== 'undefined') {
       });
       const buttons = sections.map((section, i) => {
         const button = document.createElement('button');button.type = 'button';
-        button.textContent = section.querySelector('h2')?.textContent.replace(/^2\.\d+\.\d+\s*/, '') || 'Check your understanding';
+        button.textContent = `${i + 1}. ${section.querySelector('h2')?.textContent.replace(/^2\.\d+\.\d+\s*/, '') || 'Check your understanding'}`;
         button.onclick = () => show(i, true);nav.append(button);return button;
       });
       const pager = document.createElement('nav');pager.className = 'course-pager';pager.setAttribute('aria-label', 'Previous and next concept');
@@ -116,7 +124,7 @@ if (typeof document !== 'undefined') {
         if (heading.firstChild?.nodeType === 3) heading.firstChild.textContent = heading.firstChild.textContent.replace(/^2\.\d+\.\d+\s*/, '');
         counter.textContent = `${i + 1} / ${sections.length}`;
         pager.querySelector('[data-prev]').disabled = i === 0 && number === 1;
-        pager.querySelector('[data-next]').textContent = i === sections.length - 1 ? (number === 5 ? 'Module overview →' : 'Next lesson →') : `Next: ${buttons[i + 1].textContent} →`;
+        pager.querySelector('[data-next]').textContent = i === sections.length - 1 ? (number === 5 ? 'Module overview →' : 'Next lesson →') : `Next: ${buttons[i + 1].textContent.replace(/^\d+\.\s*/, '')} →`;
         history.replaceState(null, '', `#${sections[i].id}`);
         if (moveFocus) { heading.focus();window.scrollTo(0, 0); }
         document.dispatchEvent(new CustomEvent('course:section', { detail: sections[i].id }));
