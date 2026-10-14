@@ -203,7 +203,7 @@
 .llm-course .course-header button { font-weight: 400; line-height: 1.5; }
 
 /* Connected vector graph; scoped to the shared LLM illustration. */
-.llm-course .route-toolbar { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.llm-course .route-toolbar { position: sticky; top: 0; z-index: 2; background: var(--card); padding: 8px 0; display: flex; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
 .llm-course .route-toolbar label { flex: 1; min-width: 75px; margin: 0; }
 .llm-course .route-playback { display: flex; gap: 6px; align-items: center; }
 .llm-course .route-playback button { padding: 8px; min-width: 36px; font-size: 20px; font-weight: 400; line-height: 1; color: var(--ink); background: var(--card); }
@@ -230,3 +230,17 @@
 .llm-course .vector-routes.is-playing .route-edge.is-active { stroke-dasharray: 8 6; animation: route-flow 1s linear infinite; }
 @keyframes route-flow { to { stroke-dashoffset: -28; } }
 @media (prefers-reduced-motion: reduce) { .llm-course .vector-routes .route-edge { animation: none !important; } }
+
+.llm-course .teaching-visual .route-toolbar { align-items: end; }
+.llm-course .visual-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.llm-course .teaching-visual .route-node text { font-size: 13px; }
+.llm-course .teaching-visual .route-node .visual-small { font-size: 11px; font-weight: normal; }
+.llm-course .visual-label { fill: var(--ink); font-size: 13px; }
+.llm-course .visual-arrow { fill: none; stroke: var(--line); stroke-width: 1.5px; }
+.llm-course .visual-arrow.is-active { stroke: var(--accent); }
+.llm-course .visual-caption { min-height: 3em; font-size: 15px; }
+.llm-course .visual-assumptions { font-size: 12px; margin-top: 10px; }
+.llm-course .teaching-visual.is-playing .route-edge.is-active { stroke-dasharray: 8 6; animation: route-flow 1s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .llm-course .teaching-visual.is-playing .route-edge.is-active { animation: none; stroke-dasharray: none; }
+}

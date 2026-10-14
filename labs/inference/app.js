@@ -1,3 +1,4 @@
+import {mountLearningVisual,disposeVisual} from '../llm-systems/learning-visuals.js';
 import {mountVectorRoutes} from '../attention/vector-routes.js';
 import {representations} from './guide-model.js';
 import {guide} from './guide-content.js';
@@ -10,6 +11,7 @@ if(!Array.isArray(saved.embeddings)||saved.embeddings.length!==3||!saved.embeddi
 let current=guide.findIndex(x=>`#${x.id}`===window.location.hash);if(current<0)current=guide.findIndex(x=>x.id===saved.concept);if(current<0)current=0;
 const persist=()=>{try{localStorage.setItem(storageKey,JSON.stringify(saved))}catch{/* Storage is optional. */}};
 function render(){
+ if($('#scene'))disposeVisual($('#scene'));
  const lesson=guide[current];saved.concept=lesson.id;persist();window.history.replaceState(null,'',`#${lesson.id}`);
  $('#curriculum').innerHTML=guide.map((x,i)=>`<button data-concept="${i}" ${i===current?'aria-current="step" class="selected"':''}>${i+1}. ${x.short}</button>`).join('');
  document.querySelectorAll('[data-concept]').forEach(b=>b.onclick=()=>navigate(+b.dataset.concept));
@@ -29,6 +31,9 @@ function draw(focus){
  if(saved.scenes[id]?.version!==version)saved.scenes[id]=null;
  if(!saved.scenes[id])saved.scenes[id]={event:['decode','recap'].includes(id)?(id==='decode'?2:3):0,version};
  const state=saved.scenes[id],root=$('#scene');
+ disposeVisual(root);root.classList.remove('teaching-visual','is-playing');
+ const visualTypes={prefill:'request',decode:'request',recap:'request',cache:'request',qkv:'projections',scores:'scores',mix:'values',handoff:'prediction',validity:'validity',prefix:'prefix'};
+ if(visualTypes[id]){root.replaceChildren();mountLearningVisual(root,visualTypes[id],{rows:saved.embeddings,pass:['decode','cache'].includes(id)?1:0,onPosition:position=>{saved.attention={position};persist();}});return;}
  if(id==='attention'){root.replaceChildren();mountVectorRoutes(root);return;}
  if(['qkv','scores','mix'].includes(id)){delete state.first;state.position=saved.attention?.position??state.position??2;saved.attention={position:state.position};}
  const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));

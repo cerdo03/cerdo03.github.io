@@ -1,3 +1,4 @@
+import {enhanceCourse} from './course-enhancements.js';
 import '../attention/symbols.js';
 // Shared guided reading shell for this collection only. Existing URLs and section anchors remain valid.
 const lessons = ['Self-attention', 'Multi-head attention', 'MHA / MQA / GQA', 'KV-cache internals', 'Memory and performance'];
@@ -21,6 +22,7 @@ function labelDiagram(root) {
 }
 
 if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded',()=>enhanceCourse(document),{once:true});
   const inference = !!document.getElementById('curriculum');
   const number = Number(document.body.dataset.lesson);
   const sections = number ? [...document.querySelectorAll('main > section[id]')] : [];
