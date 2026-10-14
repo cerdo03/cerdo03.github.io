@@ -68,15 +68,15 @@ function arithmetic(type,s,rows){
 }
 function request(s,rows,options){
  const f=requestFrame(s.pass,s.stage,rows,options.prompt,options.answer),query=f.queries[Math.min(s.query,f.queries.length-1)];
- const all=[...f.old,...f.newRows],height=Math.max(570,375+all.length*78);let graph='';
+ const all=[...f.old,...f.newRows],height=Math.max(570,375+all.length*96);let graph='';
  graph+=node(10,25,205,s.pass===0?'Prefill input':'Decode input',[f.input.join(' · '),`${f.input.length} new position${f.input.length===1?'':'s'}`],s.stage===0);
  graph+=edge(215,65,275,65,s.stage>=1);
  graph+=node(275,25,235,`Projections for ${query.token}`,[s.stage>=1?`Q = ${vector(query.q)}`:'Q pending',s.stage>=1?`new K = ${vector(query.k)}`:'new K pending',s.stage>=1?`new V = ${vector(query.v)}`:'new V pending'],s.stage===1);
  graph+=node(630,25,255,'Chosen answer so far',[f.answer.join(' · ')||'None',s.stage===5?`“${f.chosen}” has no K/V yet`:'No new token chosen in this pass'],s.stage===5);
  graph+=`<text class="visual-label" x="18" y="185">Layer 1 · head 1: ${f.cache.length} stored K/V rows</text>`;
- const resultY=205+Math.floor(all.length/2)*78;
+ const resultY=205+Math.floor(all.length/2)*96;
  for(let i=0;i<all.length;i++){
-  const r=all[i],isNew=i>=f.old.length,y=205+i*78,created=!isNew||s.stage>=1,stored=!isNew||s.stage>=4,allowed=i<=query.position;
+  const r=all[i],isNew=i>=f.old.length,y=205+i*96,created=!isNew||s.stage>=1,stored=!isNew||s.stage>=4,allowed=i<=query.position;
   graph+=node(15,y,390,`${i+1}: ${r.token} · ${stored?isNew?'new row stored':'cached · unchanged':'fresh from its own x'}`,[created?`K ${vector(r.k)}    V ${vector(r.v)}`:'K/V not calculated yet'],isNew&&s.stage===4);
   if(isNew&&i===query.position&&s.stage>=1)graph+=edge(395,135,405,y+35,s.stage===1||s.stage===4,s.stage>=4?'store K/V':'new K/V');
   if(s.stage>=2&&allowed){
@@ -87,7 +87,7 @@ function request(s,rows,options){
   }
  }
  if(s.stage>=3)graph+=node(760,resultY,125,'Head result',[vector(query.output),'not cached'],s.stage===3);
- const bottom=245+all.length*78;
+ const bottom=245+all.length*96;
  graph+=node(15,bottom,390,'Remaining layer → model stack',[s.stage===5?'Output projection, residuals, feed-forward, next layers':'Waiting for the rest of the forward pass',s.stage===5?'Final vector → vocabulary scores':'Head result continues here; cache stays separate'],s.stage===5);
  graph+=edge(405,bottom+40,600,bottom+40,s.stage===5,'select');
  graph+=node(600,bottom,285,'Next output token',[s.stage===5?f.chosen:'Not chosen yet','Selection does not create a cache row'],s.stage===5);
