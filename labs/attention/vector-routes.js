@@ -43,7 +43,7 @@ export function mountVectorRoutes(root, initialPosition = 2) {
       whole+=node([100,370,640][l],ys[i],tokens[i],context,{active:l===layer&&i===position,layer:l===0?1:l,position:i,ariaLabel:l===0?`Inspect embedding ${tokens[i]}`:`Inspect layer ${l} output, ${tokens[i]}`});
     }
     whole+=node(860,240,'Logits','vocabulary scores');
-    whole+=text(100,292,'Starting vectors','route-caption')+text(505,292,'Completed blocks · all heads combined','route-caption');
+    whole+=text(100,292,'Starting vectors','route-caption')+text(505,292,'Subtitles: possible context · all heads combined','route-caption');
     let detail = text(100,24,layer===1?'EMBEDDINGS':'LAYER 1 OUTPUTS','route-column-label');
     const input = i=>node(100,ys[i],`x · ${tokens[i]}`,data.inputs[i].context.map(j=>tokens[j]).join(' · '),{active:i===position,position:i});
     if(step===0) {
