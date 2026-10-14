@@ -18,3 +18,11 @@ test('vector routing keeps context, layer and head origins separate',async()=>{
  assert.deepEqual(routeState(2,1,1).allowed,[0,1]);
  assert.deepEqual(routeState(2,1,1).rows,later.rows);
 });
+test('network connections cross adjacent layers and never read a later token',async()=>{
+ const module=await import('../labs/attention/vector-routes.js');
+ assert.equal(typeof module.networkEdges,'function');
+ const edges=module.networkEdges();
+ assert.equal(edges.length,12);
+ assert.ok(edges.every(edge=>edge.toLayer===edge.fromLayer+1&&edge.fromPosition<=edge.toPosition));
+ assert.deepEqual(edges.filter(edge=>edge.toLayer===2&&edge.toPosition===1).map(edge=>edge.fromPosition),[0,1]);
+});

@@ -200,37 +200,31 @@
 .llm-course .course-header { height: auto; min-height: 0; justify-content: flex-start; }
 .llm-course .course-header button { font-weight: 400; line-height: 1.5; }
 
-/* Symbolic provenance: token chips label possible dependencies, not numeric dimensions. */
-.llm-course .route-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; margin: 0 0 16px; }
-.llm-course .route-controls label { flex: 1; min-width: 90px; margin: 0; }
-.llm-course .route-legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 12px; color: var(--muted); margin-bottom: 16px; }
-.llm-course .route-stage { font-weight: 600; margin: 16px 0; }
-.llm-course .route-boundary { border: 1px dashed var(--line); padding: 16px; border-radius: 8px; }
-.llm-course .route-boundary > span { display: block; margin-bottom: 12px; font-size: 12px; color: var(--muted); }
-.llm-course .route-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.llm-course .route-two { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
-.llm-course .route-box { border: 1px solid var(--line); padding: 12px; border-radius: 6px; background: var(--surface-alt); min-width: 0; font-size: 14px; }
-.llm-course .route-box strong, .llm-course .route-box small { display: block; }
-.llm-course .route-box small { font-size: 12px; color: var(--muted); margin-top: 6px; }
-.llm-course .route-selected { border: 2px solid var(--accent); }
-.llm-course .route-context { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 4px; }
-.llm-course .route-token { display: inline-block; font-size: 12px; border: 1px solid var(--line); border-radius: 4px; padding: 2px 6px; }
-.llm-course .route-token[data-token="0"] { border-style: solid; }
-.llm-course .route-token[data-token="1"] { border-style: dashed; }
-.llm-course .route-token[data-token="2"] { border-style: dotted; }
-.llm-course .route-blocked { opacity: 0.5; border-style: dashed; }
-.llm-course .route-pair { display: grid; gap: 8px; }
-.llm-course .route-pair > div { padding: 8px; border: 1px solid var(--line); border-radius: 4px; }
-.llm-course .route-actions { justify-content: space-between; align-items: center; margin-top: 20px; }
-@media (max-width: 600px) {
-  .llm-course .route-columns { gap: 6px; }
-  .llm-course .route-box { padding: 8px; }
-  .llm-course .route-boundary { padding: 8px; }
-  .llm-course .route-controls label { min-width: 70px; }
-}
-
-.llm-course .route-branches { display: block; width: 100%; height: 40px; }
-.llm-course .route-branches path { stroke: var(--accent); fill: none; stroke-width: 2px; }
-.llm-course .route-branches .route-blocked { stroke-dasharray: 6 4; }
-
-.llm-course .vector-routes button:hover:not(:disabled) { background: var(--surface-alt); color: var(--ink); border-color: var(--accent); }
+/* Connected vector graph; scoped to the shared LLM illustration. */
+.llm-course .route-toolbar { display: flex; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+.llm-course .route-toolbar label { flex: 1; min-width: 75px; margin: 0; }
+.llm-course .route-playback { display: flex; gap: 6px; align-items: center; }
+.llm-course .route-playback button { padding: 8px; min-width: 36px; font-size: 20px; font-weight: 400; line-height: 1; color: var(--ink); background: var(--card); }
+.llm-course .route-playback [data-route-play] { border-radius: 50%; width: 44px; height: 44px; }
+.llm-course .route-playback button:hover:not(:disabled) { color: var(--on-accent); background: var(--accent); }
+.llm-course .route-map { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.llm-course .route-canvas { width: 100%; overflow-x: auto; }
+.llm-course .route-canvas svg { display: block; width: 100%; min-width: 700px; height: auto; }
+.llm-course .route-canvas text { fill: var(--ink); font-family: var(--body-font); font-size: 14px; }
+.llm-course .route-canvas .route-column-label { font-size: 12px; fill: var(--muted); letter-spacing: 0.06em; }
+.llm-course .route-canvas .route-node-sub, .llm-course .route-canvas .route-caption { font-size: 10px; fill: var(--muted); }
+.llm-course .route-node rect { fill: var(--surface-alt); stroke: var(--line); stroke-width: 1px; }
+.llm-course .route-node.is-active rect { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2px; }
+.llm-course .route-node[role="button"] { cursor: pointer; }
+.llm-course .route-node[role="button"]:hover rect, .llm-course .route-node:focus-visible rect { stroke: var(--accent); stroke-width: 3px; }
+.llm-course .route-edge { fill: none; stroke: var(--line); stroke-width: 1.5px; }
+.llm-course .route-edge.is-active { stroke: var(--accent); stroke-width: 2.5px; }
+.llm-course .route-edge.is-blocked { stroke-dasharray: 5 5; opacity: 0.35; }
+.llm-course .route-node.is-blocked { opacity: 0.4; }
+.llm-course .route-edge-label { font-size: 10px; fill: var(--muted); }
+.llm-course .route-stage { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 12px; margin: 20px 0 10px; color: var(--muted); }
+.llm-course .route-stage > span:first-child { color: var(--ink); font-weight: 600; }
+.llm-course .route-legend { font-size: 11px; color: var(--muted); margin-top: 12px; }
+.llm-course .vector-routes.is-playing .route-edge.is-active { stroke-dasharray: 8 6; animation: route-flow 1s linear infinite; }
+@keyframes route-flow { to { stroke-dashoffset: -28; } }
+@media (prefers-reduced-motion: reduce) { .llm-course .vector-routes .route-edge { animation: none !important; } }
