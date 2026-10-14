@@ -71,7 +71,7 @@ function request(s,rows,options){
  const all=[...f.old,...f.newRows],height=Math.max(570,375+all.length*96);let graph='';
  graph+=node(10,25,205,s.pass===0?'Prefill input':'Decode input',[f.input.join(' · '),`${f.input.length} new position${f.input.length===1?'':'s'}`],s.stage===0);
  graph+=edge(215,65,275,65,s.stage>=1);
- graph+=node(275,25,235,`Projections for ${query.token}`,[s.stage>=1?`Q = ${vector(query.q)}`:'Q pending',s.stage>=1?`new K = ${vector(query.k)}`:'new K pending',s.stage>=1?`new V = ${vector(query.v)}`:'new V pending'],s.stage===1);
+ graph+=node(275,25,235,`x × WQ / WK / WV`,[s.stage>=1?`Q = ${vector(query.q)}`:'Q pending',s.stage>=1?`new K = ${vector(query.k)}`:'new K pending',s.stage>=1?`new V = ${vector(query.v)}`:'new V pending'],s.stage===1);
  graph+=node(630,25,255,'Chosen answer so far',[f.answer.join(' · ')||'None',s.stage===5?`“${f.chosen}” has no K/V yet`:'No new token chosen in this pass'],s.stage===5);
  graph+=`<text class="visual-label" x="18" y="185">Layer 1 · head 1: ${f.cache.length} stored K/V rows</text>`;
  const resultY=205+Math.floor(all.length/2)*96;
@@ -82,7 +82,7 @@ function request(s,rows,options){
   if(s.stage>=2&&allowed){
    graph+=edge(510,85,535,y+30,s.stage===2,'Q');
    graph+=edge(405,y+35,535,y+35,s.stage===2||s.stage===3,s.stage===2?'K':'V');
-   graph+=node(535,y,180,s.stage===2?'Query–key score':'Weighted V',s.stage===2?[`≈ ${number(query.scores[i])}`]:[`weight ≈ ${share(query.weights[i])}`,`≈ ${vector(r.v.map(v=>v*query.weights[i]))}`],s.stage===2||s.stage===3);
+   graph+=node(535,y,180,s.stage===2?'Σ(Qᵢ × Kᵢ) ÷ √2':'share × V',s.stage===2?[`≈ ${number(query.scores[i])}`]:[`weight ≈ ${share(query.weights[i])}`,`≈ ${vector(r.v.map(v=>v*query.weights[i]))}`],s.stage===2||s.stage===3);
    if(s.stage>=3)graph+=edge(715,y+35,760,resultY+35,s.stage===3,'+');
   }
  }
@@ -96,9 +96,9 @@ function request(s,rows,options){
  const titles=['New input','Calculate Q/K/V','Read keys and score','Mix values','Store new K/V','Choose next token'];
  const controls=select('pass','Pass',Array.from({length:(options.answer||['blue','today','.']).length},(_,p)=>[p,p===0?'Prefill':`Decode ${p}`]).filter(([p])=>p>=(options.minPass||0)),s.pass)+select('query',s.pass===0?'Inspect prompt query':'Current query',f.input.map((t,i)=>[i,t]),Math.min(s.query,f.input.length-1),s.pass!==0);
  const captions=[s.pass===0?'All prompt positions are supplied together. Select a query to inspect its allowed keys.':`“${f.input[0]}” was chosen in the preceding pass. It now enters the model; earlier positions supply cached K/V.`,
- 'Only the new positions need projections. Current Q is separate from K/V; neither new K nor V is calculated from the old cache.',
- 'The query reads earlier keys and its own new key. Prefill uses a causal mask; later prompt positions are excluded.',
- 'Softmax weights scale the corresponding V rows. This head result goes through output projection, residual and feed-forward processing; it never replaces cached K/V.',
+ 'Multiply each new position’s x by three learned matrices: Q = x × WQ, K = x × WK, V = x × WV. Each output component is a sum of products. Q/K score compatibility; V supplies information. Old cache rows are not used to create these new projections.',
+ 'For each allowed key, multiply matching Q/K components, add them, then divide by √2: one score per key. Later positions are masked. Softmax converts the allowed scores into shares summing to 1.',
+ 'Multiply each V component by that position’s softmax share, then add contributions component by component. This head result continues through the model; it never replaces cached K/V.',
  'Store the new K/V rows. Earlier rows retain exactly the same numbers. The drawing groups operations for teaching; real engines may store new K/V before attention.',
  `The final-layer output supplies vocabulary scores, then a token is chosen. “${f.next}” is scripted for this trace and remains outside the cache until its next pass.`];
  return {graph:svg(graph,height,'New input, fresh projections, cache reads, head result and chosen output'),controls,max:5,title:titles[s.stage],caption:captions[s.stage],note:'One first-layer head shown; every layer has its own cache. Trace continuation is scripted, not predicted by this tiny head.'};
@@ -114,8 +114,8 @@ function heads(s){
   if(stage>=4)graph+=edge(675,y+45,725,175,true);
  }
  if(stage>=4)graph+=node(725,140,160,'Concatenate',['a₁ a₂ b₁ b₂','4 components'],stage===4);
- if(stage>=5){graph+=edge(805,227,710,405,true);graph+=node(300,370,410,'WO → one projected update',['4 × 4 output projection → 4 components','Residual addition: x + update, component by component'],true);}
- return {graph:svg(graph,490,'Full input projected into combined columns, split between heads, then joined'),controls:'',max:5,caption:['Both heads receive the same entire four-component x. This is a wider schematic, not the two-component numeric toy.','Each head has its own 4 × 2 query matrix. Placing those matrices side by side gives one 4 × 4 WQ; it computes both projections together.','Split the projected columns: 1–2 become head 1 Q, 3–4 become head 2 Q. K and V split the same way. The original embedding is never sliced in half.','Each head independently compares its Q/K and mixes its V. Its result still has two components.','Concatenation places the two head results side by side. No addition happens here: 2 + 2 components = 4.','WO mixes the four joined components into one four-component update. Add it to incoming x; addition preserves the width.'][stage]};
+ if(stage>=5){graph+=edge(805,227,710,405,true);graph+=node(300,370,410,'joined × WO → update',['4 × 4 output projection → 4 components','Residual addition: x + update, component by component'],true);}
+ return {graph:svg(graph,490,'Full input projected into combined columns, split between heads, then joined'),controls:'',max:5,caption:['Both heads receive the same entire four-component x. This is a wider schematic, not the two-component numeric toy.','Each head has its own 4 × 2 query matrix. Placing those matrices side by side gives one 4 × 4 WQ; it computes both projections together.','Split the projected columns: 1–2 become head 1 Q, 3–4 become head 2 Q. K and V split the same way. The original embedding is never sliced in half.','Each head independently compares its Q/K and mixes its V. Its result still has two components.','Concatenation places the two head results side by side. No addition happens here: 2 + 2 components = 4.','Multiply the joined vector by WO: multiply matching entries and add products for each output component. This creates a four-component update. Add it to incoming x component by component; this residual addition preserves the width.'][stage]};
 }
 function sharing(s,rows){
  const a=sharingState(s.kvHeads,rows),selected=a.heads[s.head];let graph='';
@@ -128,7 +128,7 @@ function sharing(s,rows){
  }
  for(const c of a.caches){const y=35+c.group*(360/s.kvHeads);graph+=node(675,y,210,`KV head ${c.group+1}`,[`K rows: ${c.keys.map(vector).join(' ')}`,`V rows: ${c.values.map(vector).join(' ')}`],c.group===selected.group);}
  const other=a.heads.find(h=>h.head!==selected.head&&h.group===selected.group);
- return {graph:svg(graph,440,'Query heads connected to their shared key/value head and individual results'),controls:select('kvHeads','Compare toy architectures',[[4,'MHA: 4 query / 4 KV'],[2,'GQA: 4 query / 2 KV'],[1,'MQA: 4 query / 1 KV']],s.kvHeads),max:0,caption:`Head ${s.head+1} Q ${vector(selected.q)} → KV head ${selected.group+1} → weights ${shares(selected.weights)} → result ${vector(selected.output)}.${other?` Head ${other.head+1} reads those exact same K/V rows, but its own Q gives weights ${shares(other.weights)} and result ${vector(other.output)}.`:' MHA keeps separate K/V for every query head.'}`,note:'Invented first-layer projections: Qh = [x₁, h × x₂]; Kg = [g × x₂, x₁]; Vg = [2x₁, g × x₂]. Heads/groups numbered from 1 here. Comparing architectures does not alter a trained checkpoint.'};
+ return {graph:svg(graph,440,'Query heads connected to their shared key/value head and individual results'),controls:select('kvHeads','Compare toy architectures',[[4,'MHA: 4 query / 4 KV'],[2,'GQA: 4 query / 2 KV'],[1,'MQA: 4 query / 1 KV']],s.kvHeads),max:0,caption:`Head ${s.head+1}: compare Q ${vector(selected.q)} with keys in KV head ${selected.group+1} → weights ${shares(selected.weights)}. Multiply that head’s V rows by these weights, then add → result ${vector(selected.output)}.${other?` Head ${other.head+1} reads those exact same K/V rows, but its own Q gives weights ${shares(other.weights)} and result ${vector(other.output)}.`:' MHA keeps separate K/V for every query head.'}`,note:'Invented first-layer projections: Qh = [x₁, h × x₂]; Kg = [g × x₂, x₁]; Vg = [2x₁, g × x₂]. Heads/groups numbered from 1 here. Comparing architectures does not alter a trained checkpoint.'};
 }
 function prediction(s,rows){
  const p=predictionState(rows),stage=s.stage,j=s.candidate;let graph='';

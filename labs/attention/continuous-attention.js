@@ -20,7 +20,7 @@ function renderAll() {
   const raw = a.keys.map(k => q[0] * k[0] + q[1] * k[1]);
   for (const { root, stage } of roots) {
     disposeVisual(root);root.querySelectorAll('.teaching-visual').forEach(disposeVisual);
-    const numericOpen = root.querySelector(':scope > details')?.open;
+    const numericOpen = root.querySelector('.course-detail')?.open;
     let body = `<p class="location">Prefill · first layer · one head · position ${i + 1}: ${promptTokens[i]}</p><label>Inspect token position<select data-position>${promptTokens.map((token, j) => `<option value="${j}" ${i === j ? 'selected' : ''}>${j + 1}: ${token}</option>`).join('')}</select></label>`;
     if (stage === 1) {
       body += `<div class="node-grid">${promptTokens.map((token, j) => node(`${j + 1}: ${token}`, `<small>${j === i ? 'Current position: may read itself' : j < i ? 'Earlier position: may supply information' : 'Later position: blocked by the causal mask'}</small>`)).join('')}</div><p>All three prompt tokens were supplied together. The causal mask still prevents a position from reading tokens to its right. We are updating the vector for “${promptTokens[i]}”, not choosing an answer token. Availability is different from contribution strength: the following concepts show how the strengths are calculated.</p>`;
@@ -73,12 +73,11 @@ function renderAll() {
     });
     root.querySelector('[data-reset]')?.addEventListener('click', () => { state.rows = representations.map(row => [...row]);save();renderAll(); });
     if (stage === 2) {
-      const detail = document.createElement('details'), summary = document.createElement('summary');
-      summary.textContent = 'Numeric example · first layer · one head';detail.open = !!numericOpen;detail.append(summary, ...root.childNodes);
-      const experiment=detail.querySelector('.course-detail');
-      const calculation=document.createElement('div');detail.replaceChildren(summary,calculation);if(experiment)detail.append(experiment);
-      mountLearningVisual(calculation,'projections',{rows:state.rows,onPosition:position=>{state.position=position;save();}});
-      const diagram = document.createElement('div');root.replaceChildren(diagram, detail);mountVectorRoutes(diagram, i);
+      const experiment=root.querySelector('.course-detail');
+      if(experiment)experiment.open=!!numericOpen;
+      const diagram=document.createElement('div');root.replaceChildren(diagram);
+      if(experiment)root.append(experiment);
+      mountVectorRoutes(diagram, i);
     } else if(stage>=3&&stage<=7){
       mountLearningVisual(root,stage===7?'values':'scores',{stage:stage===5?4:[4,6].includes(stage)?3:0,rows:state.rows,onPosition:position=>{state.position=position;save();}});
     }

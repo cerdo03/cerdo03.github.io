@@ -246,3 +246,11 @@
 @media (prefers-reduced-motion: reduce) {
   .llm-course .teaching-visual.is-playing .route-edge.is-active { animation: none; stroke-dasharray: none; }
 }
+
+.llm-course .route-map summary { padding-block: 10px; cursor: pointer; color: var(--muted); }
+.llm-course .vector-routes .route-map svg { max-width: 800px; }
+.llm-course .route-operation { margin-block: 16px; max-width: 80ch; }
+.llm-course .route-operation p { margin-block: 8px; }
+.llm-course .route-formula { font-family: var(--body-font); font-size: clamp(16px, 1.3vw, 22px); overflow-wrap: anywhere; }
+.llm-course .route-inspection { display: flex; flex-wrap: wrap; gap: 16px; margin-block: 16px; }
+.llm-course .route-inspection label { flex: 1; min-width: 150px; }

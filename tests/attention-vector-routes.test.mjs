@@ -26,3 +26,20 @@ test('network connections cross adjacent layers and never read a later token',as
  assert.ok(edges.every(edge=>edge.toLayer===edge.fromLayer+1&&edge.fromPosition<=edge.toPosition));
  assert.deepEqual(edges.filter(edge=>edge.toLayer===2&&edge.toPosition===1).map(edge=>edge.fromPosition),[0,1]);
 });
+test('operation stepping separates projection products, sums, scaling and normalization',async()=>{
+ const {routeOperation}=await import('../labs/attention/vector-routes.js');
+ assert.equal(typeof routeOperation,'function');
+ const operations=Array.from({length:12},(_,i)=>routeOperation(i));
+ assert.deepEqual(operations.map(o=>o.phase),[0,1,1,1,2,2,2,3,3,4,4,4]);
+ assert.match(operations[1].formula,/×/);
+ assert.match(operations[2].formula,/×/);
+ assert.match(operations[3].formula,/Σ/);
+ assert.match(operations[4].formula,/Σ/);
+ assert.match(operations[5].formula,/√/);
+ assert.match(operations[6].formula,/exp/);
+ assert.match(operations[7].formula,/×/);
+ assert.match(operations[8].formula,/Σ/);
+ assert.match(operations[9].why,/No addition/);
+ assert.ok(operations.every(o=>o.title&&o.why&&o.formula));
+ assert.throws(()=>routeOperation(12),RangeError);
+});
