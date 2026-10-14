@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Understand source control at scale through a small shop repository, visual walkthroughs, and interactive cache experiments. Inspired by Anthropic’s Scion architecture.">
+  <title>Source control, rethought — a visual guide</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#lesson">Skip to lesson</a>
+  <header class="topbar"><a href="../../">surya / journal</a><nav aria-label="Appearance"></nav></header>
+  <div class="layout">
+    <aside>
+      <a class="course-name" href="#repo">Source control, <br>rethought.</a>
+      <p class="small">A visual companion to Scion</p>
+      <details id="contents"><summary>Learning path <span id="position"></span></summary><nav id="path" aria-label="Concepts"></nav></details>
+      <p class="side-note">One small shop repo.<br>One idea at a time.</p>
+      <a class="source-link" href="https://www.anthropic.com/engineering/redesigning-source-control">Original article ↗</a>
+    </aside>
+    <main id="lesson" tabindex="-1">
+      <p class="eyebrow" id="chapter"></p>
+      <h1 id="title">A test needs code to run.</h1>
+      <p class="intro" id="intro"></p>
+      <section class="stage" aria-labelledby="scene-title">
+        <div class="stage-header"><span class="eyebrow">Our shop repo · teaching example</span><span id="frame-count" class="small"></span></div>
+        <h2 id="scene-title">Meet our shop repository</h2>
+        <div id="diagram"></div>
+        <p id="caption" class="caption" aria-live="polite"></p>
+        <div class="scene-controls"><button id="back-frame" type="button">← Back a step</button><button id="next-frame" type="button" class="primary">See what happens →</button></div>
+      </section>
+      <div id="experiment"></div>
+      <p class="takeaway" id="takeaway"></p>
+      <details class="depth"><summary id="depth-title"></summary><div id="depth-body"></div></details>
+      <p id="source-note" class="small source-note"></p>
+      <nav class="lesson-controls" aria-label="Lesson navigation"><button id="previous" type="button">← Previous idea</button><button id="next" type="button" class="primary">Next idea →</button></nav>
+      <footer>Independent learning companion. Diagrams are simplified teaching models; no performance measurements. Your place is saved on this browser.</footer>
+    </main>
+  </div>
+  <noscript><p>This guide needs JavaScript for its diagrams. <a href="https://www.anthropic.com/engineering/redesigning-source-control">Read the source article.</a></p></noscript>
+</body>
+</html>
