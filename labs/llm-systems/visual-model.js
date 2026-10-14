@@ -51,3 +51,5 @@ export function dependencyState(change=2) {
  let match=0;while(match<a.length&&a[match]===b[match])match++;
  return {a,b,match,reused:b.map((_,i)=>i<match),change};
 }
+// The reference separates input, Q and K/V; the main diagram groups projections.
+export function decodeReferenceStage(stage){return [0,2,3,4,5,6][stage];}

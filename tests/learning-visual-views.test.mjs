@@ -24,3 +24,8 @@ test('tiny positive shares stay visibly different from causal-mask zeros',()=>{
  const shared=visualView('sharing',{...base,kvHeads:1,head:3},[[4,0],[0,1],[4,4]]);
  assert.match(shared.caption,/<0\.001/);
 });
+test('projection entries are labelled as learned W matrices, separate from output vectors',()=>{
+ const view=visualView('projections',{...base,role:'K'});
+ assert.match(view.graph,/data-symbol="W_K"/);
+ assert.match(view.graph,/data-symbol="K"/);
+});

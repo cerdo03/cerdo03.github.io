@@ -20,7 +20,7 @@ function arithmetic(type,s,rows){
   for(let i=0;i<2;i++){
    const y=45+i*110;
    graph+=node(15,y,150,`x component ${i+1}`,[number(a.x[i])],s.stage===0);
-   graph+=node(225,y,180,`${role} matrix entry`,[`row ${i+1}, column ${component+1}`,number(matrix[i][component])],s.stage===1);
+   graph+=node(225,y,180,`W${role} matrix entry`,[`row ${i+1}, column ${component+1}`,number(matrix[i][component])],s.stage===1);
    graph+=edge(165,y+40,225,y+40,s.stage>=1,'×');
    graph+=node(470,y,160,'Product',s.stage>=1?[`${number(a.x[i])} × ${number(matrix[i][component])}`,number(calc.terms[i])]:['Pending'],s.stage===1);
    graph+=edge(405,y+40,470,y+40,s.stage>=1);
@@ -94,7 +94,7 @@ function request(s,rows,options){
  if(s.stage>=3)graph+=`<path class="route-edge ${s.stage===5?'is-active':''}" d="M 885 ${resultY+35} H 895 V ${bottom-15} H 210 V ${bottom}"/><path class="visual-arrow ${s.stage===5?'is-active':''}" transform="translate(210 ${bottom}) rotate(90)" d="M -6 -4 L 0 0 L -6 4"/>`;
 
  const titles=['New input','Calculate Q/K/V','Read keys and score','Mix values','Store new K/V','Choose next token'];
- const controls=select('pass','Pass',Array.from({length:(options.answer||['blue','today','.']).length},(_,p)=>[p,p===0?'Prefill':`Decode ${p}`]),s.pass)+select('query',s.pass===0?'Inspect prompt query':'Current query',f.input.map((t,i)=>[i,t]),Math.min(s.query,f.input.length-1),s.pass!==0);
+ const controls=select('pass','Pass',Array.from({length:(options.answer||['blue','today','.']).length},(_,p)=>[p,p===0?'Prefill':`Decode ${p}`]).filter(([p])=>p>=(options.minPass||0)),s.pass)+select('query',s.pass===0?'Inspect prompt query':'Current query',f.input.map((t,i)=>[i,t]),Math.min(s.query,f.input.length-1),s.pass!==0);
  const captions=[s.pass===0?'All prompt positions are supplied together. Select a query to inspect its allowed keys.':`“${f.input[0]}” was chosen in the preceding pass. It now enters the model; earlier positions supply cached K/V.`,
  'Only the new positions need projections. Current Q is separate from K/V; neither new K nor V is calculated from the old cache.',
  'The query reads earlier keys and its own new key. Prefill uses a causal mask; later prompt positions are excluded.',
@@ -220,6 +220,7 @@ export function mountLearningVisual(root,type,options={}){
    const choose=()=>{stop();const [field,value]=target.dataset.pick.split(':');s[field]=Number(value);render(`[data-pick="${target.dataset.pick}"]`);};
    target.onclick=choose;target.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose();}};
   });
+  options.onFrame?.({pass:s.pass,stage:s.stage});
   if(focus){const target=root.querySelector(focus);(target&&!target.disabled?target:root.querySelector('[data-command=back]:not(:disabled),[data-command=reset]'))?.focus({preventScroll:true});}
  }
  function storage(event){if(event.key==='inference-course-v4'&&root.isConnected){stop();render();}}

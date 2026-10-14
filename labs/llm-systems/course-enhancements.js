@@ -22,8 +22,11 @@ export function enhanceCourse(doc){
    const detail=doc.createElement('details');detail.className='course-detail';
    const summary=doc.createElement('summary');summary.textContent='Detailed numeric trace and counters';
    existing.before(detail);detail.append(summary,existing);
+   existing.querySelector('.lab-controls').hidden=true;
+   existing.querySelector('.lab-guide').hidden=true;
+   existing.querySelector('.lab-header h3').textContent='Expanded numeric state';
    const root=doc.createElement('div');root.className='lab';detail.before(root);
-   mountLearningVisual(root,'request',{pass:1,prompt:['The','sky','is','blue'],answer:['and','the','sun','shines','.']});
+   mountLearningVisual(root,'request',{pass:1,minPass:1,prompt:['The','sky','is','blue'],answer:['and','the','sun','shines','.'],onFrame:frame=>doc.dispatchEvent(new CustomEvent('course:decode-frame',{detail:frame}))});
   }
  }
 }

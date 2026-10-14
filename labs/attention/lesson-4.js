@@ -1,3 +1,4 @@
+import {decodeReferenceStage} from '../llm-systems/visual-model.js';
 // Lesson 2.4: KV-cache internals.
 // Pure view models (exported, testable in Node) + DOM mounting guarded by `typeof document`.
 // Widgets: 2.4.2 hierarchy explorer, 2.4.3 static prefill view, 2.4.4 decode step tracer
@@ -356,6 +357,13 @@ function mountDecode(doc, onChange) {
     if (stage === 6) onChange?.(preview);
   };
   resetBtn.onclick = () => { sim.reset();snap = sim.prefill();preview = null;stage = -1;render();onChange?.(snap); };
+  doc.addEventListener('course:decode-frame', event => {
+    const frame=event.detail;if(frame.pass<1)return;
+    sim.reset();snap=sim.prefill();
+    for(let pass=1;pass<frame.pass;pass++)snap=sim.step();
+    preview=sim.step();stage=decodeReferenceStage(frame.stage);
+    render();onChange?.(stage>=5?preview:snap);
+  });
   doc.defaultView.addEventListener('storage', event => { if (event.key !== 'inference-course-v4') return;const next = sharedEmbeddings();if (JSON.stringify(next) === JSON.stringify(rows)) return;rows = next;sim = createKvSim({embeddings: rows});snap = sim.prefill();preview = null;stage = -1;mountPrefill(doc);render();out.textContent = 'Starting embeddings changed. Earlier K/V were recomputed with prefill.'; });
   render();
 }

@@ -41,3 +41,7 @@ test('changing an earlier token invalidates identical suffix tokens, appending p
  assert.deepEqual(append.reused,[true,true,true,true,false]);
  assert.deepEqual(dependencyState(3).reused,[true,true,true,false]);
 });
+test('expanded decode operations follow the six graphical phases',async()=>{
+ const model=await import('../labs/llm-systems/visual-model.js');
+ assert.deepEqual([0,1,2,3,4,5].map(s=>model.decodeReferenceStage?.(s)),[0,2,3,4,5,6]);
+});
