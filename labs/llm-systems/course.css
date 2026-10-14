@@ -1,3 +1,5 @@
+.course-pending body { visibility: hidden; }
+
 /* Shared layout for the LLM Systems collection. Topic diagrams retain their local layouts. */
 .llm-course {
   margin: 0;
