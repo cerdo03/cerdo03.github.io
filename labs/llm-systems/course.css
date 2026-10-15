@@ -262,7 +262,7 @@
 .llm-course .studio-board { position: relative; display: flex; flex-direction: column; gap: 32px; margin: 20px 0; }
 .llm-course .studio-input, .llm-course .studio-result { align-self: center; position: relative; z-index: 1; padding: 12px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; text-align: center; }
 .llm-course .studio-lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.llm-course .studio-lane { position: relative; z-index: 1; padding: 18px 12px; background: var(--card); border-radius: 7px; border-top: 3px solid var(--role-color, var(--accent)); text-align: center; min-width: 0; }
+.llm-course .studio-lane { position: relative; z-index: 1; padding: 18px 12px; background: var(--card); border: 1px solid var(--line); border-radius: 7px; border-top: 3px solid var(--role-color, var(--accent)); text-align: center; min-width: 0; }
 .llm-course [data-role="Q"] { --role-color: var(--llm-query); }
 .llm-course [data-role="K"] { --role-color: var(--llm-key); }
 .llm-course [data-role="V"] { --role-color: var(--llm-value); }
@@ -298,7 +298,7 @@
 .llm-course .vector-routes.is-playing .route-edge.is-active { animation: none; stroke-dasharray: none; }
 @media (max-width: 640px) {
   .llm-course .studio-lanes { grid-template-columns: 1fr; gap: 16px; }
-  .llm-course .studio-projections .studio-lane { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 12px; }
+  .llm-course .studio-projections .studio-lane { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); align-items: center; gap: 12px; }
   .llm-course .studio-matrix-zone { margin-bottom: 0; }
   .llm-course .studio-links { display: none; }
   .llm-course .studio-vector button { padding-inline: 8px; }
@@ -320,3 +320,10 @@
 .llm-course .studio-navigation [data-studio-all] { margin-left: auto; }
 .llm-course .studio-mask { margin-top: 8px; color: var(--muted); font-size: 13px; }
 .llm-course [data-value-source] { margin-bottom: 24px; }
+
+/* External connections stop at card edges; internal links use the matrix/output gap. */
+.llm-course .studio-projections .studio-matrix-zone { margin-bottom: 0; }
+.llm-course .studio-projections [data-output] { margin-top: 30px; }
+@media (max-width: 640px) {
+  .llm-course .studio-projections [data-output] { margin-top: 0; }
+}

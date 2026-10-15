@@ -53,6 +53,12 @@ function detail(m){
  if(m.type==='scores')terms+=`<span data-reveal="scale" data-step="scale">${n(m.total)} ÷ √2 ≈ ${n(m.total/Math.sqrt(2))}</span><span data-reveal="mask" data-step="mask">${m.key>m.position?'masked → −∞':'Allowed position'}</span><span data-reveal="weights" data-step="weights">share ≈ ${esc(share(m.weights[m.key]))}</span>`;
  return `<div class="studio-detail" data-reveal="term:0"><div class="studio-detail-head"><strong>${esc(title)}</strong></div><div class="studio-calculation">${terms}</div></div>`;
 }
+export function studioConnector(source,target,origin={left:0,top:0}){
+ const start=[source.left+source.width/2-origin.left,source.bottom-origin.top];
+ const end=[target.left+target.width/2-origin.left,target.top-origin.top];
+ const middle=(start[1]+end[1])/2,controls=[[start[0],middle],[end[0],middle]];
+ return {start,end,controls,path:`M${start[0]},${start[1]} C${controls[0].join(',')} ${controls[1].join(',')} ${end.join(',')}`};
+}
 export function mountStudio(root,type,options={}){
  const win=root.ownerDocument.defaultView;
  let state={position:options.position??2,role:options.role||'V',component:options.component??0,key:options.key??options.position??2},phase=options.phase||'input',model,disposed=false,drawKey='',busy=false;
@@ -72,11 +78,10 @@ export function mountStudio(root,type,options={}){
   svg.querySelectorAll('path').forEach(path=>path.getAnimations().forEach(animation=>animation.cancel()));svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${box.width} ${box.height}`);
   if(box.width<600)return;
   const visible=studioVisibility(type,phase);
-  const point=(el,bottom)=>{const r=el.getBoundingClientRect();return [r.left+r.width/2-box.left,(bottom?r.bottom:r.top)-box.top];};
   const connect=(from,to,gate,active,role='')=>{
    if(!visible.includes(gate))return;
-   const a=point(from,true),b=point(to,false),middle=(a[1]+b[1])/2;
-   const path=root.ownerDocument.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('class','route-edge');path.setAttribute('d',`M${a[0]},${a[1]} C${a[0]},${middle} ${b[0]},${middle} ${b[0]},${b[1]}`);
+   const curve=studioConnector(from.getBoundingClientRect(),to.getBoundingClientRect(),box);
+   const path=root.ownerDocument.createElementNS('http://www.w3.org/2000/svg','path');path.setAttribute('class','route-edge');path.setAttribute('d',curve.path);
    // A newly introduced connection grows into place; no completed base line flashes underneath.
    const newly=animate&&phase===gate;
    if(!newly)svg.append(path);
@@ -84,7 +89,7 @@ export function mountStudio(root,type,options={}){
     if(animate&&!reduced()){const length=overlay.getTotalLength();overlay.style.strokeDasharray=String(length);overlay.animate([{strokeDashoffset:length},{strokeDashoffset:0}],{duration:650,easing:'cubic-bezier(.4,0,.2,1)',fill:'both'});}
    }
   };
-  if(type==='projections')root.querySelectorAll('.studio-lane').forEach(lane=>{const role=lane.dataset.role;connect(root.querySelector('[data-source]'),lane.querySelector('[data-matrix]'),'matrices',role===state.role&&phase.startsWith('term:'),role);connect(lane.querySelector('[data-matrix]'),lane.querySelector('[data-output]'),'outputs',phase==='outputs',role);});
+  if(type==='projections')root.querySelectorAll('.studio-lane').forEach(lane=>{const role=lane.dataset.role;connect(root.querySelector('[data-source]'),lane,'matrices',role===state.role&&phase.startsWith('term:'),role);connect(lane.querySelector('[data-matrix]'),lane.querySelector('[data-output]'),'outputs',phase==='outputs',role);});
   if(type==='scores'){root.querySelectorAll('[data-score]').forEach(lane=>connect(lane,root.querySelector('[data-normalizer]'),'normalize',phase==='normalize','K'));root.querySelectorAll('[data-weight]').forEach(weight=>connect(root.querySelector('[data-normalizer]'),weight,'weights',phase==='weights','K'));}
   if(type==='values')root.querySelectorAll('[data-value]').forEach(lane=>{connect(lane.querySelector('[data-value-source]'),lane.querySelector('[data-contribution]'),`term:${lane.dataset.index}`,phase===`term:${lane.dataset.index}`,'V');connect(lane.querySelector('[data-contribution]'),root.querySelector('[data-result]'),'sum',phase==='sum','V');});
  }

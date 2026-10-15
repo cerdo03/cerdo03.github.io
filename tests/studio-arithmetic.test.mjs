@@ -54,3 +54,17 @@ test('guided projection and value diagrams keep future whole results concealed',
  assert.ok(!studioVisibility('values','term:2').includes('sum'));
  assert.ok(studioVisibility('values','sum').includes('sum'));
 });
+test('connector curves stay in the gap between source and destination card edges',async()=>{
+ const {studioConnector}=await import(moduleURL);
+ for(const width of [900,1920,3000]){
+  const origin={left:40,top:80};
+  const source={left:width/2-60,top:100,width:120,bottom:210};
+  for(const left of [50,width/2-100,width-250]){
+   const target={left,top:250,width:200,bottom:450};
+   const {start,end,controls}=studioConnector(source,target,origin);
+   assert.deepEqual(start,[width/2-origin.left,source.bottom-origin.top]);
+   assert.deepEqual(end,[left+100-origin.left,target.top-origin.top]);
+   for(const point of controls){assert.ok(point[1]>=start[1]);assert.ok(point[1]<=end[1]);}
+  }
+ }
+});
