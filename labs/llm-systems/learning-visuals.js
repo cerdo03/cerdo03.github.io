@@ -1,3 +1,4 @@
+import {mountStudio} from './studio-arithmetic.js';
 import { attentionState, promptTokens, representations } from '../inference/guide-model.js';
 import { projectionTrace, valueTrace, requestFrame, sharingState, predictionState, dependencyState } from './visual-model.js';
 const number=x=>Number.isFinite(x)?Number(x.toFixed(3)).toString():'−∞';
@@ -6,7 +7,7 @@ const shares=row=>`[${row.map(share).join(', ')}]`;
 const vector=row=>`[${row.map(number).join(', ')}]`;
 const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const symbols=text=>escape(text).replace(/\b(WQ|WK|WV|WO|Q|K|V|x)\b/g,key=>`<tspan class="sym" data-symbol="${key.length===2?`W_${key[1]}`:key}" aria-describedby="sym-${key.length===2?`W_${key[1]}`:key}">${key}</tspan>`);
-const node=(x,y,w,label,lines=[],active=false,action='')=>`<g class="route-node ${active?'is-active':''}" ${action?`role="button" tabindex="0" aria-pressed="${active}" data-pick="${escape(action)}" aria-label="${escape(action.startsWith('key:')?`Inspect score for ${promptTokens[Number(action.split(':')[1])]}`:label)}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${45+lines.length*21}" rx="7"/><text x="${x+12}" y="${y+25}">${symbols(label)}</text>${lines.map((line,i)=>`<text class="visual-small" x="${x+12}" y="${y+49+i*21}">${symbols(line)}</text>`).join('')}</g>`;
+const node=(x,y,w,label,lines=[],active=false,action='')=>`<g class="route-node ${active?'is-active':''}" ${/^(Q|K|V)(?=[ \[:=·]|$)/.test(label)?`data-role="${label[0]}"`:''} ${action?`role="button" tabindex="0" aria-pressed="${active}" data-pick="${escape(action)}" aria-label="${escape(action.startsWith('key:')?`Inspect score for ${promptTokens[Number(action.split(':')[1])]}`:label)}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${45+lines.length*21}" rx="7"/><text x="${x+12}" y="${y+25}">${symbols(label)}</text>${lines.map((line,i)=>`<text class="visual-small" x="${x+12}" y="${y+49+i*21}">${symbols(line)}</text>`).join('')}</g>`;
 const edge=(x,y,toX,toY,active=false,label='')=>`<path class="route-edge ${active?'is-active':''}" d="M ${x} ${y} C ${(x+toX)/2} ${y}, ${(x+toX)/2} ${toY}, ${toX} ${toY}"/><path class="visual-arrow ${active?'is-active':''}" transform="translate(${toX} ${toY}) rotate(${toX===x?toY>=y?90:-90:toX>x?0:180})" d="M -6 -4 L 0 0 L -6 4"/>${label?`<text class="route-edge-label" x="${(x+toX)/2-14}" y="${(y+toY)/2-8}">${symbols(label)}</text>`:''}`;
 const svg=(body,height,label)=>`<div class="route-canvas" tabindex="0" role="region" aria-label="${escape(label)}; scroll horizontally on narrow screens"><svg viewBox="0 0 900 ${height}" role="group" aria-label="${escape(label)}">${body}</svg></div>`;
 const select=(key,label,items,value,disabled=false)=>`<label>${label}<select data-field="${key}" ${disabled?'disabled':''}>${items.map(([v,t])=>`<option value="${v}" ${v===value?'selected':''}>${escape(t)}</option>`).join('')}</select></label>`;
@@ -226,11 +227,19 @@ export function visualView(type,s,rows=representations,options={}){
  return dependencies(s,type);
 }
 const owners=new WeakMap();
-export function disposeVisual(root){owners.get(root)?.();}
+export function disposeVisual(root){const cleanup=owners.get(root);owners.delete(root);cleanup?.();}
+export function ownVisual(root,cleanup){owners.set(root,cleanup);}
 export function sharedRows(){try{const rows=JSON.parse(localStorage.getItem('inference-course-v4'))?.embeddings;if(rows?.length===3&&rows.every(r=>r?.length===2&&r.every(x=>Number.isFinite(x)&&Math.abs(x)<=4)))return rows;}catch{/* Optional storage. */}return representations;}
 export function mountLearningVisual(root,type,options={}){
  disposeVisual(root);
  let position=2;try{position=JSON.parse(localStorage.getItem('inference-course-v4'))?.attention?.position??2;}catch{/* Optional. */}
+ if(['projections','scores','values'].includes(type)){
+  const cleanup=mountStudio(root,type,{...options,position, getRows:()=>options.rows||sharedRows(),onPosition:value=>{
+   options.onPosition?.(value);
+   try{const saved=JSON.parse(localStorage.getItem('inference-course-v4'))||{};saved.attention={position:value};localStorage.setItem('inference-course-v4',JSON.stringify(saved));}catch{/* Optional storage. */}
+  }});
+  owners.set(root,cleanup);return cleanup;
+ }
  let s={stage:options.stage??0,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:options.pass??0,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,inspect:false,change:type==='validity'?-1:2};
  let timer=null,disposed=false;
  const stop=()=>{if(timer)clearInterval(timer);timer=null;};

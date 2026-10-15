@@ -112,3 +112,60 @@ button.theme-toggle {
 button.theme-toggle:hover {
   border-color: var(--accent);
 }
+
+/* Owner-approved Computation studio palette for the LLM collection. */
+:root[data-theme="paper"] .llm-course {
+  --paper: #f3f6fb;
+  --ink: #1d2b43;
+  --muted: #526279;
+  --line: #ced8e8;
+  --card: #ffffff;
+  --surface-alt: #e9eef7;
+  --accent: #315fbe;
+  --accent-hover: #23498f;
+  --on-accent: #ffffff;
+  --accent-soft: #e3ebfc;
+  --success: #087a73;
+  --success-soft: #dcf1eb;
+  --danger-soft: #f7e7e9;
+  --diagram: #1d2b43;
+  --diagram-surface: #e9eef7;
+  --diagram-ink: #1d2b43;
+  --diagram-muted: #526279;
+  --llm-query: #315fbe;
+  --llm-key: #7852ac;
+  --llm-value: #087a73;
+}
+
+:root[data-theme="midnight"] .llm-course {
+  --paper: #141c2a;
+  --ink: #edf3ff;
+  --muted: #acbbd3;
+  --line: #35435b;
+  --card: #1d293b;
+  --surface-alt: #243249;
+  --accent: #8cafff;
+  --accent-hover: #b2c9ff;
+  --on-accent: #141c2a;
+  --accent-soft: #273b60;
+  --success: #79d2c2;
+  --success-soft: #1e3d3b;
+  --danger-soft: #442c3a;
+  --diagram: #141c2a;
+  --diagram-surface: #243249;
+  --diagram-ink: #edf3ff;
+  --diagram-muted: #acbbd3;
+  --llm-query: #8cafff;
+  --llm-key: #c4a7ef;
+  --llm-value: #79d2c2;
+}
+
+.llm-course {
+  --heading-font: var(--body-font);
+}
+
+:root[data-theme="contrast"] .llm-course {
+  --llm-query: var(--accent);
+  --llm-key: var(--accent);
+  --llm-value: var(--accent);
+}

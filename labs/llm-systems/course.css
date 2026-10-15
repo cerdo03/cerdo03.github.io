@@ -229,8 +229,6 @@
 .llm-course .route-stage { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 12px; margin: 20px 0 10px; color: var(--muted); }
 .llm-course .route-stage > span:first-child { color: var(--ink); font-weight: 600; }
 .llm-course .route-legend { font-size: 11px; color: var(--muted); margin-top: 12px; }
-.llm-course .vector-routes.is-playing .route-edge.is-active { stroke-dasharray: 8 6; animation: route-flow 1s linear infinite; }
-@keyframes route-flow { to { stroke-dashoffset: -28; } }
 @media (prefers-reduced-motion: reduce) { .llm-course .vector-routes .route-edge { animation: none !important; } }
 
 .llm-course .teaching-visual .route-toolbar { align-items: end; }
@@ -243,7 +241,6 @@
 .llm-course .visual-arrow.is-active { stroke: var(--accent); }
 .llm-course .visual-caption { min-height: 3em; font-size: 15px; }
 .llm-course .visual-assumptions { font-size: 12px; margin-top: 10px; }
-.llm-course .teaching-visual.is-playing .route-edge.is-active { stroke-dasharray: 8 6; animation: route-flow 1s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .llm-course .teaching-visual.is-playing .route-edge.is-active { animation: none; stroke-dasharray: none; }
 }
@@ -255,3 +252,61 @@
 .llm-course .route-formula { font-family: var(--body-font); font-size: clamp(16px, 1.3vw, 22px); overflow-wrap: anywhere; }
 .llm-course .route-inspection { display: flex; flex-wrap: wrap; gap: 16px; margin-block: 16px; }
 .llm-course .route-inspection label { flex: 1; min-width: 150px; }
+
+/* Computation studio: one collection-wide reading and calculation surface. */
+.llm-course h1, .llm-course main > section > h2 { font-size: clamp(26px, 3vw, 36px); font-weight: 500; letter-spacing: -0.025em; }
+.llm-course .studio-arithmetic, .llm-course #scene.studio-arithmetic { background: transparent; border: 0; padding: 0; }
+.llm-course .studio-arithmetic strong { font-weight: 500; }
+.llm-course .studio-arithmetic .route-toolbar { background: var(--paper); }
+.llm-course .studio-equation { display: block; margin: 16px 0 20px; padding: 12px 0; border-block: 1px solid var(--line); overflow-wrap: anywhere; font-size: 15px; }
+.llm-course .studio-board { position: relative; display: flex; flex-direction: column; gap: 32px; margin: 20px 0; }
+.llm-course .studio-input, .llm-course .studio-result { align-self: center; position: relative; z-index: 1; padding: 12px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 8px; text-align: center; }
+.llm-course .studio-lanes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.llm-course .studio-lane { position: relative; z-index: 1; padding: 18px 12px; background: var(--card); border-radius: 7px; border-top: 3px solid var(--role-color, var(--accent)); text-align: center; min-width: 0; }
+.llm-course [data-role="Q"] { --role-color: var(--llm-query); }
+.llm-course [data-role="K"] { --role-color: var(--llm-key); }
+.llm-course [data-role="V"] { --role-color: var(--llm-value); }
+.llm-course .studio-matrix-zone { margin: 0 auto 30px; width: max-content; max-width: 100%; }
+.llm-course .studio-matrix { display: grid; grid-template-columns: repeat(2, 40px); gap: 4px; border-inline: 2px solid var(--muted); border-radius: 5px; padding: 3px 8px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.llm-course .studio-matrix span { padding: 6px; border-radius: 3px; transition: background-color 240ms ease; }
+.llm-course .studio-column { background: color-mix(in srgb, var(--role-color) 9%, var(--card)); }
+.llm-course .studio-label { display: block; margin-bottom: 5px; font-size: 13px; color: var(--muted); }
+.llm-course .studio-vector { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+.llm-course .studio-vector button, .llm-course .studio-number { display: inline-block; min-width: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 5px; background: var(--card); color: var(--ink); box-sizing: border-box; font-size: 16px; font-variant-numeric: tabular-nums; transition: background-color 240ms ease; }
+.llm-course .studio-vector button { min-height: 44px; }
+.llm-course .studio-arithmetic [aria-pressed="true"] { color: var(--ink); background: var(--card); border-color: var(--role-color, var(--accent)); box-shadow: inset 0 -3px 0 var(--role-color, var(--accent)); }
+.llm-course .studio-full-vector { margin: 8px 0; font-size: 16px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.llm-course .studio-output { position: relative; padding-top: 8px; }
+.llm-course .studio-score, .llm-course .studio-product { margin-top: 12px; font-variant-numeric: tabular-nums; }
+.llm-course .studio-normalizer { z-index: 1; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 14px 20px; text-align: center; overflow-wrap: anywhere; }
+.llm-course .studio-normalizer div { font-variant-numeric: tabular-nums; }
+.llm-course .studio-weights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.llm-course .studio-weights > div { z-index: 1; background: var(--card); padding: 12px; text-align: center; border-radius: 6px; }
+.llm-course .studio-weights span { display: block; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.llm-course .studio-links { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; overflow: visible; }
+.llm-course .studio-links .route-edge { stroke-width: 1.5px; }
+.llm-course .studio-links .studio-active-link { stroke: var(--role-color, var(--accent)); stroke-width: 2px; }
+.llm-course .studio-detail { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 24px; }
+.llm-course .studio-detail-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.llm-course .studio-detail-head button { min-width: 190px; }
+.llm-course .studio-calculation { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 16px 0; font-size: 16px; font-variant-numeric: tabular-nums; }
+.llm-course .studio-calculation span { padding: 4px 6px; border-radius: 4px; transition: background-color 240ms ease; overflow-wrap: anywhere; }
+.llm-course .studio-stage { min-height: 26px; margin: 0; font-size: 14px; color: var(--muted); }
+.llm-course .studio-arithmetic .is-current { background: color-mix(in srgb, var(--role-color, var(--accent)) 18%, var(--card)); }
+.llm-course .route-node[data-role] rect { fill: color-mix(in srgb, var(--role-color) 8%, var(--card)); }
+.llm-course .route-node[data-role].is-active rect { stroke: var(--role-color); }
+.llm-course .vector-routes.is-playing .route-edge.is-active { animation: none; stroke-dasharray: none; }
+@media (max-width: 640px) {
+  .llm-course .studio-lanes { grid-template-columns: 1fr; gap: 16px; }
+  .llm-course .studio-projections .studio-lane { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; gap: 12px; }
+  .llm-course .studio-matrix-zone { margin-bottom: 0; }
+  .llm-course .studio-links { display: none; }
+  .llm-course .studio-vector button { padding-inline: 8px; }
+  .llm-course .studio-matrix { grid-template-columns: repeat(2, 32px); padding-inline: 5px; }
+  .llm-course .studio-detail-head { align-items: stretch; flex-direction: column; }
+  .llm-course .studio-detail-head button { width: 100%; min-width: 0; }
+  .llm-course .studio-stage { min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .llm-course .studio-arithmetic * { transition: none !important; }
+}
