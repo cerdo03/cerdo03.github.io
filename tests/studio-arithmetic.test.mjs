@@ -34,3 +34,23 @@ test('shared visual ownership disposes embedded observers once before reuse',asy
  ownVisual(root,()=>calls++);disposeVisual(root);disposeVisual(root);
  assert.equal(calls,1);
 });
+test('guided scores reveal products, dots, scaling, mask, softmax and shares in order',async()=>{
+ const {studioVisibility}=await import(moduleURL);
+ assert.deepEqual(studioVisibility('scores','input'),['input']);
+ assert.deepEqual(studioVisibility('scores','term:0'),['input','term:0']);
+ assert.ok(!studioVisibility('scores','sum').includes('scale'));
+ assert.ok(!studioVisibility('scores','scale').includes('mask'));
+ assert.ok(!studioVisibility('scores','mask').includes('normalize'));
+ assert.ok(!studioVisibility('scores','normalize').includes('weights'));
+ assert.ok(studioVisibility('scores','weights').includes('weights'));
+ assert.deepEqual(studioVisibility('scores','all'),studioVisibility('scores','weights'));
+});
+test('guided projection and value diagrams keep future whole results concealed',async()=>{
+ const {studioVisibility}=await import(moduleURL);
+ assert.ok(!studioVisibility('projections','input').includes('matrices'));
+ assert.ok(!studioVisibility('projections','sum').includes('outputs'));
+ assert.ok(studioVisibility('projections','outputs').includes('outputs'));
+ assert.ok(!studioVisibility('values','term:0').includes('term:1'));
+ assert.ok(!studioVisibility('values','term:2').includes('sum'));
+ assert.ok(studioVisibility('values','sum').includes('sum'));
+});

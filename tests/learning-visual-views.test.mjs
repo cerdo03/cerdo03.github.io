@@ -71,3 +71,11 @@ test('score overview shows every key and share before optional key inspection',(
  assert.match(detail.graph.replace(/<[^>]+>/g,''),/Q\[1\] at is/);
  assert.match(detail.graph.replace(/<[^>]+>/g,''),/K\[1\] at The/);
 });
+test('step-through diagrams do not expose future computed nodes on their input frame',()=>{
+ const text=(type,state)=>visualView(type,state).graph.replace(/<[^>]+>/g,'');
+ assert.doesNotMatch(text('heads',base),/Combined Q projection|Head 1 Q|Concatenate/);
+ assert.match(text('heads',{...base,stage:1}),/Combined Q projection/);
+ assert.doesNotMatch(text('request',base),/Q pending|Head result|Next output token|Remaining layer/);
+ assert.doesNotMatch(text('prediction',base),/Residual u|Feed-forward \+ residual|Layer 2 input/);
+ assert.match(text('prediction',{...base,stage:1}),/Residual u/);
+});

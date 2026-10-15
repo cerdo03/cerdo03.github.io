@@ -1,4 +1,5 @@
 import {mountStudio} from './studio-arithmetic.js';
+import {flowSnapshot,animateFlow} from './flow-motion.js';
 import { attentionState, promptTokens, representations } from '../inference/guide-model.js';
 import { projectionTrace, valueTrace, requestFrame, sharingState, predictionState, dependencyState } from './visual-model.js';
 const number=x=>Number.isFinite(x)?Number(x.toFixed(3)).toString():'−∞';
@@ -110,13 +111,14 @@ function request(s,rows,options){
  const f=requestFrame(s.pass,s.stage,rows,options.prompt,options.answer),query=f.queries[Math.min(s.query,f.queries.length-1)];
  const all=[...f.old,...f.newRows],height=Math.max(570,375+all.length*96);let graph='';
  graph+=node(10,25,205,s.pass===0?'Prefill input':'Decode input',[f.input.join(' · '),`${f.input.length} new position${f.input.length===1?'':'s'}`],s.stage===0);
- graph+=edge(215,65,275,65,s.stage>=1);
- graph+=node(275,25,235,`x × WQ / WK / WV`,[s.stage>=1?`Q = ${vector(query.q)}`:'Q pending',s.stage>=1?`new K = ${vector(query.k)}`:'new K pending',s.stage>=1?`new V = ${vector(query.v)}`:'new V pending'],s.stage===1);
+ if(s.stage>=1)graph+=edge(215,65,275,65,true);
+ if(s.stage>=1)graph+=node(275,25,235,`x × WQ / WK / WV`,[s.stage>=1?`Q = ${vector(query.q)}`:'Q pending',s.stage>=1?`new K = ${vector(query.k)}`:'new K pending',s.stage>=1?`new V = ${vector(query.v)}`:'new V pending'],s.stage===1);
  graph+=node(630,25,255,'Chosen answer so far',[f.answer.join(' · ')||'None',s.stage===5?`“${f.chosen}” has no K/V yet`:'No new token chosen in this pass'],s.stage===5);
  graph+=`<text class="visual-label" x="18" y="185">Layer 1 · head 1: ${f.cache.length} stored K/V rows</text>`;
  const resultY=205+Math.floor(all.length/2)*96;
  for(let i=0;i<all.length;i++){
   const r=all[i],isNew=i>=f.old.length,y=205+i*96,created=!isNew||s.stage>=1,stored=!isNew||s.stage>=4,allowed=i<=query.position;
+  if(!created)continue;
   graph+=node(15,y,390,`${i+1}: ${r.token} · ${stored?isNew?'new row stored':'cached · unchanged':'fresh from its own x'}`,[created?`K ${vector(r.k)}    V ${vector(r.v)}`:'K/V not calculated yet'],isNew&&s.stage===4);
   if(isNew&&i===query.position&&s.stage>=1)graph+=edge(395,135,405,y+35,s.stage===1||s.stage===4,s.stage>=4?'store K/V':'new K/V');
   if(s.stage>=2&&allowed){
@@ -128,10 +130,10 @@ function request(s,rows,options){
  }
  if(s.stage>=3)graph+=node(760,resultY,125,'Head result',[vector(query.output),'not cached'],s.stage===3);
  const bottom=245+all.length*96;
- graph+=node(15,bottom,390,'Remaining layer → model stack',[s.stage===5?'Output projection, residuals, feed-forward, next layers':'Waiting for the rest of the forward pass',s.stage===5?'Final vector → vocabulary scores':'Head result continues here; cache stays separate'],s.stage===5);
+ if(s.stage===5){graph+=node(15,bottom,390,'Remaining layer → model stack',[s.stage===5?'Output projection, residuals, feed-forward, next layers':'Waiting for the rest of the forward pass',s.stage===5?'Final vector → vocabulary scores':'Head result continues here; cache stays separate'],s.stage===5);
  graph+=edge(405,bottom+40,600,bottom+40,s.stage===5,'select');
- graph+=node(600,bottom,285,'Next output token',[s.stage===5?f.chosen:'Not chosen yet','Selection does not create a cache row'],s.stage===5);
- if(s.stage>=3)graph+=`<path class="route-edge ${s.stage===5?'is-active':''}" d="M 885 ${resultY+35} H 895 V ${bottom-15} H 210 V ${bottom}"/><path class="visual-arrow ${s.stage===5?'is-active':''}" transform="translate(210 ${bottom}) rotate(90)" d="M -6 -4 L 0 0 L -6 4"/>`;
+ graph+=node(600,bottom,285,'Next output token',[s.stage===5?f.chosen:'Not chosen yet','Selection does not create a cache row'],s.stage===5);}
+ if(s.stage===5)graph+=`<path class="route-edge ${s.stage===5?'is-active':''}" d="M 885 ${resultY+35} H 895 V ${bottom-15} H 210 V ${bottom}"/><path class="visual-arrow ${s.stage===5?'is-active':''}" transform="translate(210 ${bottom}) rotate(90)" d="M -6 -4 L 0 0 L -6 4"/>`;
 
  const titles=['New input','Calculate Q/K/V','Read keys and score','Mix values','Store new K/V','Choose next token'];
  const controls=select('pass','Pass',Array.from({length:(options.answer||['blue','today','.']).length},(_,p)=>[p,p===0?'Prefill':`Decode ${p}`]).filter(([p])=>p>=(options.minPass||0)),s.pass)+select('query',s.pass===0?'Inspect prompt query':'Current query',f.input.map((t,i)=>[i,t]),Math.min(s.query,f.input.length-1),s.pass!==0);
@@ -145,9 +147,9 @@ function request(s,rows,options){
 }
 function heads(s){
  const stage=s.stage;let graph=node(15,135,165,'Whole incoming x',['x₁ x₂ x₃ x₄'],stage===0);
- graph+=edge(180,175,235,175,stage>=1);
- graph+=node(235,135,210,'Combined Q projection',['x × WQ: 4 × 4','q₁₁ q₁₂ | q₂₁ q₂₂'],stage===1);
- for(let h=0;h<2;h++){
+ if(stage>=1)graph+=edge(180,175,235,175,true);
+ if(stage>=1)graph+=node(235,135,210,'Combined Q projection',['x × WQ: 4 × 4','q₁₁ q₁₂ | q₂₁ q₂₂'],stage===1);
+ if(stage>=2)for(let h=0;h<2;h++){
   const y=35+h*215;
   graph+=edge(445,175,505,y+45,stage>=2,`columns ${h*2+1}–${h*2+2}`);
   graph+=node(505,y,170,stage>=3?`Head ${h+1} result`:`Head ${h+1} Q`,[stage>=3?h===0?'a₁  a₂':'b₁  b₂':h===0?'q₁₁ q₁₂':'q₂₁ q₂₂',stage>=3?'After its attention':'2 projected components'],stage===2||stage===3);
@@ -173,16 +175,16 @@ function sharing(s,rows){
 function prediction(s,rows){
  const p=predictionState(rows),stage=s.stage,j=s.candidate;let graph='';
  if(stage<=1){
-  for(let l=0;l<2;l++){
+  for(let l=0;l<(stage===0?1:2);l++){
    const a=p.layers[l],y=25+l*175;
    graph+=node(15,y,170,`Layer ${l+1} input x`,[vector(a.incoming[2])],stage===0);
    graph+=edge(185,y+35,235,y+35,true);
    graph+=node(235,y,170,'Attention result',[vector(a.attention[2])],stage===0);
-   graph+=edge(405,y+35,465,y+35,true,'+ x');
+   if(stage>=1){graph+=edge(405,y+35,465,y+35,true,'+ x');
    graph+=node(465,y,170,'Residual u',[vector(a.residual[2])],stage===1);
    graph+=edge(635,y+35,695,y+35,stage>=1);
    graph+=node(695,y,190,'Feed-forward + residual',[vector(a.outgoing[2]),'u + 0.1u'],stage===1);
-   if(l===0)graph+=edge(885,y+35,15,y+210,stage>=1,'next layer');
+   if(l===0)graph+=edge(885,y+35,15,y+210,true,'next layer');}
   }
  }else{
   const calc=projectionTrace(p.final,p.vocabulary,j);
@@ -246,6 +248,7 @@ export function mountLearningVisual(root,type,options={}){
  owners.set(root,()=>{disposed=true;stop();window.removeEventListener('storage',storage);});
  function rows(){return options.rows||sharedRows();}
  function render(focus){
+  const previous=flowSnapshot(root);
   const view=visualView(type,s,rows(),options);
   const scope=['projections','scores','values'].includes(type)?`Prefill · layer 1 · head 1 · ${promptTokens[s.position]}`:type==='sharing'?'Prefill · layer 1 · is':type==='prediction'?'Prefill · is · two-layer numeric toy':type==='heads'?'One position · two-head schematic':type==='request'?`${s.pass===0?'Prefill':`Decode ${s.pass}`} · layer 1 · head 1`:'Compatible requests · token-level reuse';
   root.classList.add('teaching-visual');root.classList.toggle('is-playing',!!timer);
@@ -269,6 +272,7 @@ export function mountLearningVisual(root,type,options={}){
    const choose=()=>{stop();const [field,value,column]=target.dataset.pick.split(':');if(field==='projection'){s.role=value;s.component=Number(column);s.inspect=true;}else{s[field]=Number(value);if(field==='component'||field==='key')s.inspect=true;}render(`[data-pick="${target.dataset.pick}"]`);};
    target.onclick=choose;target.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose();}};
   });
+  animateFlow(root,previous);
   options.onFrame?.({pass:s.pass,stage:s.stage});
   if(focus){const target=root.querySelector(focus);(target&&!target.disabled?target:root.querySelector('[data-command=back]:not(:disabled),[data-command=reset]'))?.focus({preventScroll:true});}
  }

@@ -1,3 +1,4 @@
+import {flowSnapshot,animateFlow} from '../llm-systems/flow-motion.js';
 import {mountStudio} from '../llm-systems/studio-arithmetic.js';
 import { sharedRows,disposeVisual,ownVisual } from '../llm-systems/learning-visuals.js';
 // Structural dependencies, not measured attention weights or numeric embeddings.
@@ -52,12 +53,13 @@ const edge = (x1,y1,x2,y2,active=false,blocked=false,label='') => `<path class="
 const svg = (body,label) => `<div class="route-canvas" tabindex="0" aria-label="${label}; scroll horizontally on narrow screens"><svg viewBox="0 0 960 310" role="group" aria-label="${label}">${body}</svg></div>`;
 export function mountVectorRoutes(root, initialPosition = 2) {
   disposeVisual(root);
-  let layer=1,head=1,position=initialPosition,operation=0,timer=null,component=0,role='V',key=initialPosition,mapOpen=false,studioCleanup=null;
+  let layer=1,head=1,position=initialPosition,operation=0,timer=null,component=0,role='V',key=initialPosition,mapOpen=false,studioCleanup=null,showAll=false;
   const id=++instance, win=root.ownerDocument.defaultView;
   const stop=()=>{if(timer)win.clearInterval(timer);timer=null;};
   ownVisual(root,()=>{stop();studioCleanup?.();});
   const next=()=>{if(operation===11){if(layer===2){stop();return;}layer=2;operation=0;}else operation++;};
   function render(focus) {
+    const previous=flowSnapshot(root);
     studioCleanup?.();studioCleanup=null;
     const data=routeState(layer,head,position), token=tokens[position], op=routeOperation(operation), step=op.phase;
     let whole = [100,370,640,860].map((x,i)=>text(x,24,['EMBEDDINGS','LAYER 1 OUTPUTS','LAYER 2 OUTPUTS','NEXT-TOKEN SCORES'][i],'route-column-label')).join('');
@@ -86,40 +88,43 @@ export function mountVectorRoutes(root, initialPosition = 2) {
     }
     if(step===2) {
       detail=text(100,24,'CURRENT QUERY','route-column-label')+text(390,24,'KEY ROWS','route-column-label')+text(650,24,'SCORES','route-column-label')+text(860,24,'SHARES','route-column-label');
-      for(let i=0;i<3;i++)detail+=edge(158,160,332,ys[i],i<=position,i>position)+edge(448,ys[i],592,ys[i],i<=position,i>position,'dot ÷ √dₖ')+(i<=position?edge(708,ys[i],802,160,true):'');
+      for(let i=0;i<3;i++)detail+=edge(158,160,332,ys[i],i<=position,i>position)+edge(448,ys[i],592,ys[i],i<=position,i>position,operation>=5?'dot ÷ √dₖ':'Σ Qᵢ × Kᵢ')+(i<=position&&operation>=6?edge(708,ys[i],802,160,true):'');
       detail+=node(100,160,'Q',`L${layer} · H${head} · ${token}`,{active:true});
-      for(let i=0;i<3;i++)detail+=node(390,ys[i],`K · ${tokens[i]}`,`L${layer} · H${head}`,{active:i<=position,blocked:i>position})+node(650,ys[i],i>position?'−∞':'score',i>position?'masked':'scaled dot product',{blocked:i>position});
-      detail+=node(860,160,'Softmax','over allowed scores',{active:true});
+      for(let i=0;i<3;i++)detail+=node(390,ys[i],`K · ${tokens[i]}`,`L${layer} · H${head}`,{active:i<=position,blocked:i>position})+node(650,ys[i],i>position&&operation>=5?'−∞':'score',i>position&&operation>=5?'masked':operation>=5?'scaled dot product':'dot product',{blocked:i>position});
+      if(operation>=6)detail+=node(860,160,'Softmax','over allowed scores',{active:true});
     }
     if(step===3) {
       detail=text(100,24,'VALUE ROWS','route-column-label')+text(410,24,'CONTRIBUTIONS','route-column-label')+text(790,24,`HEAD ${head} RESULT`,'route-column-label');
-      for(let i=0;i<3;i++)detail+=edge(158,ys[i],342,ys[i],i<=position,i>position,'× its share')+edge(478,ys[i],734,160,i<=position,i>position);
+      for(let i=0;i<3;i++)detail+=edge(158,ys[i],342,ys[i],i<=position,i>position,'× its share')+(operation>=8?edge(478,ys[i],734,160,i<=position,i>position):'');
       for(let i=0;i<3;i++)detail+=node(100,ys[i],`V · ${tokens[i]}`,`L${layer} · H${head}`,{active:i<=position,blocked:i>position})+node(410,ys[i],i>position?'0':'share × V',tokens[i],{width:136,blocked:i>position});
-      detail+=node(790,160,'Σ vectors',`L${layer} · H${head} · ${token}`,{active:true});
+      if(operation>=8)detail+=node(790,160,'Σ vectors',`L${layer} · H${head} · ${token}`,{active:true});
     }
     if(step===4) {
-      detail=text(90,24,'HEAD RESULTS','route-column-label')+text(900,24,`LAYER ${layer} OUTPUT`,'route-column-label');
-      detail+=edge(148,80,212,160,head===1)+edge(148,240,212,160,head===2)+edge(328,160,362,160,true)+edge(458,160,512,160,true)+edge(608,160,682,160,true)+edge(818,160,852,160,true)+edge(560,70,560,130,true);
-      detail+=node(90,80,'Head 1',token,{active:head===1,position,head:1})+node(90,240,'Head 2',token,{active:head===2,position,head:2})+node(270,160,'Concat','join components')+node(410,160,'× Wₒ','matrix multiply',{width:96})+node(560,160,'+','residual addition',{width:96})+node(560,47,'Incoming x',token)+node(750,160,'FF + residual','same token',{width:136})+node(900,160,'Updated x',tokens.slice(0,position+1).join(' · '),{width:96,active:true});
+      detail=text(90,24,'HEAD RESULTS','route-column-label');
+      detail+=edge(148,80,212,160,head===1)+edge(148,240,212,160,head===2);
+      detail+=node(90,80,'Head 1',token,{active:head===1,position,head:1})+node(90,240,'Head 2',token,{active:head===2,position,head:2})+node(270,160,'Concat','join components',{active:operation===9});
+      if(operation>=10)detail+=edge(328,160,362,160,true)+node(410,160,'× Wₒ','matrix multiply',{width:96,active:operation===10});
+      if(operation>=11)detail+=text(900,24,`LAYER ${layer} OUTPUT`,'route-column-label')+edge(458,160,512,160,true)+edge(608,160,682,160,true)+edge(818,160,852,160,true)+edge(560,70,560,130,true)+node(560,160,'+','residual addition',{width:96})+node(560,47,'Incoming x',token)+node(750,160,'FF + residual','same token',{width:136})+node(900,160,'Updated x',tokens.slice(0,position+1).join(' · '),{width:96,active:true});
     }
     if ((layer!==1 || head!==1) && step===1 && operation>=2) {
       detail = text(150,24,'INPUT × MATRIX COLUMN','route-column-label') + text(470,24,'COMPONENT PRODUCTS','route-column-label') + text(790,24,'ONE OUTPUT COMPONENT','route-column-label');
-      detail += edge(260,100,360,100,true,'×') + edge(260,230,360,230,true,'×') + edge(580,100,700,160,operation===3,'+') + edge(580,230,700,160,operation===3,'+');
+      detail += edge(260,100,360,100,true,'×') + edge(260,230,360,230,true,'×') + (operation===3?edge(580,100,700,160,true,'+') + edge(580,230,700,160,true,'+'):'');
       detail += node(150,100,'x₁ × W₁ⱼ','input 1 · column j',{width:220}) + node(150,230,'xᵢ × Wᵢⱼ','repeat for other inputs i',{width:220});
       detail += node(470,100,'product₁','one multiplication',{width:220,active:operation===2}) + node(470,230,'productᵢ','one per input component',{width:220,active:operation===2});
-      detail += node(790,160,'Σ products','component j of Q/K/V',{width:180,active:operation===3});
+      if(operation===3)detail += node(790,160,'Σ products','component j of Q/K/V',{width:180,active:operation===3});
     }
     const numericType = step===1?'projections':step===2?'scores':step===3?'values':null;
     const numeric = layer===1 && head===1 && numericType;
     const calculation = numeric ? '<div data-studio-slot></div>' : svg(detail,'Selected head data flow');
     root.innerHTML=`<div class="route-toolbar" data-route-instance="${id}"><div class="route-playback"><button type="button" data-route-reset aria-label="Reset diagram">↺</button><button type="button" data-route-back ${operation===0?'disabled':''} aria-label="Previous operation">‹</button><button type="button" data-route-play aria-label="${timer?'Pause':'Play'} diagram" aria-pressed="${!!timer}">${timer?'Ⅱ':'▶'}</button><button type="button" data-route-next ${operation===11&&layer===2?'disabled':''} aria-label="${operation===11&&layer===1?'Follow into Layer 2':'Next operation'}">›</button></div><label>Layer<select data-route="layer">${[1,2].map(l=>`<option ${layer===l?'selected':''}>${l}</option>`).join('')}</select></label><label>Head<select data-route="head">${[1,2].map(h=>`<option ${head===h?'selected':''}>${h}</option>`).join('')}</select></label><label>Token<select data-route="position">${tokens.map((t,i)=>`<option value="${i}" ${position===i?'selected':''}>${t}</option>`).join('')}</select></label></div><details class="route-map" ${mapOpen?'open':''}><summary>Model map · layer ${layer} · ${token}</summary>${svg(whole,'Token vectors across the whole model')}</details><div class="route-stage" role="status"><span>Layer ${layer} · Head ${head} · ${token}</span><span>${operation+1}/12 · ${op.title}</span></div><div class="route-operation">${numeric&&operation===1?'':`<p class="route-formula">${textFormula(op.formula)}</p>`}<p>${op.why}</p></div>${calculation}<div class="route-legend">${numeric?'Invented 2-component example · layer 1, head 1 only · shared starting embeddings. Other heads/layers remain schematic.':'2-layer, 2-head MHA schematic · normalization omitted · lines show dependencies, not measured weights'}</div>`;
     root.classList.toggle('is-playing',!!timer);
-    if(numeric)studioCleanup=mountStudio(root.querySelector('[data-studio-slot]'),numericType,{embedded:true,getRows:sharedRows,position,role,component,key,phase:({1:'overview',2:'products',3:'sum',4:'sum',5:'scale',6:'normalize',7:'products',8:'sum'})[operation],onSelect:state=>{stop();role=state.role;component=state.component;key=state.key;}});
+    if(numeric)studioCleanup=mountStudio(root.querySelector('[data-studio-slot]'),numericType,{embedded:true,getRows:sharedRows,position,role,component,key,phase:showAll?'all':({1:'matrices',2:'term:1',3:'outputs',4:'sum',5:'mask',6:'weights',7:'term:2',8:'sum'})[operation],animate:focus==='[data-route-next]'||!!timer,onOverview:value=>{stop();showAll=value;render();},onSelect:state=>{stop();role=state.role;component=state.component;key=state.key;}});
+    if(!numeric)animateFlow(root,previous);
     root.querySelector('.route-map').ontoggle=event=>{mapOpen=event.target.open;};
     root.querySelectorAll('[data-route]').forEach(select=>select.onchange=()=>{stop();const field=select.dataset.route;if(field==='layer'){layer=Number(select.value);operation=0;}if(field==='head')head=Number(select.value);if(field==='position'){position=Number(select.value);key=position;}render(`[data-route="${field}"]`);});
     root.querySelectorAll('[data-node-position]').forEach(n=>{const choose=()=>{stop();position=Number(n.dataset.nodePosition);key=position;if(n.dataset.nodeLayer){layer=Number(n.dataset.nodeLayer);operation=0;}if(n.dataset.nodeHead)head=Number(n.dataset.nodeHead);render('[data-route="position"]');};n.onclick=e=>{if(!e.target.closest('[data-symbol]'))choose();};n.onkeydown=e=>{if(e.target!==n)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}};});
     root.querySelector('[data-route-back]').onclick=()=>{stop();operation=Math.max(0,operation-1);render('[data-route-back]');};
-    root.querySelector('[data-route-next]').onclick=()=>{stop();next();render('[data-route-next]');};
+    root.querySelector('[data-route-next]').onclick=()=>{stop();showAll=false;next();render('[data-route-next]');};
     root.querySelector('[data-route-reset]').onclick=()=>{stop();layer=1;head=1;position=initialPosition;key=position;component=0;role='V';operation=0;render('[data-route-reset]');};
     root.querySelector('[data-route-play]').onclick=()=>{if(timer)stop();else {if(layer===2&&operation===11){layer=1;operation=0;}timer=win.setInterval(()=>{if(!root.isConnected || !root.getClientRects().length || !root.querySelector(`[data-route-instance="${id}"]`)){stop();return;}next();render();},1800);}render('[data-route-play]');};
     if(focus){const target=root.querySelector(focus);(target&&!target.disabled?target:root.querySelector('[data-route-back]:not(:disabled),[data-route-reset]'))?.focus({preventScroll:true});}

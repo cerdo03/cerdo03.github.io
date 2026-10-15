@@ -310,3 +310,13 @@
 @media (prefers-reduced-motion: reduce) {
   .llm-course .studio-arithmetic * { transition: none !important; }
 }
+
+/* Reveal future calculations without moving already visible values. */
+.llm-course .studio-future { display: none !important; }
+.llm-course .studio-entering { visibility: hidden; opacity: 0; pointer-events: none; }
+.llm-course .studio-calculation { min-height: 36px; }
+.llm-course .studio-navigation { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 16px 8px; }
+.llm-course .studio-navigation button { min-height: 44px; }
+.llm-course .studio-navigation [data-studio-all] { margin-left: auto; }
+.llm-course .studio-mask { margin-top: 8px; color: var(--muted); font-size: 13px; }
+.llm-course [data-value-source] { margin-bottom: 24px; }
