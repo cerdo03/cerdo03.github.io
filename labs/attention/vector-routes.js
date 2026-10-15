@@ -31,8 +31,8 @@ export function routeOperation(index) {
   const [phase,title,formula,why] = operations[index];
   return {phase,title,formula,why};
 }
-const textFormula = formula => formula.replace(/(Wq|Wₒ|Wₖ|Wᵥ|\bQ\b|\bK\b|\bV\b|\bx\b)/g, value => {
-  const key = {Wq:'W_Q',Wₒ:'W_O',Wₖ:'W_K',Wᵥ:'W_V'}[value] || value;
+const textFormula = formula => formula.replace(/(WQ|WK|WV|WO|Wq|Wₒ|Wₖ|Wᵥ|\bQ\b|\bK\b|\bV\b|\bx\b)/g, value => {
+  const key = {WQ:'W_Q',WK:'W_K',WV:'W_V',WO:'W_O',Wq:'W_Q',Wₒ:'W_O',Wₖ:'W_K',Wᵥ:'W_V'}[value] || value;
   return `<span class="sym" data-symbol="${key}" aria-describedby="sym-${key}">${value}</span>`;
 });
 const mounts = new WeakMap();
@@ -40,7 +40,7 @@ let instance = 0;
 const ys = [80,160,240];
 const text = (x,y,label,cls='') => {
   const keys={Q:'Q',K:'K',V:'V',x:'x',Wq:'W_Q','Wₒ':'W_O','Wₖ':'W_K','Wᵥ':'W_V'};
-  const content=label.split(/(Wq|Wₒ|Wₖ|Wᵥ|\bQ\b|\bK\b|\bV\b|\bx\b)/g).map(part=>keys[part]?`<tspan class="sym" data-symbol="${keys[part]}" aria-describedby="sym-${keys[part]}">${part}</tspan>`:part).join('');
+  const content=label.split(/(WQ|WK|WV|WO|Wq|Wₒ|Wₖ|Wᵥ|\bQ\b|\bK\b|\bV\b|\bx\b)/g).map(part=>keys[part]?`<tspan class="sym" data-symbol="${keys[part]}" aria-describedby="sym-${keys[part]}">${part}</tspan>`:part).join('');
   return `<text x="${x}" y="${y}" class="${cls}" text-anchor="middle">${content}</text>`;
 };
 const node = (x,y,label,sub='',options={}) => {
@@ -52,11 +52,11 @@ const edge = (x1,y1,x2,y2,active=false,blocked=false,label='') => `<path class="
 const svg = (body,label) => `<div class="route-canvas" tabindex="0" aria-label="${label}; scroll horizontally on narrow screens"><svg viewBox="0 0 960 310" role="group" aria-label="${label}">${body}</svg></div>`;
 export function mountVectorRoutes(root, initialPosition = 2) {
   mounts.get(root)?.();
-  let layer=1,head=1,position=initialPosition,operation=0,timer=null,component=0,role='Q',key=initialPosition,mapOpen=false;
+  let layer=1,head=1,position=initialPosition,operation=0,timer=null,component=0,role='Q',key=initialPosition,mapOpen=false,inspect=false;
   const id=++instance, win=root.ownerDocument.defaultView;
   const stop=()=>{if(timer)win.clearInterval(timer);timer=null;};
   mounts.set(root,stop);
-  const next=()=>{if(operation===11){if(layer===2){stop();return;}layer=2;operation=0;}else operation++;};
+  const next=()=>{const phase=routeOperation(operation).phase;if(operation===11){if(layer===2){stop();return;}layer=2;operation=0;}else operation++;if(routeOperation(operation).phase!==phase)inspect=false;};
   function render(focus) {
     const data=routeState(layer,head,position), token=tokens[position], op=routeOperation(operation), step=op.phase;
     let whole = [100,370,640,860].map((x,i)=>text(x,24,['EMBEDDINGS','LAYER 1 OUTPUTS','LAYER 2 OUTPUTS','NEXT-TOKEN SCORES'][i],'route-column-label')).join('');
@@ -110,18 +110,24 @@ export function mountVectorRoutes(root, initialPosition = 2) {
     }
     const numericType = step===1?'projections':step===2?'scores':step===3?'values':null;
     const numericStage = [0,0,1,2,2,3,4,1,2][operation];
-    const numeric = layer===1 && head===1 && numericType ? visualView(numericType,{position,component,role,key,stage:numericStage},sharedRows()) : null;
+    const numeric = layer===1 && head===1 && numericType ? visualView(numericType,{position,component,role,key,stage:numericStage,inspect},sharedRows()) : null;
     const controls = numeric ? numeric.controls.replace(/<label>Inspect position[\s\S]*?<\/label>/,'') : '';
-    const calculation = numeric ? `${numeric.graph}<p class="visual-caption">${numeric.caption}</p>` : svg(detail,'Selected head data flow');
-    root.innerHTML=`<div class="route-toolbar" data-route-instance="${id}"><div class="route-playback"><button type="button" data-route-reset aria-label="Reset diagram">↺</button><button type="button" data-route-back ${operation===0?'disabled':''} aria-label="Previous operation">‹</button><button type="button" data-route-play aria-label="${timer?'Pause':'Play'} diagram" aria-pressed="${!!timer}">${timer?'Ⅱ':'▶'}</button><button type="button" data-route-next ${operation===11&&layer===2?'disabled':''} aria-label="${operation===11&&layer===1?'Follow into Layer 2':'Next operation'}">›</button></div><label>Layer<select data-route="layer">${[1,2].map(l=>`<option ${layer===l?'selected':''}>${l}</option>`).join('')}</select></label><label>Head<select data-route="head">${[1,2].map(h=>`<option ${head===h?'selected':''}>${h}</option>`).join('')}</select></label><label>Token<select data-route="position">${tokens.map((t,i)=>`<option value="${i}" ${position===i?'selected':''}>${t}</option>`).join('')}</select></label></div><details class="route-map" ${mapOpen?'open':''}><summary>Model map · layer ${layer} · ${token}</summary>${svg(whole,'Token vectors across the whole model')}</details><div class="route-stage" role="status"><span>Layer ${layer} · Head ${head} · ${token}</span><span>${operation+1}/12 · ${op.title}</span></div><div class="route-operation"><p class="route-formula">${textFormula(op.formula)}</p><p>${op.why}</p></div>${numeric?`<div class="route-inspection">${controls}</div>`:''}${calculation}<div class="route-legend">${numeric?'Invented 2-component example · layer 1, head 1 only · shared starting embeddings. Other heads/layers remain schematic.':'2-layer, 2-head MHA schematic · normalization omitted · lines show dependencies, not measured weights'}</div>`;
+    const calculation = numeric ? `${numeric.equation&&operation!==1?`<p class="route-formula">${textFormula(numeric.equation)}</p>`:''}${numeric.graph}${inspect?'<button type="button" data-route-overview>Close detail</button>':''}<p class="visual-caption">${numeric.caption}</p>` : svg(detail,'Selected head data flow');
+    root.innerHTML=`<div class="route-toolbar" data-route-instance="${id}"><div class="route-playback"><button type="button" data-route-reset aria-label="Reset diagram">↺</button><button type="button" data-route-back ${operation===0?'disabled':''} aria-label="Previous operation">‹</button><button type="button" data-route-play aria-label="${timer?'Pause':'Play'} diagram" aria-pressed="${!!timer}">${timer?'Ⅱ':'▶'}</button><button type="button" data-route-next ${operation===11&&layer===2?'disabled':''} aria-label="${operation===11&&layer===1?'Follow into Layer 2':'Next operation'}">›</button></div><label>Layer<select data-route="layer">${[1,2].map(l=>`<option ${layer===l?'selected':''}>${l}</option>`).join('')}</select></label><label>Head<select data-route="head">${[1,2].map(h=>`<option ${head===h?'selected':''}>${h}</option>`).join('')}</select></label><label>Token<select data-route="position">${tokens.map((t,i)=>`<option value="${i}" ${position===i?'selected':''}>${t}</option>`).join('')}</select></label></div><details class="route-map" ${mapOpen?'open':''}><summary>Model map · layer ${layer} · ${token}</summary>${svg(whole,'Token vectors across the whole model')}</details><div class="route-stage" role="status"><span>Layer ${layer} · Head ${head} · ${token}</span><span>${operation+1}/12 · ${op.title}</span></div><div class="route-operation"><p class="route-formula">${textFormula(op.formula)}</p><p>${op.why}</p></div>${controls?`<div class="route-inspection">${controls}</div>`:''}${calculation}<div class="route-legend">${numeric?'Invented 2-component example · layer 1, head 1 only · shared starting embeddings. Other heads/layers remain schematic.':'2-layer, 2-head MHA schematic · normalization omitted · lines show dependencies, not measured weights'}</div>`;
     root.classList.toggle('is-playing',!!timer);
+    root.querySelector('[data-route-overview]')?.addEventListener('click',()=>{stop();inspect=false;render('[data-route-next]');});
+    root.querySelectorAll('[data-pick]').forEach(target=>{
+      const choose=()=>{stop();const [field,value,column]=target.dataset.pick.split(':');if(field==='projection'){role=value;component=Number(column);}else if(field==='component')component=Number(value);else if(field==='key')key=Number(value);inspect=true;render(`[data-pick="${target.dataset.pick}"]`);};
+      target.onclick=event=>{if(!event.target.closest('[data-symbol]'))choose();};
+      target.onkeydown=event=>{if(event.target===target&&(event.key==='Enter'||event.key===' ')){event.preventDefault();choose();}};
+    });
     root.querySelector('.route-map').ontoggle=event=>{mapOpen=event.target.open;};
     root.querySelectorAll('[data-field]').forEach(control=>control.onchange=()=>{stop();const field=control.dataset.field;if(field==='role')role=control.value;if(field==='component')component=Number(control.value);if(field==='key')key=Number(control.value);render(`[data-field="${field}"]`);});
-    root.querySelectorAll('[data-route]').forEach(select=>select.onchange=()=>{stop();const field=select.dataset.route;if(field==='layer'){layer=Number(select.value);operation=0;}if(field==='head')head=Number(select.value);if(field==='position'){position=Number(select.value);key=position;}render(`[data-route="${field}"]`);});
-    root.querySelectorAll('[data-node-position]').forEach(n=>{const choose=()=>{stop();position=Number(n.dataset.nodePosition);key=position;if(n.dataset.nodeLayer){layer=Number(n.dataset.nodeLayer);operation=0;}if(n.dataset.nodeHead)head=Number(n.dataset.nodeHead);render('[data-route="position"]');};n.onclick=e=>{if(!e.target.closest('[data-symbol]'))choose();};n.onkeydown=e=>{if(e.target!==n)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}};});
-    root.querySelector('[data-route-back]').onclick=()=>{stop();operation=Math.max(0,operation-1);render('[data-route-back]');};
+    root.querySelectorAll('[data-route]').forEach(select=>select.onchange=()=>{stop();const field=select.dataset.route;inspect=false;if(field==='layer'){layer=Number(select.value);operation=0;}if(field==='head')head=Number(select.value);if(field==='position'){position=Number(select.value);key=position;}render(`[data-route="${field}"]`);});
+    root.querySelectorAll('[data-node-position]').forEach(n=>{const choose=()=>{stop();position=Number(n.dataset.nodePosition);key=position;inspect=false;if(n.dataset.nodeLayer){layer=Number(n.dataset.nodeLayer);operation=0;}if(n.dataset.nodeHead)head=Number(n.dataset.nodeHead);render('[data-route="position"]');};n.onclick=e=>{if(!e.target.closest('[data-symbol]'))choose();};n.onkeydown=e=>{if(e.target!==n)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();choose();}};});
+    root.querySelector('[data-route-back]').onclick=()=>{stop();const phase=routeOperation(operation).phase;operation=Math.max(0,operation-1);if(routeOperation(operation).phase!==phase)inspect=false;render('[data-route-back]');};
     root.querySelector('[data-route-next]').onclick=()=>{stop();next();render('[data-route-next]');};
-    root.querySelector('[data-route-reset]').onclick=()=>{stop();layer=1;head=1;position=initialPosition;key=position;component=0;role='Q';operation=0;render('[data-route-reset]');};
+    root.querySelector('[data-route-reset]').onclick=()=>{stop();layer=1;head=1;position=initialPosition;key=position;component=0;role='Q';inspect=false;operation=0;render('[data-route-reset]');};
     root.querySelector('[data-route-play]').onclick=()=>{if(timer)stop();else {if(layer===2&&operation===11){layer=1;operation=0;}timer=win.setInterval(()=>{if(!root.isConnected || !root.getClientRects().length || !root.querySelector(`[data-route-instance="${id}"]`)){stop();return;}next();render();},1800);}render('[data-route-play]');};
     if(focus){const target=root.querySelector(focus);(target&&!target.disabled?target:root.querySelector('[data-route-back]:not(:disabled),[data-route-reset]'))?.focus({preventScroll:true});}
   }

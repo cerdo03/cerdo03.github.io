@@ -29,3 +29,45 @@ test('projection entries are labelled as learned W matrices, separate from outpu
  assert.match(view.graph,/data-symbol="W_K"/);
  assert.match(view.graph,/data-symbol="K"/);
 });
+test('projection overview exposes all matrices and complete Q K V before inspection',()=>{
+ const view=visualView('projections',base);
+ assert.doesNotMatch(view.controls,/Follow component|Projection/);
+ for(const role of ['Q','K','V']){
+  assert.match(view.graph,new RegExp(`data-symbol="W_${role}"`));
+  for(const component of [0,1])assert.ok(view.graph.includes(`data-pick="projection:${role}:${component}"`));
+ }
+ assert.match(view.graph,/\[1, 2\]/);
+ assert.match(view.graph,/\[2, 1\]/);
+ assert.match(view.graph,/\[2, 2\]/);
+ assert.doesNotMatch(view.graph,/Pending|pending/);
+ assert.match(view.equation,/Q = x × WQ/);
+});
+test('projection node inspection retains the whole overview and reveals its calculation',()=>{
+ const view=visualView('projections',{...base,role:'V',component:1,inspect:true});
+ assert.ok(view.graph.includes('data-pick="projection:Q:0"'));
+ assert.match(view.graph,/row 1, column 2/);
+ assert.match(view.graph,/2 × 1/);
+ assert.match(view.graph,/Sum of products/);
+});
+test('value overview shows whole values and whole result with both components inspectable',()=>{
+ const view=visualView('values',base);
+ assert.doesNotMatch(view.controls,/Follow component/);
+ assert.match(view.graph,/\[4, 0\]/);
+ assert.match(view.graph,/\[0, 1\]/);
+ assert.match(view.graph,/\[2, 2\]/);
+ assert.ok(view.graph.includes('data-pick="component:0"'));
+ assert.ok(view.graph.includes('data-pick="component:1"'));
+ assert.doesNotMatch(view.graph,/Pending|pending/);
+ assert.match(view.equation,/Σ/);
+});
+test('score overview shows every key and share before optional key inspection',()=>{
+ const view=visualView('scores',base);
+ assert.doesNotMatch(view.controls,/Compare with key/);
+ for(let key=0;key<3;key++)assert.ok(view.graph.includes(`data-pick="key:${key}"`));
+ assert.match(view.graph,/Softmax/);
+ assert.match(view.graph,/aria-label="Inspect score for The"/);
+ assert.match(view.equation,/score/);
+ const detail=visualView('scores',{...base,key:0,inspect:true});
+ assert.match(detail.graph.replace(/<[^>]+>/g,''),/Q\[1\] at is/);
+ assert.match(detail.graph.replace(/<[^>]+>/g,''),/K\[1\] at The/);
+});

@@ -6,28 +6,41 @@ const shares=row=>`[${row.map(share).join(', ')}]`;
 const vector=row=>`[${row.map(number).join(', ')}]`;
 const escape=text=>String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const symbols=text=>escape(text).replace(/\b(WQ|WK|WV|WO|Q|K|V|x)\b/g,key=>`<tspan class="sym" data-symbol="${key.length===2?`W_${key[1]}`:key}" aria-describedby="sym-${key.length===2?`W_${key[1]}`:key}">${key}</tspan>`);
-const node=(x,y,w,label,lines=[],active=false,action='')=>`<g class="route-node ${active?'is-active':''}" ${action?`role="button" tabindex="0" aria-pressed="${active}" data-pick="${escape(action)}" aria-label="${escape(label)}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${45+lines.length*21}" rx="7"/><text x="${x+12}" y="${y+25}">${symbols(label)}</text>${lines.map((line,i)=>`<text class="visual-small" x="${x+12}" y="${y+49+i*21}">${symbols(line)}</text>`).join('')}</g>`;
+const node=(x,y,w,label,lines=[],active=false,action='')=>`<g class="route-node ${active?'is-active':''}" ${action?`role="button" tabindex="0" aria-pressed="${active}" data-pick="${escape(action)}" aria-label="${escape(action.startsWith('key:')?`Inspect score for ${promptTokens[Number(action.split(':')[1])]}`:label)}"`:''}><rect x="${x}" y="${y}" width="${w}" height="${45+lines.length*21}" rx="7"/><text x="${x+12}" y="${y+25}">${symbols(label)}</text>${lines.map((line,i)=>`<text class="visual-small" x="${x+12}" y="${y+49+i*21}">${symbols(line)}</text>`).join('')}</g>`;
 const edge=(x,y,toX,toY,active=false,label='')=>`<path class="route-edge ${active?'is-active':''}" d="M ${x} ${y} C ${(x+toX)/2} ${y}, ${(x+toX)/2} ${toY}, ${toX} ${toY}"/><path class="visual-arrow ${active?'is-active':''}" transform="translate(${toX} ${toY}) rotate(${toX===x?toY>=y?90:-90:toX>x?0:180})" d="M -6 -4 L 0 0 L -6 4"/>${label?`<text class="route-edge-label" x="${(x+toX)/2-14}" y="${(y+toY)/2-8}">${symbols(label)}</text>`:''}`;
 const svg=(body,height,label)=>`<div class="route-canvas" tabindex="0" role="region" aria-label="${escape(label)}; scroll horizontally on narrow screens"><svg viewBox="0 0 900 ${height}" role="group" aria-label="${escape(label)}">${body}</svg></div>`;
 const select=(key,label,items,value,disabled=false)=>`<label>${label}<select data-field="${key}" ${disabled?'disabled':''}>${items.map(([v,t])=>`<option value="${v}" ${v===value?'selected':''}>${escape(t)}</option>`).join('')}</select></label>`;
 function arithmetic(type,s,rows){
  const a=attentionState(s.position,undefined,rows),component=s.component,token=promptTokens[s.position];
  const position=select('position','Inspect position',promptTokens.map((t,i)=>[i,`${i+1}: ${t}`]),s.position);
- const components=select('component','Follow component',[[0,'1st component'],[1,'2nd component']],component);
  if(type==='projections'){
   const matrices={Q:[[1,0],[0,1]],K:[[0,1],[1,0]],V:[[2,0],[0,1]]},role=s.role,matrix=matrices[role],calc=projectionTrace(a.x,matrix,component);
-  let graph='';
-  for(let i=0;i<2;i++){
-   const y=45+i*110;
-   graph+=node(15,y,150,`x component ${i+1}`,[number(a.x[i])],s.stage===0);
-   graph+=node(225,y,180,`W${role} matrix entry`,[`row ${i+1}, column ${component+1}`,number(matrix[i][component])],s.stage===1);
-   graph+=edge(165,y+40,225,y+40,s.stage>=1,'×');
-   graph+=node(470,y,160,'Product',s.stage>=1?[`${number(a.x[i])} × ${number(matrix[i][component])}`,number(calc.terms[i])]:['Pending'],s.stage===1);
-   graph+=edge(405,y+40,470,y+40,s.stage>=1);
-   graph+=edge(630,y+40,715,145,s.stage>=2,'+');
+  const outputs={Q:a.q,K:a.keys[s.position],V:a.values[s.position]};
+  let graph=node(15,190,155,`x at ${token}`,[vector(a.x),'Same input for Q/K/V'],s.stage===0);
+  for(const [index,r] of ['Q','K','V'].entries()){
+   const y=25+index*145;
+   graph+=edge(170,230,235,y+40,s.stage===0,'×');
+   graph+=node(235,y,230,`W${r} · 2 × 2 matrix`,matrices[r].map(vector),s.stage===1);
+   graph+=edge(465,y+40,535,y+40,s.stage>=1,'≈');
+   graph+=node(535,y,345,`${r} = x × W${r}`,[vector(outputs[r]),'','',''],s.stage===2);
+   for(let c=0;c<2;c++){
+    graph+=node(550+c*165,y+60,145,`${r}[${c+1}]`,[number(outputs[r][c])],!!s.inspect&&role===r&&component===c,`projection:${r}:${c}`);
+   }
   }
-  graph+=node(715,110,165,`${role}[${component+1}]`,[s.stage>=2?`≈ ${number(calc.total)}`:'Sum pending'],s.stage===2);
-  return {graph:svg(graph,300,'Input components multiplied by one matrix column and summed'),controls:position+select('role','Projection',[['Q','Q'],['K','K'],['V','V']],role)+components,max:2,note:'Same invented first-layer head as the main lesson. Calculations use full precision; displayed numbers are rounded. Positive shares below 0.001 are shown as <0.001, not zero.',caption:[`“${token}”: x = ${vector(a.x)}. Follow one output component. Each output uses one whole matrix column.`,`Multiply each input component by the entry in row 1 or 2 of column ${component+1}.`,`Add the two products: ${calc.terms.map(number).join(' + ')} ≈ ${number(calc.total)}. The full ${role} vector is ${vector(role==='Q'?a.q:role==='K'?a.keys[s.position]:a.values[s.position])}.`][s.stage]};
+  if(s.inspect){
+   graph+=`<text class="visual-label" x="15" y="465">Inspect ${role}[${component+1}]: input × column ${component+1} of W${role}</text>`;
+   for(let i=0;i<2;i++){
+    const y=490+i*110;
+    graph+=node(15,y,150,`x component ${i+1}`,[number(a.x[i])],s.stage===0);
+    graph+=node(225,y,180,`W${role} matrix entry`,[`row ${i+1}, column ${component+1}`,number(matrix[i][component])],s.stage===1);
+    graph+=edge(165,y+40,225,y+40,s.stage>=1,'×');
+    graph+=node(470,y,160,'Product',[`${number(a.x[i])} × ${number(matrix[i][component])}`,number(calc.terms[i])],s.stage===1);
+    graph+=edge(405,y+40,470,y+40,s.stage>=1);
+    graph+=edge(630,y+40,700,590,s.stage>=2,'+');
+   }
+   graph+=node(700,555,185,'Sum of products',[calc.terms.map(number).join(' + '),`${role}[${component+1}] ≈ ${number(calc.total)}`],s.stage===2);
+  }
+  return {graph:svg(graph,s.inspect?745:460,'Complete Q K V projections with selectable output components'),equation:'Q = x × WQ; K = x × WK; V = x × WV',controls:position,max:0,note:'Same invented first-layer head as the main lesson. Calculations use full precision; displayed numbers are rounded.',caption:s.inspect?`${role}[${component+1}]: ${calc.terms.map(number).join(' + ')} ≈ ${number(calc.total)}. The other components and both other projections remain visible above.`:`“${token}”: the same x ${vector(a.x)} is multiplied by three matrices. Q ${vector(a.q)}, K ${vector(a.keys[s.position])}, V ${vector(a.values[s.position])}. Select any output component to inspect its products and sum.`};
  }
  if(type==='scores'){
   const j=s.key,k=a.keys[j],terms=a.q.map((q,i)=>q*k[i]),raw=terms.reduce((x,y)=>x+y,0),allowed=j<=s.position;
@@ -37,11 +50,11 @@ function arithmetic(type,s,rows){
    graph+=node(15,y,170,`Q[${i+1}] at ${token}`,[number(a.q[i])],s.stage===0);
    graph+=node(230,y,175,`K[${i+1}] at ${promptTokens[j]}`,[number(k[i])],s.stage===0);
    graph+=edge(185,y+35,230,y+35,s.stage>=1,'×');
-   graph+=node(450,y,145,'Product',[s.stage>=1?number(terms[i]):'Pending'],s.stage===1);
+   graph+=node(450,y,145,'Product',[number(terms[i])],s.stage===1);
    graph+=edge(405,y+35,450,y+35,s.stage>=1);
    graph+=edge(595,y+35,670,115,s.stage>=2,'+');
   }
-  graph+=node(670,75,210,'Dot product → score',[s.stage>=2?`${terms.map(number).join(' + ')} ≈ ${number(raw)}`:'Sum pending',s.stage>=3?allowed?`÷ √2 ≈ ${number(raw/Math.sqrt(2))}`:'Future key → masked −∞':'Scale and mask pending'],s.stage>=2);
+  graph+=node(670,75,210,'Dot product → score',[`${terms.map(number).join(' + ')} ≈ ${number(raw)}`,allowed?`÷ √2 ≈ ${number(raw/Math.sqrt(2))}`:'Future key → masked −∞'],s.stage>=2);
   if(s.stage>=4){
    graph+=`<path class="route-edge is-active" d="M 775 162 V 240 H 125 V 270"/><path class="visual-arrow is-active" transform="translate(125 270) rotate(90)" d="M -6 -4 L 0 0 L -6 4"/><text class="route-edge-label" x="320" y="232">Repeat for the other keys → the whole score row</text>`;
    graph+=node(15,270,215,'All scaled, masked scores',[vector(a.scores)],true);
@@ -51,20 +64,46 @@ function arithmetic(type,s,rows){
    graph+=edge(540,310,620,310,true,'÷ sum');
    graph+=node(620,270,260,'Attention weights',[shares(a.weights),'Over input positions, not words to output'],true);
   }
-  return {graph:svg(graph,400,'Query and key dot product, scaling, mask and softmax'),controls:position+select('key','Compare with key',promptTokens.map((t,i)=>[i,`${i+1}: ${t}`]),j),max:4,note:'Same invented first-layer head; calculations use full precision, display rounded. Future-position shares are exactly zero; tiny positive shares are shown as <0.001.',caption:[`Q for “${token}” compares with K for “${promptTokens[j]}”.${allowed?'':' This later key is shown to illustrate masking; its score will not contribute.'}`,`Multiply matching components. These products are not attention weights yet.`,`Add products to form one dot product: ${number(raw)}.`,`Divide by √2. ${allowed?'This position is allowed.':'This key is later than the query, so replace its score with −∞.'}`,`Softmax acts on the whole score row. exp(score − maximum) ÷ sum gives the shares; future positions receive exactly zero.`][s.stage]};
+  let overview='';
+  for(let key=0;key<3;key++){
+   const y=25+key*125,dot=a.q.reduce((sum,q,i)=>sum+q*a.keys[key][i],0);
+   overview+=node(15,y,235,`Compare with ${promptTokens[key]}`,[`Q ${vector(a.q)}`,`K ${vector(a.keys[key])}`],s.stage===0);
+   overview+=edge(250,y+40,305,y+40,s.stage>=1);
+   overview+=node(305,y,245,'Dot → scale → mask',[`Σ(Qᵢ × Kᵢ) ≈ ${number(dot)}`,key<=s.position?`÷ √2 ≈ ${number(a.scores[key])}`:'Future key → masked −∞'],!!s.inspect&&s.key===key,`key:${key}`);
+   overview+=edge(550,y+40,600,190,s.stage>=3);
+   overview+=edge(725,190,770,y+35,s.stage>=4);
+   overview+=node(770,y,115,`Share: ${promptTokens[key]}`,[share(a.weights[key])],s.stage>=4);
+  }
+  overview+=node(600,150,125,'Softmax',['Whole row','Shares sum to 1'],s.stage===4);
+  const complete=overview+(s.inspect?`<g transform="translate(0 440)">${graph}</g>`:'');
+  return {graph:svg(complete,s.inspect?850:395,'All query key comparisons and attention shares with optional arithmetic'),equation:'scoreⱼ = Σᵢ(Qᵢ × Kⱼᵢ) ÷ √2; shares = softmax(masked scores)',controls:position,max:0,note:'Same invented first-layer head; calculations use full precision, display rounded. Future-position shares are exactly zero; tiny positive shares are shown as <0.001.',caption:s.inspect?[`Q for “${token}” compares with K for “${promptTokens[j]}”.${allowed?'':' This later key is shown to illustrate masking; its score will not contribute.'}`,`Multiply matching components. These products are not attention weights yet.`,`Add products to form one dot product: ${number(raw)}.`,`Divide by √2. ${allowed?'This position is allowed.':'This key is later than the query, so replace its score with −∞.'}`,`Softmax acts on the whole score row. exp(score − maximum) ÷ sum gives the shares; future positions receive exactly zero.`][s.stage]:`The same Q ${vector(a.q)} compares with every key. Each comparison gives one score; softmax uses the whole allowed row to produce shares ${shares(a.weights)}. Future positions receive exactly zero. Select a score node to inspect its arithmetic.`};
  }
  const mix=valueTrace(a.values,a.weights,component);let graph='';
  for(let j=0;j<3;j++){
-  const y=20+j*90;
-  graph+=node(15,y,205,`V[${component+1}] at ${promptTokens[j]}`,[`${number(a.values[j][component])}${j>s.position?' · masked':''}`],s.stage===0);
-  graph+=edge(220,y+35,290,y+35,s.stage>=1,'×');
-  graph+=node(290,y,205,'Attention weight',[share(a.weights[j])],s.stage===1);
-  graph+=edge(495,y+35,555,y+35,s.stage>=1);
-  graph+=node(555,y,150,'Contribution',[s.stage>=1?`≈ ${number(mix.terms[j])}`:'Pending'],s.stage===1);
-  graph+=edge(705,y+35,755,145,s.stage>=2,'+');
+  const y=20+j*105,contribution=a.values[j].map(v=>v*a.weights[j]);
+  graph+=node(15,y,190,`V at ${promptTokens[j]}`,[vector(a.values[j]),j>s.position?'Masked: share 0':'Allowed position'],s.stage===0);
+  graph+=edge(205,y+40,270,y+40,s.stage>=1,'×');
+  graph+=node(270,y,165,'Share',[share(a.weights[j])],s.stage===1);
+  graph+=edge(435,y+40,500,y+40,s.stage>=1,'≈');
+  graph+=node(500,y,195,'Contribution',[vector(contribution)],s.stage===1);
+  graph+=edge(695,y+35,735,160,s.stage>=2,'+');
  }
- graph+=node(755,110,130,`Result[${component+1}]`,[s.stage>=2?`≈ ${number(mix.total)}`:'Pending'],s.stage===2);
- return {graph:svg(graph,310,'One output component is the sum of weighted value components'),controls:position+components,max:2,note:'Same invented first-layer head; calculations use full precision, display rounded. Selecting a component changes only the inspected calculation.',caption:[`Follow component ${component+1} of each V. The other component is calculated the same way.`,`Scale each value component by its attention weight. A masked position contributes zero.`,`Add the contributions: ${mix.terms.map(number).join(' + ')} ≈ ${number(mix.total)}. Full head result: ${vector(a.output)}. Cached K/V stay unchanged.`][s.stage]};
+ graph+=node(735,115,150,'Head result',[vector(a.output)],s.stage===2);
+ for(let c=0;c<2;c++)graph+=node(735,205+c*85,150,`Result[${c+1}]`,[number(a.output[c])],!!s.inspect&&component===c,`component:${c}`);
+ if(s.inspect){
+  graph+=`<text class="visual-label" x="15" y="425">Inspect result component ${component+1}: scale each V component, then add</text>`;
+  for(let j=0;j<3;j++){
+   const y=450+j*90;
+   graph+=node(15,y,205,`V[${component+1}] at ${promptTokens[j]}`,[number(a.values[j][component])],s.stage===0);
+   graph+=edge(220,y+35,290,y+35,s.stage>=1,'×');
+   graph+=node(290,y,205,'Attention weight',[share(a.weights[j])],s.stage===1);
+   graph+=edge(495,y+35,555,y+35,s.stage>=1);
+   graph+=node(555,y,150,'Contribution',[`≈ ${number(mix.terms[j])}`],s.stage===1);
+   graph+=edge(705,y+35,755,575,s.stage>=2,'+');
+  }
+  graph+=node(755,540,130,`Result[${component+1}]`,[`≈ ${number(mix.total)}`],s.stage===2);
+ }
+ return {graph:svg(graph,s.inspect?740:390,'Whole value vectors weighted and summed, with selectable result components'),equation:'head result = Σⱼ (shareⱼ × Vⱼ)',controls:position,max:0,note:'Same invented first-layer head; calculations use full precision, display rounded. Inspection does not change the calculation.',caption:s.inspect?`Component ${component+1}: ${mix.terms.map(number).join(' + ')} ≈ ${number(mix.total)}. Both components of every V and the full result stay visible above.`:`Each share scales the whole V vector. Add the contribution vectors component by component to obtain ${vector(a.output)}. Select a result component to inspect its arithmetic. Cached K/V stay unchanged.`};
 }
 function request(s,rows,options){
  const f=requestFrame(s.pass,s.stage,rows,options.prompt,options.answer),query=f.queries[Math.min(s.query,f.queries.length-1)];
@@ -192,7 +231,7 @@ export function sharedRows(){try{const rows=JSON.parse(localStorage.getItem('inf
 export function mountLearningVisual(root,type,options={}){
  disposeVisual(root);
  let position=2;try{position=JSON.parse(localStorage.getItem('inference-course-v4'))?.attention?.position??2;}catch{/* Optional. */}
- let s={stage:options.stage??0,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:options.pass??0,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,change:type==='validity'?-1:2};
+ let s={stage:options.stage??0,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:options.pass??0,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,inspect:false,change:type==='validity'?-1:2};
  let timer=null,disposed=false;
  const stop=()=>{if(timer)clearInterval(timer);timer=null;};
  owners.set(root,()=>{disposed=true;stop();window.removeEventListener('storage',storage);});
@@ -201,10 +240,11 @@ export function mountLearningVisual(root,type,options={}){
   const view=visualView(type,s,rows(),options);
   const scope=['projections','scores','values'].includes(type)?`Prefill · layer 1 · head 1 · ${promptTokens[s.position]}`:type==='sharing'?'Prefill · layer 1 · is':type==='prediction'?'Prefill · is · two-layer numeric toy':type==='heads'?'One position · two-head schematic':type==='request'?`${s.pass===0?'Prefill':`Decode ${s.pass}`} · layer 1 · head 1`:'Compatible requests · token-level reuse';
   root.classList.add('teaching-visual');root.classList.toggle('is-playing',!!timer);
-  root.innerHTML=`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions"><button type="button" data-command="reset" aria-label="Reset diagram">↺</button><button type="button" data-command="back" ${s.stage===0?'disabled':''}>← Previous</button><button type="button" data-command="play">${timer?'Pause':'Play'}</button><button type="button" data-command="next" ${s.stage===view.max&&!(type==='request'&&s.pass<(options.answer||['blue','today','.']).length-1)?'disabled':''}>${s.stage===view.max&&type==='request'?'Next pass →':'Next →'}</button></div>`:''}</div><div class="route-stage"><span>${scope} — ${view.title||({projections:'Calculate a projection',scores:'Query → scores → weights',values:'Weighted value components',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage+1} / ${view.max+1}</span>`:''}</div>${view.graph}<p class="visual-caption" role="status">${escape(view.caption)}</p>${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
+  root.innerHTML=`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions"><button type="button" data-command="reset" aria-label="Reset diagram">↺</button><button type="button" data-command="back" ${s.stage===0?'disabled':''}>← Previous</button><button type="button" data-command="play">${timer?'Pause':'Play'}</button><button type="button" data-command="next" ${s.stage===view.max&&!(type==='request'&&s.pass<(options.answer||['blue','today','.']).length-1)?'disabled':''}>${s.stage===view.max&&type==='request'?'Next pass →':'Next →'}</button></div>`:''}</div><div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage+1} / ${view.max+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
   root.querySelectorAll('[data-field]').forEach(control=>control.onchange=()=>{
    stop();const field=control.dataset.field;s[field]=field==='role'?control.value:Number(control.value);
    if(['pass','change'].includes(field))s.stage=0;
+   if(field==='position')s.inspect=false;
    if(field==='position')options.onPosition?.(s.position);
    if(field==='position')try{const saved=JSON.parse(localStorage.getItem('inference-course-v4'))||{};saved.attention={position:s.position};localStorage.setItem('inference-course-v4',JSON.stringify(saved));}catch{/* Optional. */}
    render(`[data-field="${field}"]`);
@@ -213,11 +253,11 @@ export function mountLearningVisual(root,type,options={}){
    const command=button.dataset.command;
    if(command==='play'){
     if(timer)stop();else{if(s.stage===view.max)s.stage=0;timer=setInterval(()=>{if(disposed||!root.isConnected||!root.getClientRects().length){stop();return;}if(s.stage>=visualView(type,s,rows(),options).max){stop();render();return;}s.stage++;render();},1600);}
-   }else{stop();if(command==='reset')s.stage=0;if(command==='back')s.stage=Math.max(0,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(type==='request'){s.pass++;s.stage=0;}}}
-   render(`[data-command="${command}"]`);
+   }else{stop();if(command==='overview')s.inspect=false;if(command==='reset'){s.stage=0;s.inspect=false;}if(command==='back')s.stage=Math.max(0,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(type==='request'){s.pass++;s.stage=0;}}}
+   render(command==='overview'?`[data-pick="${type==='projections'?`projection:${s.role}:${s.component}`:type==='scores'?`key:${s.key}`:`component:${s.component}`}"]`:`[data-command="${command}"]`);
   });
   root.querySelectorAll('[data-pick]').forEach(target=>{
-   const choose=()=>{stop();const [field,value]=target.dataset.pick.split(':');s[field]=Number(value);render(`[data-pick="${target.dataset.pick}"]`);};
+   const choose=()=>{stop();const [field,value,column]=target.dataset.pick.split(':');if(field==='projection'){s.role=value;s.component=Number(column);s.inspect=true;}else{s[field]=Number(value);if(field==='component'||field==='key')s.inspect=true;}render(`[data-pick="${target.dataset.pick}"]`);};
    target.onclick=choose;target.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose();}};
   });
   options.onFrame?.({pass:s.pass,stage:s.stage});
