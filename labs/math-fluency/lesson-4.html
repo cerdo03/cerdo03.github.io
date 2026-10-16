@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Optional mathematical notation toolkit for reading attention and KV-cache equations.">
+  <title>0.4 · Stable softmax — LLM Systems</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="../attention/styles.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../llm-systems/course.css">
+  <link rel="stylesheet" href="../llm-systems/math.css">
+  <link rel="stylesheet" href="../llm-systems/equation-explorer.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="../llm-systems/course-shell.js"></script>
+  <script type="module" src="../llm-systems/math-renderer.js"></script>
+  <script type="module" src="../llm-systems/equation-explorer.js"></script>
+  <script type="module" src="../llm-systems/math-exercises.js"></script>
+</head>
+<body data-math-lesson="4">
+  <a class="skip-link" href="#main">Skip to lesson content</a>
+  <header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a><nav aria-label="Site"><a href="./">Optional math toolkit</a><a href="../../">Journal</a></nav></header>
+  <div class="lesson-layout">
+    <aside class="sidebar"><nav aria-label="Math toolkit"><a href="./">Module 0 overview</a><ol><li><a href="lesson-1.html">0.1 Notation grammar</a></li><li><a href="lesson-2.html">0.2 Indices and reductions</a></li><li><a href="lesson-3.html">0.3 Dimensions and transpose</a></li><li><a href="lesson-4.html">0.4 Stable softmax</a></li><li><a href="lesson-5.html">0.5 Transformer equations</a></li><li><a href="lesson-6.html">0.6 Write and read equations</a></li></ol></nav></aside>
+    <main id="main">
+      <header class="lesson-header"><p class="eyebrow">Module 0 · optional · Lesson 0.4</p><h1>Softmax and numerical stability</h1><p class="lede">Read stable softmax as a row operation. By the end, you should identify the two indices and the row maximum, compute one probability, and explain exact equivalence versus finite-precision overflow.</p><p><strong>Prerequisite:</strong> sums, maxima and free indices from <a href="lesson-2.html">0.2</a>; basic fractions.</p></header>
+      <section id="ordinary"><h2>0.4.1 Exponentiate, then normalize</h2><p>Let z be one row of scores, zⱼ its j-th entry, and aⱼ the resulting weight. The exponential exp(x), also written e to the power x, is positive and grows rapidly as its input grows. Softmax divides each exponential by the sum of all exponentials in that row:</p><p data-math="a_j=\frac{e^{z_j}}{\sum_k e^{z_k}}" data-display="true">a_j = exp(z_j) divided by the sum over k of exp(z_k)</p><p>j is the free index naming the requested output. k is a bound reduction index visiting every candidate in the denominator. The denominator includes j too; excluding it would break normalization. In exact arithmetic all finite inputs produce positive weights summing to one.</p></section>
+      <section id="stable"><h2>0.4.2 Subtract one shared maximum</h2><p data-math="m=\max_k z_k" data-display="true">m is the maximum score in the row</p><p>Multiplying the original numerator and denominator by the same nonzero factor exp(−m) leaves the ratio unchanged. This identity uses exact real-number arithmetic. In a floating-point implementation, unshifted exponentials can overflow; the shifted inputs are at most zero, so their exponentials are at most one. Very negative differences can still underflow to zero. Subtracting a different amount from each entry would generally change the distribution.</p><div data-equation="softmax-stable"><noscript><p>a_j = exp(z_j − m) / sum_k exp(z_k − m), where m = max_k z_k. Normalize each row after subtracting its shared maximum; this preserves the ideal ratio while avoiding positive exponential overflow.</p></noscript></div></section>
+      <section id="worked"><h2>0.4.3 Worked example: predict the maximum first</h2><p>Use the invented score row [4,8,2,6]. Predict m and write the shifted row before opening the worked calculation.</p><details><summary>Reveal maximum and worked probabilities</summary><p>The maximum m is 8; the shifted row is [−4,0,−6,−2]. The exponentials are approximately [0.018316,1,0.002479,0.135335], whose sum is approximately 1.156130.</p><p data-math="a\approx[0.015842,\ 0.864955,\ 0.002144,\ 0.117059]" data-display="true">weights approximately [0.015842,0.864955,0.002144,0.117059]</p><p>The weight for the second position is approximately 1 / 1.156130 = 0.864955. These displayed numbers are rounded; the computation uses unrounded values. Add 1000 to every score to obtain [1004,1008,1002,1006]. The maximum becomes 1008, and subtraction recovers exactly the same shifted row. Direct JavaScript exponentials overflow on these large inputs, while the stable implementation returns finite probabilities.</p></details><p><strong>Common mistake:</strong> calling tiny valid weights “masked zeros.” A causal mask deliberately excludes positions. After applying that exclusion, masked positions have exactly zero probability if at least one legal position remains. A row with every position excluded has no valid probability distribution; report it rather than silently returning NaN.</p></section>
+      <section id="practice"><h2>0.4.4 Compare moderate and large inputs</h2><p>Make a prediction before opening hints. Try the task again without help after checking the reasoning.</p><div data-math-exercise="softmax"><noscript><p>Compare [4,8,2,6] with [1004,1008,1002,1006]. Their shifted rows match. Ideal softmax probabilities match, while direct floating-point exponentials overflow for the second row.</p></noscript></div></section>
+      <section id="transfer"><h2>0.4.5 Explain the equation without help</h2><p>Given <span data-math="p_r=\frac{\exp(u_r-c)}{\sum_s\exp(u_s-c)},\quad c=\max_s u_s">p_r = exp(u_r minus c) divided by sum over s exp(u_s minus c), c is max u</span>, name the free index, bound index, row scalar and denominator. For u=[−1,1], write the shifted inputs and explain why the maximum entry has the larger probability.</p><details><summary>Check the reference explanation</summary><p>r names one output; s runs through candidates in each reduction. c is the shared row maximum, 1. The shifted row is [−2,0]. Its exponentials are [exp(−2),1], so the second entry gets the greater weight. The denominator sums both exponentials. Subtracting c preserves the exact ratio; it changes the numerical route used to compute it.</p></details><p><a href="../attention/lesson-1.html#s2-1-5">Return to softmax in the attention mechanism.</a></p></section>
+      <nav class="pager" aria-label="Previous and next lesson"><a href="lesson-3.html">← Previous lesson</a><a href="lesson-5.html">Next lesson →</a></nav>
+      <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
+    </main>
+  </div>
+  <footer><a href="../../">Back to the journal</a></footer>
+</body>
+</html>

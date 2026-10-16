@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Optional mathematical notation toolkit for reading attention and KV-cache equations.">
+  <title>0.3 · Dimensions and transpose — LLM Systems</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="../attention/styles.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../llm-systems/course.css">
+  <link rel="stylesheet" href="../llm-systems/math.css">
+  <link rel="stylesheet" href="../llm-systems/equation-explorer.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="../llm-systems/course-shell.js"></script>
+  <script type="module" src="../llm-systems/math-renderer.js"></script>
+  <script type="module" src="../llm-systems/equation-explorer.js"></script>
+  <script type="module" src="../llm-systems/math-exercises.js"></script>
+</head>
+<body data-math-lesson="3">
+  <a class="skip-link" href="#main">Skip to lesson content</a>
+  <header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a><nav aria-label="Site"><a href="./">Optional math toolkit</a><a href="../../">Journal</a></nav></header>
+  <div class="lesson-layout">
+    <aside class="sidebar"><nav aria-label="Math toolkit"><a href="./">Module 0 overview</a><ol><li><a href="lesson-1.html">0.1 Notation grammar</a></li><li><a href="lesson-2.html">0.2 Indices and reductions</a></li><li><a href="lesson-3.html">0.3 Dimensions and transpose</a></li><li><a href="lesson-4.html">0.4 Stable softmax</a></li><li><a href="lesson-5.html">0.5 Transformer equations</a></li><li><a href="lesson-6.html">0.6 Write and read equations</a></li></ol></nav></aside>
+    <main id="main">
+      <header class="lesson-header"><p class="eyebrow">Module 0 · optional · Lesson 0.3</p><h1>Dimensions and transpose</h1><p class="lede">Check shapes before calculating entries. By the end, you should infer a transposed matrix product, reject an impossible product, and preserve axes through scaling and row normalization.</p><p><strong>Prerequisite:</strong> read matrix declarations and indices; <a href="lesson-1.html">0.1</a> and <a href="lesson-2.html">0.2</a> offer optional refreshers.</p></header>
+      <section id="rules"><h2>0.3.1 Match the inner axes</h2><p>For matrix multiplication, a left matrix with r rows and c columns can multiply a right matrix with c rows and s columns. The matching c axis is reduced. The result retains r rows and s columns:</p><p data-math="(r\times c)(c\times s)\longrightarrow r\times s" data-display="true">(r by c) times (c by s) produces r by s</p><p>r, c and s are sizes, not matrix entries. An equal total element count is insufficient; the inner dimensions must match. Transpose swaps row and column axes without adding or deleting entries.</p></section>
+      <section id="worked"><h2>0.3.2 Worked example: scores compare query and key rows</h2><p data-math="Q\in\mathbb{R}^{4\times8},\quad K\in\mathbb{R}^{6\times8},\quad K^{\mathsf T}\in\mathbb{R}^{8\times6}" data-display="true">Q: 4 by 8; K: 6 by 8; transposed K: 8 by 6</p><p data-math="QK^{\mathsf T}\in\mathbb{R}^{4\times6}" data-display="true">Q times transposed K: 4 by 6</p><p>Q contains four query rows, K six key rows, and both use eight features per row. Every query-key pair reduces eight component products into one score. Four queries compared against six keys need 24 scores. K and its transpose each contain 48 entries. The untransposed product QK is invalid here because 8 does not match 6.</p><p><strong>Common mistake:</strong> producing 8 by 8 by retaining the inner axes. Those axes describe the products being summed, not the surviving query-key pairs.</p></section>
+      <section id="preservation"><h2>0.3.3 Elementwise operations preserve the score grid</h2><p>Dividing each score by a nonzero scalar changes entries but keeps the four-by-six shape. Row-wise softmax turns each six-entry row into six weights; it also preserves shape. Broadcasting a scalar means reusing the same scalar for each entry, rather than performing matrix multiplication.</p><p>With independent sequences and heads, a score tensor may have shape <span data-math="N\times H\times T_q\times T_k">N by H by T_q by T_k</span>. N is batch size, H is query-head count, T_q query positions and T_k key positions. The last two axes describe each score matrix. Reducing or normalizing over the key axis must be stated; softmax over the whole tensor would answer a different question.</p></section>
+      <section id="practice"><h2>0.3.4 Predict valid and impossible products</h2><p>Make a prediction before opening hints. Try the task again without help after checking the reasoning.</p><div data-math-exercise="shapes"><noscript><p>Q has shape 4 by 8. K has shape 6 by 8. Q times transposed K is valid and produces 4 by 6; Q times K is invalid. Explain the inner-axis match.</p></noscript></div></section>
+      <section id="transfer"><h2>0.3.5 Transfer to different dimensions</h2><p>Without the shape display, let <span data-math="P\in\mathbb{R}^{3\times5},\quad R\in\mathbb{R}^{7\times5}">P is 3 by 5 and R is 7 by 5</span>. Give the shapes of transposed R, P times transposed R, and its row-wise softmax. Can P multiply R directly?</p><details><summary>Check the reference explanation</summary><p>Transposed R is 5 by 7. The product is 3 by 7, and row-wise softmax keeps 3 by 7. The direct product is invalid because 5 differs from 7. If your output was 3 by 5, you kept the feature axis that was reduced instead of the seven comparison targets.</p></details><p><a href="../attention/lesson-1.html#s2-1-3">Use these shapes in the attention-score equation.</a></p></section>
+      <nav class="pager" aria-label="Previous and next lesson"><a href="lesson-2.html">← Previous lesson</a><a href="lesson-4.html">Next lesson →</a></nav>
+      <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
+    </main>
+  </div>
+  <footer><a href="../../">Back to the journal</a></footer>
+</body>
+</html>

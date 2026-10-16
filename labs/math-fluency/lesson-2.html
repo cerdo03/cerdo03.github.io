@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Optional mathematical notation toolkit for reading attention and KV-cache equations.">
+  <title>0.2 · Indices and reductions — LLM Systems</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="../attention/styles.css">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../llm-systems/course.css">
+  <link rel="stylesheet" href="../llm-systems/math.css">
+  <link rel="stylesheet" href="../llm-systems/equation-explorer.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="../llm-systems/course-shell.js"></script>
+  <script type="module" src="../llm-systems/math-renderer.js"></script>
+  <script type="module" src="../llm-systems/equation-explorer.js"></script>
+  <script type="module" src="../llm-systems/math-exercises.js"></script>
+</head>
+<body data-math-lesson="2">
+  <a class="skip-link" href="#main">Skip to lesson content</a>
+  <header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a><nav aria-label="Site"><a href="./">Optional math toolkit</a><a href="../../">Journal</a></nav></header>
+  <div class="lesson-layout">
+    <aside class="sidebar"><nav aria-label="Math toolkit"><a href="./">Module 0 overview</a><ol><li><a href="lesson-1.html">0.1 Notation grammar</a></li><li><a href="lesson-2.html">0.2 Indices and reductions</a></li><li><a href="lesson-3.html">0.3 Dimensions and transpose</a></li><li><a href="lesson-4.html">0.4 Stable softmax</a></li><li><a href="lesson-5.html">0.5 Transformer equations</a></li><li><a href="lesson-6.html">0.6 Write and read equations</a></li></ol></nav></aside>
+    <main id="main">
+      <header class="lesson-header"><p class="eyebrow">Module 0 · optional · Lesson 0.2</p><h1>Indices, sums and maxima</h1><p class="lede">Trace one output entry through a reduction. By the end, you should distinguish a fixed output index from a changing summation index, count the terms, and translate a sum into a loop.</p><p><strong>Prerequisite:</strong> read matrix subscripts; <a href="lesson-1.html">0.1</a> is available if needed.</p></header>
+      <section id="indices"><h2>0.2.1 Fix an output, then vary the reduction index</h2><p>Attention mixes value rows using attention weights. A matrix entry has two coordinates: the first subscript selects a row, the second a column. In the following expression, i selects an output token row, j selects an output feature, and k visits the six source token rows:</p><p data-math="O_{ij}=\sum_{k=1}^{6} A_{ik}V_{kj}" data-display="true">O_ij = sum over k=1 through 6 of A_ik V_kj</p><p>O is the output, A the attention-weight matrix, and V the value matrix. The free indices i and j identify which answer is requested; the bound index k is consumed by the sum and does not become an extra output axis. Choosing i=1 and j=1 fixes one scalar output. The lower and upper limits include both endpoints.</p></section>
+      <section id="worked"><h2>0.2.2 Worked example: six products, one answer</h2><p>For arithmetic practice, use the invented row A₁ = [1,2,3,4,5,6] and the first column of V = [1,2,1,0,2,1]. These A entries are unnormalized coefficients, not attention probabilities. This isolates the reduction; real softmax attention rows sum to one.</p><p data-math="O_{1,1}=1\cdot1+2\cdot2+3\cdot1+4\cdot0+5\cdot2+6\cdot1=24" data-display="true">O_1,1 = 1 + 4 + 3 + 0 + 10 + 6 = 24</p><p>All six products belong to the same answer. Changing j selects a different value column while retaining the selected A row. Changing i selects a different A row. The bound index could be renamed r everywhere inside the same sum without changing the result.</p><pre><code>total = 0
+for k in 1..6 inclusive:
+    total += A[i, k] * V[k, j]
+O[i, j] = total</code></pre><p><strong>Common mistake:</strong> keeping k in the answer shape or summing over j. Read the bound variable printed below the sigma; only that index is reduced here.</p></section>
+      <section id="maxima"><h2>0.2.3 A maximum is another reduction</h2><p data-math="z=[4,8,2,6],\qquad m=\max_{k=1}^{4}z_k=8" data-display="true">z = [4,8,2,6]; m is the maximum entry, 8</p><p>The maximum produces one scalar m from four candidates. It returns the largest value, 8; it does not return the index 2. The operation that returns a maximizing index is argmax. Here z is the score vector and k is a local search index; it has no surviving output coordinate.</p></section>
+      <section id="practice"><h2>0.2.4 Inspect a different output</h2><p>Make a prediction before opening hints. Try the task again without help after checking the reasoning.</p><div data-math-exercise="indices"><noscript><p>For the row and column above, expand all six terms before summing. The answer is 24. Changing the bound index name does not change the value.</p></noscript></div></section>
+      <section id="transfer"><h2>0.2.5 Transfer without the term display</h2><p>Read <span data-math="R_{ab}=\sum_{r=1}^{3}P_{ar}U_{rb}">R_ab = sum over r=1 through 3 of P_ar U_rb</span>. Which indices are free? Write a loop for one requested output and name its three products. Separately explain <span data-math="c=\max_r h_r">c = max over r of h_r</span> without confusing the value with its location.</p><details><summary>Check the reference explanation</summary><p>a and b are free; r is bound. For fixed a,b, initialize a scalar accumulator to zero, then add P[a,1]U[1,b], P[a,2]U[2,b] and P[a,3]U[3,b]. Store that scalar in R[a,b]. The maximum c is the greatest entry of vector h, not its index. If you created three separate outputs, you omitted the reduction.</p></details><p><a href="../attention/lesson-1.html#s2-1-7">Return to weighted values in attention.</a></p></section>
+      <nav class="pager" aria-label="Previous and next lesson"><a href="lesson-1.html">← Previous lesson</a><a href="lesson-3.html">Next lesson →</a></nav>
+      <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
+    </main>
+  </div>
+  <footer><a href="../../">Back to the journal</a></footer>
+</body>
+</html>
