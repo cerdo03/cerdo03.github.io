@@ -1,0 +1,26 @@
+/* Topic layout only; the shared course shell owns navigation and sizing. */
+.math-example {
+  margin-block: 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  background: var(--card);
+}
+
+.math-key { display: grid; gap: 0.7rem; }
+.math-key > div { display: grid; grid-template-columns: minmax(5rem, 8rem) minmax(0, 1fr); gap: 1rem; }
+.math-key dt { font-weight: 600; }
+.math-key dd { margin: 0; }
+.math-lesson-list > li { margin-block: 1.2rem; }
+.math-lesson-list p { margin-block: 0.3rem; }
+.math-return { margin-top: 2rem; }
+.math-example > :first-child { margin-top: 0; }
+.math-example > :last-child { margin-bottom: 0; }
+[data-math-lesson] details > summary { cursor: pointer; }
+[data-math-lesson] details { margin-block: 1rem; }
+[data-math-lesson] .table-wrap { max-width: 100%; overflow-x: auto; }
+
+@media (max-width: 480px) {
+  .math-key > div { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
+  .math-example { padding: 0.75rem; }
+}
