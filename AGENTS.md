@@ -36,7 +36,7 @@ One visual language, two levels of interaction. The homepage is a quiet director
 
 - All pages load `assets/theme.css` and `assets/theme.js` using correct relative paths, including journal posts and every learning site.
 - Owner default lives in `assets/theme-config.js`: `defaultTheme` is `paper`, `midnight` or `contrast`. Changing it and deploying changes the design everywhere for all visitors.
-- Paper: warm beige background, near-black text, white surfaces and restrained brown accents. Midnight: warm charcoal background, light text and muted tan accents. High contrast: black/white with yellow accents.
+- All pages use the Computation studio palette and shared sans typography: Paper has cool blue-gray backgrounds, navy text, white surfaces and blue accents; Midnight has cool navy surfaces, light text and pale blue accents. High contrast stays black/white with yellow accents. Apply these tokens globally, including the homepage, journal and every learning site; do not add collection-specific palette overrides.
 - Colors must use shared semantic CSS variables. Never add page-specific palettes, hardcoded colors, font families or local theme implementations. Page-specific layouts and interactive diagrams are encouraged.
 - Prefer shared `--paper`, `--ink`, `--muted`, `--line`, `--card`, `--surface-alt`, `--accent`, `--on-accent`, `--accent-soft`, `--success-soft`, `--danger-soft` and diagram tokens. Typography uses `--body-font` and `--heading-font`.
 - Design scheme control belongs to the owner. Visitors have one shared Light/Dark button on every page, persisted under journal-appearance and synchronized across tabs. Do not expose palette menus or independent page overrides. Legacy scheme preferences remain ignored.
@@ -72,7 +72,7 @@ One visual language, two levels of interaction. The homepage is a quiet director
 
 ## LLM Systems collection design contract
 
-Applies only to the Learning LLM Systems collection (`labs/llm-systems/`, `labs/inference/`, `labs/attention/` and future member sites), not unrelated learning collections.
+The layout and learning-interaction rules below apply to the Learning LLM Systems collection (`labs/llm-systems/`, `labs/inference/`, `labs/attention/` and future member sites). Its Computation studio palette and shared sans typography apply globally to the homepage, journal and all learning sites.
 
 - Load `labs/llm-systems/course.css` and `course-shell.js` after topic styles. These own the shared header, module navigation, concept navigation, content width, mobile behavior, and Previous/Next pattern. Topic files own diagrams and calculations. Preserve existing URLs.
 - Use Module 1’s one-concept-at-a-time flow with Module 2’s precise mathematics available in expandable technical details. Keep a brief intuition, the relevant inline illustration, and its consequence on the main path. Do not add slogans, decorative motion, dashboards, notes boxes or progression gates.
@@ -93,5 +93,5 @@ Applies only to the Learning LLM Systems collection (`labs/llm-systems/`, `labs/
 
 - Guided diagrams start with known inputs. Next reveals one operation and its result, retaining earlier work while concealing future calculations. Draw incoming connections smoothly before fading in their new result; keep numbers stationary and respect reduced motion. Keep equations visible, and offer Show all for reviewing the whole transformation. Inspect equivalent components or key comparisons by selecting revealed nodes; reserve selectors for meaningful changes of input, layer, head or model configuration.
 
-- LLM collection uses the Computation studio palette defined centrally in `assets/theme.css`: cool neutral surfaces, query blue, key purple, value teal, and shared sans typography. Keep the journal and unrelated collections on their existing palette. Use labels as well as colors.
+- Reuse the global Computation studio palette defined centrally in `assets/theme.css`: cool neutral surfaces, query blue, key purple, value teal, and shared sans typography. Do not scope a different palette to this collection. Use labels as well as colors.
 - Numerical Q/K/V, score and weighted-value views reuse `studio-arithmetic.js`: start with known inputs, reveal future results by operation, and retain Show all for complete vectors/matrices. Click revealed outputs to inspect products. Values stay stationary. Animate only eased connection/cell highlights, with reduced-motion support; no traveling numbers, particles or marching dashed lines.

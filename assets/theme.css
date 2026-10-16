@@ -1,46 +1,53 @@
-/* Shared tokens: page styles must never define their own palettes. */
+/* One Computation studio palette for the journal and every learning site.
+   Page styles own layout; colors and typography inherit these shared tokens. */
 :root, :root[data-theme="paper"] {
   color-scheme: light;
 
-  --paper: #f7f3ed;
-  --ink: #211c18;
-  --muted: #6b6056;
-  --line: #ded4c8;
+  --paper: #f3f6fb;
+  --ink: #1d2b43;
+  --muted: #526279;
+  --line: #ced8e8;
   --card: #ffffff;
-  --surface-alt: #eee6dc;
-  --accent: #79543b;
-  --accent-hover: #593c29;
+  --surface-alt: #e9eef7;
+  --accent: #315fbe;
+  --accent-hover: #23498f;
   --on-accent: #ffffff;
-  --accent-soft: #ede0d2;
-  --success: #79543b;
-  --success-soft: #ede0d2;
-  --danger-soft: #f5e6dd;
-  --diagram: #211c18;
-  --diagram-surface: #3d3027;
-  --diagram-ink: #ffffff;
-  --diagram-muted: #ddd0c2;
+  --accent-soft: #e3ebfc;
+  --success: #087a73;
+  --success-soft: #dcf1eb;
+  --danger-soft: #f7e7e9;
+  --diagram: #1d2b43;
+  --diagram-surface: #e9eef7;
+  --diagram-ink: #1d2b43;
+  --diagram-muted: #526279;
+  --llm-query: #315fbe;
+  --llm-key: #7852ac;
+  --llm-value: #087a73;
 }
 
 :root[data-theme="midnight"] {
   color-scheme: dark;
 
-  --paper: #1d1916;
-  --ink: #f4eee7;
-  --muted: #c5b8aa;
-  --line: #55483d;
-  --card: #28221d;
-  --surface-alt: #342b24;
-  --accent: #d8b596;
-  --accent-hover: #ead0b8;
-  --on-accent: #211a14;
-  --accent-soft: #403025;
-  --success: #d8b596;
-  --success-soft: #403025;
-  --danger-soft: #49342d;
-  --diagram: #14110f;
-  --diagram-surface: #342b24;
-  --diagram-ink: #f4eee7;
-  --diagram-muted: #c5b8aa;
+  --paper: #141c2a;
+  --ink: #edf3ff;
+  --muted: #acbbd3;
+  --line: #35435b;
+  --card: #1d293b;
+  --surface-alt: #243249;
+  --accent: #8cafff;
+  --accent-hover: #b2c9ff;
+  --on-accent: #141c2a;
+  --accent-soft: #273b60;
+  --success: #79d2c2;
+  --success-soft: #1e3d3b;
+  --danger-soft: #442c3a;
+  --diagram: #141c2a;
+  --diagram-surface: #243249;
+  --diagram-ink: #edf3ff;
+  --diagram-muted: #acbbd3;
+  --llm-query: #8cafff;
+  --llm-key: #c4a7ef;
+  --llm-value: #79d2c2;
 }
 
 :root[data-theme="contrast"] {
@@ -63,6 +70,9 @@
   --diagram-surface: #242424;
   --diagram-ink: #ffffff;
   --diagram-muted: #eeeeee;
+  --llm-query: var(--accent);
+  --llm-key: var(--accent);
+  --llm-value: var(--accent);
 }
 
 /* Legacy learning components consume the same semantic palette. */
@@ -73,7 +83,7 @@
   --teal-soft: var(--success-soft);
   --bad: var(--danger-soft);
   --body-font: system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif;
-  --heading-font: georgia, "Times New Roman", serif;
+  --heading-font: var(--body-font);
 }
 
 :where(a, button, input, select):focus-visible {
@@ -111,61 +121,4 @@ button.theme-toggle {
 
 button.theme-toggle:hover {
   border-color: var(--accent);
-}
-
-/* Owner-approved Computation studio palette for the LLM collection. */
-:root[data-theme="paper"] .llm-course {
-  --paper: #f3f6fb;
-  --ink: #1d2b43;
-  --muted: #526279;
-  --line: #ced8e8;
-  --card: #ffffff;
-  --surface-alt: #e9eef7;
-  --accent: #315fbe;
-  --accent-hover: #23498f;
-  --on-accent: #ffffff;
-  --accent-soft: #e3ebfc;
-  --success: #087a73;
-  --success-soft: #dcf1eb;
-  --danger-soft: #f7e7e9;
-  --diagram: #1d2b43;
-  --diagram-surface: #e9eef7;
-  --diagram-ink: #1d2b43;
-  --diagram-muted: #526279;
-  --llm-query: #315fbe;
-  --llm-key: #7852ac;
-  --llm-value: #087a73;
-}
-
-:root[data-theme="midnight"] .llm-course {
-  --paper: #141c2a;
-  --ink: #edf3ff;
-  --muted: #acbbd3;
-  --line: #35435b;
-  --card: #1d293b;
-  --surface-alt: #243249;
-  --accent: #8cafff;
-  --accent-hover: #b2c9ff;
-  --on-accent: #141c2a;
-  --accent-soft: #273b60;
-  --success: #79d2c2;
-  --success-soft: #1e3d3b;
-  --danger-soft: #442c3a;
-  --diagram: #141c2a;
-  --diagram-surface: #243249;
-  --diagram-ink: #edf3ff;
-  --diagram-muted: #acbbd3;
-  --llm-query: #8cafff;
-  --llm-key: #c4a7ef;
-  --llm-value: #79d2c2;
-}
-
-.llm-course {
-  --heading-font: var(--body-font);
-}
-
-:root[data-theme="contrast"] .llm-course {
-  --llm-query: var(--accent);
-  --llm-key: var(--accent);
-  --llm-value: var(--accent);
 }

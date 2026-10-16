@@ -32,8 +32,8 @@ This repository is public. Keep credentials, private notes, internal company mat
 
 ## Change the design globally
 
-Edit `defaultTheme` in `assets/theme-config.js` (`paper`, `midnight`, `contrast`), then push to main. Every page uses this owner setting for every visitor. There are no public design controls or saved visitor overrides.
+Edit `defaultTheme` in `assets/theme-config.js` (`paper`, `midnight`, `contrast`), then push to main. Every page uses this owner palette. The shared Light/Dark button switches appearance, persists under `journal-appearance`, and synchronizes across pages and tabs; it does not select a separate palette.
 
-Edit `assets/theme.css` to change the shared palette or fonts. Local page CSS controls layout only. Add both shared CSS and script to every new page using relative paths.
+Edit `assets/theme.css` to change the global Computation studio palette or shared sans typography. The homepage, journal and all learning sites inherit the same light, dark and high-contrast tokens. Local page CSS controls layout only. Add both shared CSS and script to every new page using relative paths.
 
 `CLAUDE.md` symlinks to `AGENTS.md`; edit the latter for future-agent design and privacy rules.
