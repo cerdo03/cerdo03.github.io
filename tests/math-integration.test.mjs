@@ -8,7 +8,7 @@ test('Module 0 has independent current-page and concept navigation', () => {
   assert.match(shell, /dataset\.mathLesson/);
   assert.match(shell, /0\. Optional math toolkit/);
   assert.match(shell, /math-fluency\/lesson-\$\{mathNumber\}/);
-  assert.match(shell, /mathNumber \? 'Mathematical notation/);
+  assert.match(shell, /mathNumber \? `Mathematical notation/);
   assert.match(shell, /location\.search/);
 });
 
@@ -43,4 +43,37 @@ test('course context retains only encoded allowlisted equation origins', async (
   assert.equal(equationContext('?from=%22%3E'), '');
   assert.equal(equationContext(''), '');
   assert.doesNotMatch(shell, /location\.search\s*:/);
+});
+
+test('concept titles strip either module prefix before local numbering', async () => {
+  const { conceptTitle } = await import('../labs/llm-systems/course-context.js');
+  assert.equal(typeof conceptTitle, 'function');
+  assert.equal(conceptTitle('0.1.1 A declaration'), 'A declaration');
+  assert.equal(conceptTitle('2.1.5 Softmax'), 'Softmax');
+  assert.equal(conceptTitle('Transfer check'), 'Transfer check');
+});
+
+test('all prioritized Module 2 authored equation blocks are typeset', () => {
+  for (let lesson = 1; lesson <= 5; lesson++) {
+    const html = read(`labs/attention/lesson-${lesson}.html`);
+    const blocks = [...html.matchAll(/<div class="eq[^\"]*"[^>]*>/g)];
+    assert.ok(blocks.length, `lesson ${lesson} equations`);
+    for (const [block] of blocks) assert.match(block, /data-math=/, block);
+  }
+});
+
+test('dynamic visual formulas use fixed authored math and explicit per-view mounting', () => {
+  assert.match(read('labs/llm-systems/learning-visuals.js'), /renderVisualMath\(root, type\)/);
+  assert.match(read('labs/inference/app.js'), /mountConceptMath\(.*lesson\.id/);
+});
+
+test('migrated equations and fixed visual identities parse with strict self-hosted KaTeX', async () => {
+  const { default: katex } = await import('../assets/vendor/katex/0.19.0/katex.js');
+  for (let lesson = 1; lesson <= 5; lesson++) {
+    for (const [, source] of read(`labs/attention/lesson-${lesson}.html`).matchAll(/data-math="([^"]+)"/g)) {
+      const tex = source.replaceAll('&gt;', '>').replaceAll('&lt;', '<').replaceAll('&amp;', '&').replaceAll('&quot;', '"');
+      const rendered = katex.renderToString(tex, { strict: 'error', throwOnError: true, output: 'htmlAndMathml' });
+      assert.match(rendered, /<math/);
+    }
+  }
 });

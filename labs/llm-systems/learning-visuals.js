@@ -1,3 +1,4 @@
+import {renderVisualMath} from './math-integration.js';
 import {mountStudio} from './studio-arithmetic.js';
 import {flowSnapshot,animateFlow} from './flow-motion.js';
 import { attentionState, promptTokens, representations } from '../inference/guide-model.js';
@@ -253,6 +254,7 @@ export function mountLearningVisual(root,type,options={}){
   const scope=['projections','scores','values'].includes(type)?`Prefill · layer 1 · head 1 · ${promptTokens[s.position]}`:type==='sharing'?'Prefill · layer 1 · is':type==='prediction'?'Prefill · is · two-layer numeric toy':type==='heads'?'One position · two-head schematic':type==='request'?`${s.pass===0?'Prefill':`Decode ${s.pass}`} · layer 1 · head 1`:'Compatible requests · token-level reuse';
   root.classList.add('teaching-visual');root.classList.toggle('is-playing',!!timer);
   root.innerHTML=`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions"><button type="button" data-command="reset" aria-label="Reset diagram">↺</button><button type="button" data-command="back" ${s.stage===0?'disabled':''}>← Previous</button><button type="button" data-command="play">${timer?'Pause':'Play'}</button><button type="button" data-command="next" ${s.stage===view.max&&!(type==='request'&&s.pass<(options.answer||['blue','today','.']).length-1)?'disabled':''}>${s.stage===view.max&&type==='request'?'Next pass →':'Next →'}</button></div>`:''}</div><div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage+1} / ${view.max+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
+  renderVisualMath(root, type);
   root.querySelectorAll('[data-field]').forEach(control=>control.onchange=()=>{
    stop();const field=control.dataset.field;s[field]=field==='role'?control.value:Number(control.value);
    if(['pass','change'].includes(field))s.stage=0;

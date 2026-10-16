@@ -1,3 +1,4 @@
+import {mountConceptMath} from '../llm-systems/math-integration.js';
 import {mountLearningVisual,disposeVisual} from '../llm-systems/learning-visuals.js';
 import {mountVectorRoutes} from '../attention/vector-routes.js';
 import {representations} from './guide-model.js';
@@ -23,6 +24,7 @@ function render(){
  if(Number.isInteger(saved.checks[lesson.check.id]))show(saved.checks[lesson.check.id]);
  }
  draw();
+ mountConceptMath($('#lesson'), lesson.id);
 }
 function navigate(index){current=Math.max(0,Math.min(guide.length-1,index));render();$('h1').focus();window.scrollTo(0,0)}
 function draw(focus){

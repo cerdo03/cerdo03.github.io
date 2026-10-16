@@ -87,7 +87,7 @@
       <section id="s2-4-2" aria-labelledby="s2-4-2-title">
         <h2 id="s2-4-2-title">2.4.2 The conceptual shape of the cache</h2>
         <p>Collect the per-layer, per-position, per-head key vectors into one tensor, and the value vectors into another. For one sequence (no batch dimension):</p>
-        <div class="eq eq-boxed" role="math" aria-label="K cache and V cache are each in R to the L by T by H K V by D">
+        <div class="eq eq-boxed" role="math" aria-label="K cache and V cache are each in R to the L by T by H K V by D" data-math="K_{\mathrm{cache}},V_{\mathrm{cache}}\in\mathbb R^{L\times T\times H_{\mathrm{KV}}\times D}" data-display="true">
           <var>K</var><sub>cache</sub>, <var>V</var><sub>cache</sub> ∈ ℝ<sup><var>L</var> × <var>T</var> × <var>H</var><sub>KV</sub> × <var>D</var></sup>
         </div>
         <dl class="eq-vars">
@@ -141,10 +141,10 @@
       <section id="s2-4-4" aria-labelledby="s2-4-4-title">
         <h2 id="s2-4-4-title">2.4.4 Reusing the cache during decode</h2>
         <p>Each decode forward pass processes exactly one new position <var>p</var>, the token sampled at the end of the previous pass. For that position, in each layer:</p>
-        <div class="eq" role="math" aria-label="q p equals x p W Q, k p equals x p W K, v p equals x p W V">
+        <div class="eq" role="math" aria-label="q p equals x p W Q, k p equals x p W K, v p equals x p W V" data-math="\begin{aligned}q_p&amp;=x_pW_Q\\ k_p&amp;=x_pW_K\\ v_p&amp;=x_pW_V\end{aligned}" data-display="true">
           <var>q</var><sub><var>p</var></sub> = <var>x</var><sub><var>p</var></sub><var>W</var><sub>Q</sub>,  <var>k</var><sub><var>p</var></sub> = <var>x</var><sub><var>p</var></sub><var>W</var><sub>K</sub>,  <var>v</var><sub><var>p</var></sub> = <var>x</var><sub><var>p</var></sub><var>W</var><sub>V</sub>
         </div>
-        <div class="eq eq-boxed" role="math" aria-label="o p equals softmax of q p times K 0 to p transposed over root d, times V 0 to p, where K 0 to p stacks the p cached keys with k p">
+        <div class="eq eq-boxed" role="math" aria-label="o p equals softmax of q p times K 0 to p transposed over root d, times V 0 to p, where K 0 to p stacks the p cached keys with k p" data-math="\begin{aligned}o_p&amp;=\operatorname{softmax}\!\left(\frac{q_pK_{0:p}^{\mathsf T}}{\sqrt d}\right)V_{0:p}\\K_{0:p}&amp;=[K_{\mathrm{cache}};k_p]\end{aligned}" data-display="true">
           <var>o</var><sub><var>p</var></sub> = softmax(<var>q</var><sub><var>p</var></sub> <var>K</var><sub>0:<var>p</var></sub><sup>T</sup> / √<var>d</var>) <var>V</var><sub>0:<var>p</var></sub>,   <var>K</var><sub>0:<var>p</var></sub> = [<var>K</var><sub>cache</sub>; <var>k</var><sub><var>p</var></sub>]
         </div>
         <dl class="eq-vars">

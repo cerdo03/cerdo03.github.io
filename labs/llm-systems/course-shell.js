@@ -1,6 +1,6 @@
 import {enhanceCourse} from './course-enhancements.js';
 import '../attention/symbols.js';
-import { equationContext } from './course-context.js';
+import { equationContext, conceptTitle } from './course-context.js';
 import { renderMathIn } from './math-renderer.js';
 import { mountEquationExplorers } from './equation-explorer.js';
 // Shared guided reading shell for this collection only. Existing URLs and section anchors remain valid.
@@ -117,7 +117,7 @@ if (typeof document !== 'undefined') {
       });
       const buttons = sections.map((section, i) => {
         const button = document.createElement('button');button.type = 'button';
-        button.textContent = `${i + 1}. ${section.querySelector('h2')?.textContent.replace(/^2\.\d+\.\d+\s*/, '') || 'Check your understanding'}`;
+        button.textContent = `${i + 1}. ${conceptTitle(section.querySelector('h2')?.textContent || '') || 'Check your understanding'}`;
         button.onclick = () => show(i, true);nav.append(button);return button;
       });
       const pager = document.createElement('nav');pager.className = 'course-pager';pager.setAttribute('aria-label', 'Previous and next concept');
@@ -131,7 +131,7 @@ if (typeof document !== 'undefined') {
         buttons.forEach((button, j) => { button.setAttribute('aria-current', j === i ? 'step' : 'false'); });
         if (hero) hero.hidden = i !== 0;
         const heading = sections[i].querySelector('h2');heading.tabIndex = -1;
-        if (heading.firstChild?.nodeType === 3) heading.firstChild.textContent = heading.firstChild.textContent.replace(/^2\.\d+\.\d+\s*/, '');
+        if (heading.firstChild?.nodeType === 3) heading.firstChild.textContent = conceptTitle(heading.firstChild.textContent);
         counter.textContent = `${i + 1} / ${sections.length}`;
         pager.querySelector('[data-prev]').disabled = i === 0 && currentNumber === 1;
         pager.querySelector('[data-next]').textContent = i === sections.length - 1 ? (currentNumber === (mathNumber ? 6 : 5) ? 'Module overview →' : 'Next lesson →') : `Next: ${buttons[i + 1].textContent.replace(/^\d+\.\s*/, '')} →`;
@@ -165,7 +165,7 @@ if (typeof document !== 'undefined') {
     document.querySelector('main')?.prepend(existingHeader);
     existingHeader.replaceChildren();
     const home = document.createElement('a');home.href = '../llm-systems/';home.textContent = 'Learning LLM Systems';existingHeader.append(home);
-    const context = document.createElement('span');context.textContent = mathNumber ? 'Mathematical notation · Optional toolkit' : location.pathname.includes('/math-fluency/') ? 'Optional math toolkit' : inference ? 'Inference fundamentals' : number ? `Attention · ${lessons[number - 1]}` : location.pathname.includes('llm-systems') ? 'Modules' : 'Attention and KV cache';existingHeader.append(context);
+    const context = document.createElement('span');context.textContent = mathNumber ? `Mathematical notation · ${mathLessons[mathNumber - 1]}` : location.pathname.includes('/math-fluency/') ? 'Optional math toolkit' : inference ? 'Inference fundamentals' : number ? `Attention · ${lessons[number - 1]}` : location.pathname.includes('llm-systems') ? 'Modules' : 'Attention and KV cache';existingHeader.append(context);
     if (themeButton) existingHeader.append(themeButton);
     if (!themeButton) { const observer = new MutationObserver(() => { const toggle = document.querySelector('.theme-toggle');if (toggle) { if (toggle.parentElement !== existingHeader) existingHeader.append(toggle);observer.disconnect(); } });observer.observe(document.body, {childList: true, subtree: true}); }
   }

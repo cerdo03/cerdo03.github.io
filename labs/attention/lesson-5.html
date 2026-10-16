@@ -62,20 +62,21 @@
       <section id="s2-5-1" aria-labelledby="s2-5-1-title">
         <h2 id="s2-5-1-title">2.5.1 Deriving KV-cache memory</h2>
         <p><strong>The problem.</strong> Before deploying a model you need to know how much memory each request’s cache will occupy. The answer follows directly from the conceptual shape from Lesson 2.4: for each layer, keys and values are each a tensor of shape [<var>T</var>, <var>H</var><sub>KV</sub>, <var>D</var>].</p>
+        <div class="course-core" data-equation="kv-memory">M_KV = 2 L T H_KV D B bytes. This counts raw keys and values for one sequence, excluding other memory.</div>
 
         <h3>Step 1: one token in one layer</h3>
         <p>For one new token, each KV head in a layer stores one key vector and one value vector, each with <var>D</var> numbers, and each number takes <var>B</var> bytes.</p>
-        <div class="eq" role="math" aria-label="bytes per token per layer equals 2 times H KV times D times B">bytes per token per layer = 2 · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
+        <div class="eq" role="math" aria-label="bytes per token per layer equals 2 times H KV times D times B" data-math="\text{Bytes per token per layer}=2H_{\mathrm{KV}}DB" data-display="true">bytes per token per layer = 2 · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
         <p>Example: 2 × 8 × 128 × 2 = <span class="num">4,096</span> B = 4 KiB. The 2 counts the key <em>and</em> the value; forgetting it is the most common mistake.</p>
 
         <h3>Step 2: one token across all layers</h3>
         <p>Every attention layer has its own projections, so every layer keeps its own K and V for the token. Nothing is shared across layers in this model.</p>
-        <div class="eq" role="math" aria-label="bytes per token equals 2 times L times H KV times D times B">bytes per token = 2 · <var>L</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
+        <div class="eq" role="math" aria-label="bytes per token equals 2 times L times H KV times D times B" data-math="\text{Bytes per token}=2LH_{\mathrm{KV}}DB" data-display="true">bytes per token = 2 · <var>L</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
         <p>Example: 32 × 4,096 = <span class="num">131,072</span> B = 128 KiB per cached token.</p>
 
         <h3>Step 3: a whole sequence</h3>
         <p>A sequence with <var>T</var> cached tokens stores that per-token amount <var>T</var> times.</p>
-        <div class="eq eq-boxed" role="math" aria-label="M KV equals 2 times L times T times H KV times D times B">
+        <div class="eq eq-boxed" role="math" aria-label="M KV equals 2 times L times T times H KV times D times B" data-math="M_{\mathrm{KV}}=2LTH_{\mathrm{KV}}DB" data-display="true">
           <var>M</var><sub>KV</sub> = 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>  bytes
         </div>
         <dl class="eq-vars">
@@ -110,7 +111,7 @@
       <section id="s2-5-2" aria-labelledby="s2-5-2-title">
         <h2 id="s2-5-2-title">2.5.2 KV-cache memory calculator</h2>
         <p>The calculator applies the boxed formula to any configuration and to many concurrent sequences. With <var>N</var> sequences of possibly different lengths <var>T</var><sub>i</sub>, the raw total is a sum; for equal lengths it collapses to a product:</p>
-        <div class="eq" role="math" aria-label="M total equals the sum over i of 2 L T i H KV D B, which for N equal lengths equals N times 2 L T H KV D B">
+        <div class="eq" role="math" aria-label="M total equals the sum over i of 2 L T i H KV D B, which for N equal lengths equals N times 2 L T H KV D B" data-math="\begin{aligned}M_{\mathrm{total}}&amp;=\sum_{i=1}^N2LT_iH_{\mathrm{KV}}DB\\&amp;=N(2LTH_{\mathrm{KV}}DB)\quad\text{for equal lengths}\end{aligned}" data-display="true">
           <var>M</var><sub>total</sub> = Σ<sub><var>i</var></sub> 2 · <var>L</var> · <var>T</var><sub><var>i</var></sub> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>   =   <var>N</var> · 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>  (if every <var>T</var><sub><var>i</var></sub> = <var>T</var>)
         </div>
         <p>Unequal example (worked example config): three requests with 1,000, 4,000 and 8,000 cached tokens hold 13,000 tokens × 131,072 B = 1,703,936,000 B ≈ 1.70 GB ≈ 1.59 GiB. Only the total token count matters, not how it is split. The calculator below assumes equal lengths.</p>
@@ -243,7 +244,7 @@
 
         <h3>KV bytes read per decode step</h3>
         <p>Assume the new query attends to all <var>T</var> cached positions and every cached byte is read from GPU memory exactly once per step. Then one decode step for one sequence reads approximately the whole cache:</p>
-        <div class="eq" role="math" aria-label="KV bytes read per decode step approximately equals 2 times L times T times H KV times D times B">KV bytes read per step ≈ 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
+        <div class="eq" role="math" aria-label="KV bytes read per decode step approximately equals 2 times L times T times H KV times D times B" data-math="\text{KV bytes read per step}\approx2LTH_{\mathrm{KV}}DB" data-display="true">KV bytes read per step ≈ 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
         <p>Worked example: for the default configuration at <var>T</var> = 4,096, every generated token requires reading ≈ 536,870,912 B = <strong>512 MiB</strong> of K/V for that one sequence, and the amount grows by 128 KiB with each token generated. With 32 such sequences in a decode batch, a step reads ≈ 16 GiB (≈ 17.18 GB) of K/V. For scale: the weights of a hypothetical 8-billion-parameter model in BF16 are about 16 GB, so at this batch size and context the KV reads are comparable to the weight reads.</p>
 
         <h3>Arithmetic intensity: why KV reads are hard to hide</h3>

@@ -83,7 +83,7 @@
       <section id="s2-3-2" aria-labelledby="s2-3-2-title">
         <h2 id="s2-3-2-title">2.3.2 GQA generalises MHA and MQA</h2>
         <p>In grouped-query attention, each KV head serves a fixed group of query heads. With 16 query heads and 4 KV heads, each group contains 4 query heads. They ask different questions using their own Q vectors, but read the same K/V rows. The architecture defines these groups; the input tokens do not choose them.</p>
-        <div class="eq eq-boxed" role="math" aria-label="G equals H q over H K V. g of i equals floor of i over G. head i equals Attention of X W Q i, X W K g of i, X W V g of i.">
+        <div class="eq eq-boxed" role="math" aria-label="G equals H q over H K V. g of i equals floor of i over G. head i equals Attention of X W Q i, X W K g of i, X W V g of i." data-math="\begin{aligned}G&amp;=\frac{H_q}{H_{\mathrm{KV}}},\quad g(i)=\left\lfloor\frac{i}{G}\right\rfloor\\\operatorname{head}_i&amp;=\operatorname{Attention}(XW_i^Q,XW_{g(i)}^K,XW_{g(i)}^V)\end{aligned}" data-display="true">
           <var>G</var> = <var>H</var><sub>q</sub> / <var>H</var><sub>KV</sub><br><var>g</var>(<var>i</var>) = ⌊<var>i</var> / <var>G</var>⌋<br>head<sub><var>i</var></sub> = Attention(<var>X</var><var>W</var><sup>Q</sup><sub><var>i</var></sub>, <var>X</var><var>W</var><sup>K</sup><sub><var>g</var>(<var>i</var>)</sub>, <var>X</var><var>W</var><sup>V</sup><sub><var>g</var>(<var>i</var>)</sub>)
         </div>
         <dl class="eq-vars">
@@ -119,7 +119,7 @@ for i in range(H_q):
       <section id="s2-3-3" aria-labelledby="s2-3-3-title">
         <h2 id="s2-3-3-title">2.3.3 Comparing head layouts and KV memory</h2>
         <p>The cache stores one key and one value vector of length <var>D</var> per KV head, per token, per layer. Lesson 2.5 derives this formula step by step; here we use it to compare layouts.</p>
-        <div class="eq eq-boxed" role="math" aria-label="M K V equals 2 times L times T times H K V times D times B">
+        <div class="eq eq-boxed" role="math" aria-label="M K V equals 2 times L times T times H K V times D times B" data-math="M_{\mathrm{KV}}=2LTH_{\mathrm{KV}}DB" data-display="true">
           <var>M</var><sub>KV</sub> = 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var>
         </div>
         <dl class="eq-vars">
