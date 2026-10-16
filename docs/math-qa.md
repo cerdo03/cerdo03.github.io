@@ -31,3 +31,14 @@ Headless installed Chrome controlled through Playwright, served as ordinary stat
 No remaining blocking defect was found in this audit. The duplicate radio-name regression discovered during integration was reproduced and retested after the component owner's fix.
 
 This is an automated browser/accessibility smoke audit, not a WCAG certification. Actual screen-reader speech, physical touch devices, OS/browser zoom, Safari/Firefox and qualitative learner outcomes were not tested. MathML presence and accessible labels were checked structurally; intelligibility should still be assessed with a screen reader. CSS zoom approximates increased content scale and does not establish browser-zoom equivalence. Local equation scrolling was verified in Chrome; other engines require their own keyboard checks.
+
+## Orchestrator final recheck
+
+After the independent audit, the orchestrator removed redundant maximum notation
+from the compact stable-softmax formula, added visible overflow cues and explicit
+keyboard focus only for long equations, and tested cleanup when display math
+changes to inline. Both new renderer tests were observed failing before their
+implementation. Final suite: **209 passed**, full lint and diff check passed.
+The 224-case route matrix, 960-case concept matrix, all activity flows,
+keyboard/progress/storage checks and JavaScript-disabled fallbacks were rerun
+successfully. Final screenshots were refreshed in all three themes at 320/1280.

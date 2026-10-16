@@ -107,3 +107,30 @@ test('changing options removes stale renderer labels without removing MathML', a
   assert.equal(target.hasAttribute('role'), false);
   assert.match(target.innerHTML, /<math[\s>]/);
 });
+
+test('overflowing equations expose a scroll cue and keyboard access only when needed', async () => {
+  const renderer = await import('../labs/llm-systems/math-renderer.js');
+  assert.equal(typeof renderer.updateMathOverflow, 'function');
+  const attrs = new Map();
+  const hint = { hidden: true };
+  const element = { clientWidth: 200, scrollWidth: 350, dataset: {},
+    matches: () => true, querySelectorAll: () => [], querySelector: () => hint,
+    setAttribute: (key, value) => attrs.set(key, value), removeAttribute: key => attrs.delete(key) };
+  renderer.updateMathOverflow(element);
+  assert.equal(hint.hidden, false);
+  assert.equal(attrs.get('tabindex'), '0');
+  element.scrollWidth = 200;
+  renderer.updateMathOverflow(element);
+  assert.equal(hint.hidden, true);
+  assert.equal(attrs.has('tabindex'), false);
+});
+
+test('changing a scrolling display equation to inline removes owned focus state', async () => {
+  const { renderMath } = await renderer();
+  const target = element({ tabindex: '0' });
+  target.dataset = { mathOverflow: 'true' };
+  renderMath(target, 'x', { displayMode: true });
+  renderMath(target, 'x', { displayMode: false });
+  assert.equal(target.hasAttribute('tabindex'), false);
+  assert.equal(target.dataset.mathOverflow, undefined);
+});

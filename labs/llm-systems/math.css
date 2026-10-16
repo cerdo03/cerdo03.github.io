@@ -45,6 +45,19 @@
   outline-offset: 3px;
 }
 
+.math-scroll-hint {
+  display: block;
+  position: sticky;
+  left: 0;
+  width: max-content;
+  max-width: 100%;
+  margin-top: 0.5rem;
+  font: 0.75rem var(--body-font);
+  color: var(--muted);
+}
+
+.math-scroll-hint[hidden] { display: none; }
+
 @media (max-width: 400px) {
   .math-display {
     padding: 0.75rem;

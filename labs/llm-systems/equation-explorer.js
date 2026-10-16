@@ -4,7 +4,7 @@ import { stableSoftmax, mountMathExercises, dot, rawKvBytes, toMiB } from './mat
 import { projectionTrace, valueTrace } from './visual-model.js';
 export const equationDefinitions={
  'softmax-stable':{
-  tex:String.raw`a_j=\frac{e^{z_j-m}}{\sum_k e^{z_k-m}},\qquad m=\max_k z_k`,
+  tex:String.raw`a_j=\frac{e^{z_j-m}}{\sum_k e^{z_k-m}}`,
   label:'Stable softmax: each shifted exponential divided by their sum',
   purpose:'Turn a row of scores into nonnegative weights that sum to one, while avoiding exponential overflow.',
   symbols:{'aⱼ':'One output weight, selected by free index j','zⱼ':'The score at position j','k':'Reduction index: visits every allowed position in the denominator','m':'Maximum score in this row'},

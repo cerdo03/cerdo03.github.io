@@ -64,3 +64,12 @@ output, inline/display modes, multiline alignment, idempotence, changed TeX,
 invalid fallback, disabled HTML/unsafe URL extensions, license and every CSS
 font reference. Browser QA must additionally inspect fonts, overflow, theme
 contrast and assistive-technology behavior in the integrated lesson.
+
+## Narrow equation affordance
+
+Connected display equations are measured after mounting, font readiness, concept
+changes, disclosure toggles and window resizing. Actual horizontal overflow shows
+“Scroll equation horizontally” and makes that region explicitly keyboard
+focusable. The cue disappears when the expression fits; compact equations do not
+add focus stops. These checks never re-typeset mathematics or retain discarded
+simulation nodes. `updateMathOverflow(root)` is also available for explicit mounts.
