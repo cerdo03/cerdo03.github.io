@@ -77,3 +77,28 @@ test('migrated equations and fixed visual identities parse with strict self-host
     }
   }
 });
+
+test('explicit dynamic formula mounts are idempotent and never typeset unknown views', async () => {
+  const { renderVisualMath, visualEquations } = await import('../labs/llm-systems/math-integration.js');
+  const attrs = new Map();
+  let writes = 0, html = '';
+  const formula = {
+    classList: { add() {}, toggle() {}, remove() {} },
+    removeAttribute: name => attrs.delete(name),
+    setAttribute: (name, value) => attrs.set(name, value),
+    set innerHTML(value) { html = value; writes++; },
+    get innerHTML() { return html; },
+  };
+  const root = { querySelector: () => formula };
+  for (const type of Object.keys(visualEquations)) {
+    renderVisualMath(root, type);
+    assert.match(html, /<math/);
+    assert.equal(attrs.has('data-math-error'), false);
+    const count = writes;
+    renderVisualMath(root, type);
+    assert.equal(writes, count);
+  }
+  const count = writes;
+  renderVisualMath(root, 'request');
+  assert.equal(writes, count);
+});
