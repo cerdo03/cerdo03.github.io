@@ -10,7 +10,7 @@
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="site.js"></script>
   <script type="module" src="lesson-1.js"></script>
-<link rel="stylesheet" href="../llm-systems/course.css"><script type="module" src="../llm-systems/course-shell.js"></script><script type="module" src="continuous-attention.js"></script><script src="../llm-systems/render-guard.js"></script></head>
+<link rel="stylesheet" href="../llm-systems/course.css"><script type="module" src="../llm-systems/course-shell.js"></script><script type="module" src="continuous-attention.js"></script><script src="../llm-systems/render-guard.js"></script><link rel="stylesheet" href="../llm-systems/math.css"><link rel="stylesheet" href="../llm-systems/equation-explorer.css"></head>
 <body data-lesson="1">
   <a class="skip-link" href="#main">Skip to lesson content</a>
   <header class="site-header">
@@ -190,8 +190,14 @@
       <section id="s2-1-5" aria-labelledby="s2-1-5-title">
         <h2 id="s2-1-5-title">2.1.5 Softmax: scores to weights</h2>
         <p>A row of scores is not yet usable as mixing weights: scores can be negative and do not sum to anything in particular. We want weights that are non-negative, sum to 1, preserve the ordering of the scores and are differentiable. Softmax does this.</p>
-        <div class="eq" role="math" aria-label="a j equals e to the z j divided by the sum over k of e to the z k, which equals e to the z j minus m divided by the sum over k of e to the z k minus m, where m is the maximum z">
-          <var>a</var><sub>j</sub> = e<sup><var>z</var><sub>j</sub></sup> / Σ<sub><var>k</var></sub> e<sup><var>z</var><sub>k</sub></sup> = e<sup><var>z</var><sub>j</sub> − <var>m</var></sup> / Σ<sub><var>k</var></sub> e<sup><var>z</var><sub>k</sub> − <var>m</var></sup>, &nbsp;&nbsp; <var>m</var> = max<sub><var>k</var></sub> <var>z</var><sub>k</sub>
+        <div class="course-core">
+          <p><strong>Original softmax</strong></p>
+          <div data-math="a_j=\frac{e^{z_j}}{\sum_k e^{z_k}}" data-display="true">Each exponential divided by their sum.</div>
+          <p><strong>Choose row maximum</strong></p>
+          <div data-math="m=\max_k z_k" data-display="true">Find the largest score in this row.</div>
+          <p><strong>Numerically stable form</strong></p>
+          <p><a href="../math-fluency/lesson-4.html?from=softmax">Need help reading the math?</a></p>
+          <div data-equation="softmax-stable"></div>
         </div>
         <dl class="eq-vars">
           <dt><var>z</var><sub>j</sub></dt><dd>Softmax input for key <var>j</var>: the scaled (and, later, masked) score of one query row.</dd>

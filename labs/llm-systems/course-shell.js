@@ -1,6 +1,9 @@
 import {enhanceCourse} from './course-enhancements.js';
 import '../attention/symbols.js';
+import { renderMathIn } from './math-renderer.js';
+import { mountEquationExplorers } from './equation-explorer.js';
 // Shared guided reading shell for this collection only. Existing URLs and section anchors remain valid.
+const mathLessons = ['Notation grammar', 'Indices and reductions', 'Dimensions and transpose', 'Softmax and stability', 'Transformer equations', 'Write equations'];
 const lessons = ['Self-attention', 'Multi-head attention', 'MHA / MQA / GQA', 'KV-cache internals', 'Memory and performance'];
 export function sectionIndex(ids, hash) { const index = ids.indexOf(hash.replace(/^#/, '')); return index < 0 ? 0 : index; }
 
@@ -22,10 +25,12 @@ function labelDiagram(root) {
 }
 
 if (typeof document !== 'undefined') {
-  document.addEventListener('DOMContentLoaded',()=>enhanceCourse(document),{once:true});
+  document.addEventListener('DOMContentLoaded',()=>{ enhanceCourse(document);renderMathIn(document);mountEquationExplorers(document); },{once:true});
   const inference = !!document.getElementById('curriculum');
   const number = Number(document.body.dataset.lesson);
-  const sections = number ? [...document.querySelectorAll('main > section[id]')] : [];
+  const mathNumber = Number(document.body.dataset.mathLesson);
+  const currentNumber = mathNumber || number;
+  const sections = currentNumber ? [...document.querySelectorAll('main > section[id]')] : [];
   const navigationKey = 'llm-course-navigation-v1';
   let navigation = {};
   try { navigation = JSON.parse(localStorage.getItem(navigationKey)) || {}; } catch { /* Optional storage. */ }
@@ -60,21 +65,21 @@ if (typeof document !== 'undefined') {
     rememberDisclosure(modules, 'modules', false);
     const title = document.createElement('summary');title.textContent = 'Modules';modules.append(title);
     const links = document.createElement('nav');links.setAttribute('aria-label', 'Modules');
-    links.innerHTML = '<ul><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';
-    const active = inference ? '../inference/' : number ? `../attention/lesson-${number}.html` : !location.pathname.includes('llm-systems') ? '../attention/' : null;
-    if (active) links.querySelector(`a[href="${active}"]`).setAttribute('aria-current', 'page');
+    links.innerHTML = '<ul><li><a href="../math-fluency/">0. Optional math toolkit</a><ul>' + mathLessons.map((text, i) => `<li><a href="../math-fluency/lesson-${i + 1}.html${mathNumber ? location.search : ''}">0.${i + 1} ${text}</a></li>`).join('') + '</ul></li><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';
+    const active = mathNumber ? `../math-fluency/lesson-${mathNumber}.html${location.search}` : location.pathname.includes('/math-fluency/') ? '../math-fluency/' : inference ? '../inference/' : number ? `../attention/lesson-${number}.html` : !location.pathname.includes('llm-systems') ? '../attention/' : null;
+    if (active) [...links.querySelectorAll('a')].find(link => link.getAttribute('href') === active)?.setAttribute('aria-current', 'page');
     modules.append(links);sidebar.prepend(modules);
     if (sections.length) {
       const main = document.querySelector('main');
       const hero = main.querySelector(':scope > header');
       hero?.classList.add('course-intro');
       main.querySelector('.pager')?.remove();
-      if (number === 2) {
+      if (!mathNumber && number === 2) {
         const introSection = sections[0], figure = document.createElement('div');figure.className = 'lab';
         figure.innerHTML = '<p>Every head receives the same incoming token vector x. Its own learned matrices create its Q, K and V.</p><div class="mechanism-node"><strong>Same incoming x</strong><span>One token position</span></div><div class="connector">↓ parallel projections</div><div class="node-grid"><div class="mechanism-node"><strong>Head 1</strong>x × WQ₁ → Q₁<br>x × WK₁ → K₁<br>x × WV₁ → V₁<br>↓ its weights mix its V rows<br>Head result 1</div><div class="mechanism-node"><strong>Head 2</strong>x × WQ₂ → Q₂<br>x × WK₂ → K₂<br>x × WV₂ → V₂<br>↓ its weights mix its V rows<br>Head result 2</div></div><div class="connector">↓ concatenate the head results, then output projection</div><div class="mechanism-node"><strong>One update for this token</strong>Add to its incoming vector (residual addition). Q/K/V are intermediate vectors, not the next layer’s input.</div>';
         labelDiagram(figure);introSection.querySelector('p').after(figure);
       }
-      if (number === 2) {
+      if (!mathNumber && number === 2) {
         const split = document.createElement('div');split.className = 'lab';
         split.innerHTML = '<div class="mechanism-node"><strong>After Q projection: 4 components</strong>[head1·a, head1·b, head2·a, head2·b]</div><div class="connector">↓ split the projected columns</div><div class="node-grid"><div class="mechanism-node"><strong>Head 1 gets 2 components</strong>[head1·a, head1·b]</div><div class="mechanism-node"><strong>Head 2 gets 2 components</strong>[head2·a, head2·b]</div></div><p>This split happens after projection. Both heads started from the same full input x; they do not receive disjoint slices of the original embedding. K and V split in the same way.</p>';
         labelDiagram(split);sections[1].querySelector('p').after(split);
@@ -82,7 +87,7 @@ if (typeof document !== 'undefined') {
         join.innerHTML = '<div class="node-grid"><div class="mechanism-node"><strong>Head result 1</strong>2 components</div><div class="mechanism-node"><strong>Head result 2</strong>2 components</div></div><div class="connector">↓ concatenate: place components next to each other</div><div class="mechanism-node"><strong>Joined result</strong>2 + 2 = 4 components</div><div class="connector">↓ learned output projection WO mixes the head results</div><div class="mechanism-node"><strong>One 4-component update</strong>Add this to the incoming 4-component x. This residual addition preserves the original path while incorporating the attention update.</div>';
         labelDiagram(join);sections[3].querySelector('p').after(join);
       }
-      if (number === 5) {
+      if (!mathNumber && number === 5) {
         const counts = document.createElement('div');counts.className = 'lab';
         counts.innerHTML = '<div class="mechanism-node"><strong>One token, one KV head, one layer</strong>One K vector + one V vector → 2 × D numbers.<br>Each number takes B bytes → 2 × D × B bytes.</div><div class="connector">↓ repeat for all KV heads</div><div class="mechanism-node"><strong>One token, one layer</strong>2 × HKV × D × B bytes</div><div class="connector">↓ repeat for L layers and T cached positions</div><div class="mechanism-node"><strong>One sequence’s raw KV memory</strong>2 × L × T × HKV × D × B bytes.<br>For N equal-length sequences, multiply by N.</div><p>Queries are not stored in the KV cache, so the number of query heads does not appear in this formula. The calculator applies these counts to a configuration; its chart uses that same configuration.</p>';
         labelDiagram(counts);sections[0].querySelector('p').after(counts);
@@ -96,8 +101,8 @@ if (typeof document !== 'undefined') {
         nodes[0].before(detail);nodes.forEach(node => body.append(node));
         if (host) host.append(detail);
       };
-      if (hero?.querySelector('.callout')) fold([hero.querySelector('.callout')], 'Prerequisites and assumptions');
-      sections.forEach(section => {
+      if (!mathNumber && hero?.querySelector('.callout')) fold([hero.querySelector('.callout')], 'Prerequisites and assumptions');
+      if (!mathNumber) sections.forEach(section => {
         const children = [...section.children];
         const intro = children.find(child => child.tagName === 'P');
         const labs = children.filter(child => child.classList.contains('lab'));
@@ -125,24 +130,24 @@ if (typeof document !== 'undefined') {
         const heading = sections[i].querySelector('h2');heading.tabIndex = -1;
         if (heading.firstChild?.nodeType === 3) heading.firstChild.textContent = heading.firstChild.textContent.replace(/^2\.\d+\.\d+\s*/, '');
         counter.textContent = `${i + 1} / ${sections.length}`;
-        pager.querySelector('[data-prev]').disabled = i === 0 && number === 1;
-        pager.querySelector('[data-next]').textContent = i === sections.length - 1 ? (number === 5 ? 'Module overview →' : 'Next lesson →') : `Next: ${buttons[i + 1].textContent.replace(/^\d+\.\s*/, '')} →`;
+        pager.querySelector('[data-prev]').disabled = i === 0 && currentNumber === 1;
+        pager.querySelector('[data-next]').textContent = i === sections.length - 1 ? (currentNumber === (mathNumber ? 6 : 5) ? 'Module overview →' : 'Next lesson →') : `Next: ${buttons[i + 1].textContent.replace(/^\d+\.\s*/, '')} →`;
         history.replaceState(null, '', `#${sections[i].id}`);
         if (moveFocus) { heading.focus();window.scrollTo(0, 0); }
         document.dispatchEvent(new CustomEvent('course:section', { detail: sections[i].id }));
       }
       pager.querySelector('[data-prev]').onclick = () => {
-        if (index > 0) show(index - 1, true); else location.href = `lesson-${number - 1}.html`;
+        if (index > 0) show(index - 1, true); else location.href = `lesson-${currentNumber - 1}.html${mathNumber ? location.search : ''}`;
       };
       pager.querySelector('[data-next]').onclick = () => {
-        if (index < sections.length - 1) show(index + 1, true); else location.href = number === 5 ? './' : `lesson-${number + 1}.html`;
+        if (index < sections.length - 1) show(index + 1, true); else location.href = currentNumber === (mathNumber ? 6 : 5) ? `./${mathNumber ? location.search : ''}` : `lesson-${currentNumber + 1}.html${mathNumber ? location.search : ''}`;
       };
       window.addEventListener('hashchange', () => { if (sections.some(s => `#${s.id}` === location.hash)) show(sectionIndex(sections.map(s => s.id), location.hash), true); });
       show(index, false);
     }
   }
   for (const link of document.querySelectorAll('footer a')) { if (/Back to the journal/i.test(link.textContent)) link.href = 'https://cerdo03.github.io/';if (/Back to learning sites/i.test(link.textContent)) link.href = 'https://cerdo03.github.io/#sites'; }
-  if (!number && !inference && !location.pathname.includes('llm-systems')) {
+  if (!currentNumber && !inference && !location.pathname.includes('llm-systems')) {
     for (const id of ['goal', 'prerequisites', 'notation', 'references']) {
       const section = document.getElementById(id);if (!section) continue;
       const detail = document.createElement('details');detail.className = 'course-detail';
@@ -157,7 +162,7 @@ if (typeof document !== 'undefined') {
     document.querySelector('main')?.prepend(existingHeader);
     existingHeader.replaceChildren();
     const home = document.createElement('a');home.href = '../llm-systems/';home.textContent = 'Learning LLM Systems';existingHeader.append(home);
-    const context = document.createElement('span');context.textContent = inference ? 'Inference fundamentals' : number ? `Attention · ${lessons[number - 1]}` : location.pathname.includes('llm-systems') ? 'Modules' : 'Attention and KV cache';existingHeader.append(context);
+    const context = document.createElement('span');context.textContent = mathNumber ? 'Mathematical notation · Optional toolkit' : location.pathname.includes('/math-fluency/') ? 'Optional math toolkit' : inference ? 'Inference fundamentals' : number ? `Attention · ${lessons[number - 1]}` : location.pathname.includes('llm-systems') ? 'Modules' : 'Attention and KV cache';existingHeader.append(context);
     if (themeButton) existingHeader.append(themeButton);
     if (!themeButton) { const observer = new MutationObserver(() => { const toggle = document.querySelector('.theme-toggle');if (toggle) { if (toggle.parentElement !== existingHeader) existingHeader.append(toggle);observer.disconnect(); } });observer.observe(document.body, {childList: true, subtree: true}); }
   }
