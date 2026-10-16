@@ -21,7 +21,8 @@ export function resolveReturnLink(search='') {
  return Object.hasOwn(returnLinks,key)?returnLinks[key]:returnLinks.softmax;
 }
 export const exercises={
- notation:{prompt:'In aⱼ = exp(zⱼ − m) / Σₖ exp(zₖ − m), which index selects the single output being calculated?',choices:['k, because it appears under the sum','j, because it remains free on both sides','m, because it sets the maximum'],answer:1,hints:['Look at the subscript of the output a.','An index bound by Σ runs over many entries; a free index names one output.'],explanation:'j selects one output weight. k is bound by the sum and visits all allowed scores. m is the row maximum, a scalar value rather than an index.'},
+ notation:{prompt:'What does X ∈ ℝ^(3 × 4) declare?',choices:['Compute X by multiplying 3 and 4','X is a real matrix with 3 rows and 4 columns','Every entry of X equals 12'],answer:1,hints:['The membership symbol ∈ declares what kind of object X is.','The superscript gives two axes: rows × columns.'],explanation:'X is a real matrix with 3 rows and 4 columns: 12 entries whose values are not specified. This is a shape/type declaration, not a multiplication instruction or a computation of the entries.'},
+ softmax:{prompt:'In aⱼ = exp(zⱼ − m) / Σₖ exp(zₖ − m), which index selects the single output being calculated?',choices:['k, because it appears under the sum','j, because it remains free on both sides','m, because it sets the maximum'],answer:1,hints:['Look at the subscript of the output a.','An index bound by Σ runs over many entries; a free index names one output.'],explanation:'j selects one output weight. k is bound by the sum and visits all allowed scores. m is the row maximum, a scalar value rather than an index.'},
 };
 export function evaluateChoice(id,choice) {
  const exercise=exercises[id];

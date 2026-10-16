@@ -8,7 +8,7 @@ export const equationDefinitions={
   purpose:'Turn a row of scores into nonnegative weights that sum to one, while avoiding exponential overflow.',
   symbols:{'aⱼ':'One output weight, selected by free index j','zⱼ':'The score at position j','k':'Reduction index: visits every allowed position in the denominator','m':'Maximum score in this row'},
   steps:['Read one output first: j selects one numerator and one resulting weight.','The denominator sums the shifted exponentials over k. It is shared by every output in the row.','Subtracting m multiplies the numerator and denominator by the same factor exp(−m), so the ideal real-number ratio is unchanged. Floating-point implementations differ: shifting prevents overflow.'],
-  practice:'notation',origin:'softmax',
+  practice:'softmax',origin:'softmax',
  },
 };
 function node(tag,text){const item=document.createElement(tag);if(text)item.textContent=text;return item;}
@@ -27,7 +27,7 @@ export function mountEquationExplorers(root=document){
   const logits=[4,8,2,6],weights=stableSoftmax(logits);reveal.append(node('p',`Illustrative scores: [${logits.join(', ')}]. Maximum = 8. Shifted scores = [−4, 0, −6, −2].`),node('p',`Computed weights ≈ [${weights.map(x=>x.toFixed(6)).join(', ')}]. The score 8 gets the largest weight. The weights sum to approximately 1.`));compute.append(prediction,reveal);
   const practice=disclosure('Practice'),exercise=node('div');exercise.dataset.mathExercise=definition.practice;practice.append(exercise);
   const learn=node('a','Read the optional math toolkit');learn.href=`../math-fluency/lesson-1.html?from=${definition.origin}`;
-  host.append(decode,compute,practice,learn);mountMathExercises(host);
+  const understand=disclosure('Understand this equation');understand.append(decode,compute,practice,learn);host.append(understand);mountMathExercises(host);
  }
  return hosts;
 }

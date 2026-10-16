@@ -18,6 +18,8 @@ test('return links accept only authored origin keys', () => {
  for(const query of ['?from=https://evil.example','?from=__proto__','?from=constructor','']) assert.equal(resolveReturnLink(query),'../attention/lesson-1.html#s2-1-5');
 });
 test('notation checkpoint gives deterministic explanatory feedback', () => {
+ assert.match(exercises.notation.prompt,/3.*4/);
+ assert.match(exercises.notation.explanation,/12/);
  assert.equal(exercises.notation.answer,1);
  assert.equal(evaluateChoice('notation',1).correct,true);
  assert.equal(evaluateChoice('notation',0).correct,false);
