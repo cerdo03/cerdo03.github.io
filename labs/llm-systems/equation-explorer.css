@@ -12,3 +12,7 @@
 .math-practice input { flex-shrink: 0; }
 .math-practice button { margin-top: .7rem; padding: .5rem .8rem; border: 1px solid var(--line); background: var(--surface-alt); color: var(--ink); border-radius: .25rem; cursor: pointer; font: inherit; }
 .equation-explorer :focus-visible, .math-practice :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.math-practice .math-choice-field { display: grid; gap: .4rem; align-items: start; }
+.math-practice select { max-width: 100%; padding: .4rem; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; }
+.math-practice [role="status"] { overflow-wrap: anywhere; }
+.math-practice .math-display { max-width: 100%; overflow-x: auto; }
