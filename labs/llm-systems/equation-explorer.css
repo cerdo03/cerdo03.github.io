@@ -1,0 +1,14 @@
+.equation-explorer { margin-block: 1.25rem; padding: 1rem; border: 1px solid var(--line); border-radius: .5rem; background: var(--card); color: var(--ink); min-width: 0; }
+.explorer-equation { overflow-x: auto; max-width: 100%; padding-block: .5rem; }
+.explorer-key { display: grid; grid-template-columns: minmax(2rem, max-content) minmax(0, 1fr); gap: .4rem .8rem; font-size: .9rem; }
+.explorer-key dt { font-weight: 600; }
+.explorer-key dd { margin: 0; overflow-wrap: anywhere; }
+.equation-explorer details, .math-practice details { margin-block: .7rem; }
+.equation-explorer summary, .math-practice summary { cursor: pointer; font-weight: 600; }
+.equation-explorer a { display: inline-block; margin-top: .7rem; }
+.math-practice fieldset { min-width: 0; padding: .8rem; border: 1px solid var(--line); }
+.math-practice legend { padding-inline: .3rem; }
+.math-practice label { display: flex; align-items: baseline; gap: .5rem; margin-block: .65rem; }
+.math-practice input { flex-shrink: 0; }
+.math-practice button { margin-top: .7rem; padding: .5rem .8rem; border: 1px solid var(--line); background: var(--surface-alt); color: var(--ink); border-radius: .25rem; cursor: pointer; font: inherit; }
+.equation-explorer :focus-visible, .math-practice :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
