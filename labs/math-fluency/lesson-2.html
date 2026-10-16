@@ -16,6 +16,7 @@
   <script type="module" src="../llm-systems/math-renderer.js"></script>
   <script type="module" src="../llm-systems/equation-explorer.js"></script>
   <script type="module" src="../llm-systems/math-exercises.js"></script>
+  <script src="../llm-systems/render-guard.js"></script>
 </head>
 <body data-math-lesson="2">
   <a class="skip-link" href="#main">Skip to lesson content</a>
@@ -33,6 +34,7 @@ O[i, j] = total</code></pre><p><strong>Common mistake:</strong> keeping k in the
       <section id="practice"><h2>0.2.4 Inspect a different output</h2><p>Make a prediction before opening hints. Try the task again without help after checking the reasoning.</p><div data-math-exercise="indices"><noscript><p>For the row and column above, expand all six terms before summing. The answer is 24. Changing the bound index name does not change the value.</p></noscript></div></section>
       <section id="transfer"><h2>0.2.5 Transfer without the term display</h2><p>Read <span data-math="R_{ab}=\sum_{r=1}^{3}P_{ar}U_{rb}">R_ab = sum over r=1 through 3 of P_ar U_rb</span>. Which indices are free? Write a loop for one requested output and name its three products. Separately explain <span data-math="c=\max_r h_r">c = max over r of h_r</span> without confusing the value with its location.</p><details><summary>Check the reference explanation</summary><p>a and b are free; r is bound. For fixed a,b, initialize a scalar accumulator to zero, then add P[a,1]U[1,b], P[a,2]U[2,b] and P[a,3]U[3,b]. Store that scalar in R[a,b]. The maximum c is the greatest entry of vector h, not its index. If you created three separate outputs, you omitted the reduction.</p></details><p><a href="../attention/lesson-1.html#s2-1-7">Return to weighted values in attention.</a></p></section>
       <nav class="pager" aria-label="Previous and next lesson"><a href="lesson-1.html">← Previous lesson</a><a href="lesson-3.html">Next lesson →</a></nav>
+      <div data-math-progress></div>
       <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
     </main>
   </div>

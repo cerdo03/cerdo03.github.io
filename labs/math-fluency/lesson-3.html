@@ -16,6 +16,7 @@
   <script type="module" src="../llm-systems/math-renderer.js"></script>
   <script type="module" src="../llm-systems/equation-explorer.js"></script>
   <script type="module" src="../llm-systems/math-exercises.js"></script>
+  <script src="../llm-systems/render-guard.js"></script>
 </head>
 <body data-math-lesson="3">
   <a class="skip-link" href="#main">Skip to lesson content</a>
@@ -30,6 +31,7 @@
       <section id="practice"><h2>0.3.4 Predict valid and impossible products</h2><p>Make a prediction before opening hints. Try the task again without help after checking the reasoning.</p><div data-math-exercise="shapes"><noscript><p>Q has shape 4 by 8. K has shape 6 by 8. Q times transposed K is valid and produces 4 by 6; Q times K is invalid. Explain the inner-axis match.</p></noscript></div></section>
       <section id="transfer"><h2>0.3.5 Transfer to different dimensions</h2><p>Without the shape display, let <span data-math="P\in\mathbb{R}^{3\times5},\quad R\in\mathbb{R}^{7\times5}">P is 3 by 5 and R is 7 by 5</span>. Give the shapes of transposed R, P times transposed R, and its row-wise softmax. Can P multiply R directly?</p><details><summary>Check the reference explanation</summary><p>Transposed R is 5 by 7. The product is 3 by 7, and row-wise softmax keeps 3 by 7. The direct product is invalid because 5 differs from 7. If your output was 3 by 5, you kept the feature axis that was reduced instead of the seven comparison targets.</p></details><p><a href="../attention/lesson-1.html#s2-1-3">Use these shapes in the attention-score equation.</a></p></section>
       <nav class="pager" aria-label="Previous and next lesson"><a href="lesson-2.html">← Previous lesson</a><a href="lesson-4.html">Next lesson →</a></nav>
+      <div data-math-progress></div>
       <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
     </main>
   </div>

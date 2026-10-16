@@ -16,6 +16,7 @@
   <script type="module" src="../llm-systems/math-renderer.js"></script>
   <script type="module" src="../llm-systems/equation-explorer.js"></script>
   <script type="module" src="../llm-systems/math-exercises.js"></script>
+  <script src="../llm-systems/render-guard.js"></script>
 </head>
 <body data-math-lesson="5">
   <a class="skip-link" href="#main">Skip to lesson content</a>
@@ -31,6 +32,7 @@
       <section id="practice"><h2>0.5.5 Predict the operation and result</h2><p>Make a prediction before opening hints. Try the task again without help after checking the reasoning.</p><div data-math-exercise="transformer"><noscript><p>For the worked model, state Q shape 3 by 2, score shape 3 by 3, and output shape 3 by 2. Name which axis the weighted sum consumes.</p></noscript></div></section>
       <section id="transfer"><h2>0.5.6 Transfer across unequal lengths</h2><p>For a new cross-attention example, Q is 2 by 4, K is 5 by 4, and V is 5 by 3. Write the score and output shapes. State the softmax axis. In the cache formula, what happens if only the bytes per element is halved?</p><details><summary>Check the reference explanation</summary><p>Transposed K is 4 by 5, so the scores and weights are 2 by 5. Normalize each query row over its five keys. Multiplying the 2-by-5 weights by the 5-by-3 values produces a 2-by-3 output. Halving B halves raw KV bytes when all other counts and the simple storage format remain fixed; practical quantization metadata can add overhead outside this raw formula.</p></details><p>Original context: <a href="../attention/lesson-1.html#s2-1-8">the full attention equation</a> and <a href="../attention/lesson-5.html">KV-cache memory</a>. Primary sources: <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need, Section 3.2</a> and <a href="https://arxiv.org/abs/2305.13245">GQA</a>.</p></section>
       <nav class="pager" aria-label="Previous and next lesson"><a href="lesson-4.html">← Previous lesson</a><a href="lesson-6.html">Next lesson →</a></nav>
+      <div data-math-progress></div>
       <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
     </main>
   </div>

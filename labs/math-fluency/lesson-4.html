@@ -16,6 +16,7 @@
   <script type="module" src="../llm-systems/math-renderer.js"></script>
   <script type="module" src="../llm-systems/equation-explorer.js"></script>
   <script type="module" src="../llm-systems/math-exercises.js"></script>
+  <script src="../llm-systems/render-guard.js"></script>
 </head>
 <body data-math-lesson="4">
   <a class="skip-link" href="#main">Skip to lesson content</a>
@@ -30,6 +31,7 @@
       <section id="practice"><h2>0.4.4 Compare moderate and large inputs</h2><p>Make a prediction before opening hints. Try the task again without help after checking the reasoning.</p><div data-math-exercise="softmax"><noscript><p>Compare [4,8,2,6] with [1004,1008,1002,1006]. Their shifted rows match. Ideal softmax probabilities match, while direct floating-point exponentials overflow for the second row.</p></noscript></div></section>
       <section id="transfer"><h2>0.4.5 Explain the equation without help</h2><p>Given <span data-math="p_r=\frac{\exp(u_r-c)}{\sum_s\exp(u_s-c)},\quad c=\max_s u_s">p_r = exp(u_r minus c) divided by sum over s exp(u_s minus c), c is max u</span>, name the free index, bound index, row scalar and denominator. For u=[−1,1], write the shifted inputs and explain why the maximum entry has the larger probability.</p><details><summary>Check the reference explanation</summary><p>r names one output; s runs through candidates in each reduction. c is the shared row maximum, 1. The shifted row is [−2,0]. Its exponentials are [exp(−2),1], so the second entry gets the greater weight. The denominator sums both exponentials. Subtracting c preserves the exact ratio; it changes the numerical route used to compute it.</p></details><p><a href="../attention/lesson-1.html#s2-1-5">Return to softmax in the attention mechanism.</a></p></section>
       <nav class="pager" aria-label="Previous and next lesson"><a href="lesson-3.html">← Previous lesson</a><a href="lesson-5.html">Next lesson →</a></nav>
+      <div data-math-progress></div>
       <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
     </main>
   </div>

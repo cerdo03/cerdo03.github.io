@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 const root = new URL('../', import.meta.url);
-const pages = ['llm-systems/index', 'inference/index', 'attention/index', ...[1, 2, 3, 4, 5].map(n => `attention/lesson-${n}`)];
+const pages = ['math-fluency/index', ...[1, 2, 3, 4, 5, 6].map(n => `math-fluency/lesson-${n}`), 'llm-systems/index', 'inference/index', 'attention/index', ...[1, 2, 3, 4, 5].map(n => `attention/lesson-${n}`)];
 test('each collection entry starts the render guard before body parsing', () => {
   for (const page of pages) {
     const html = readFileSync(new URL(`labs/${page}.html`, root), 'utf8');

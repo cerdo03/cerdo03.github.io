@@ -16,6 +16,7 @@
   <script type="module" src="../llm-systems/math-renderer.js"></script>
   <script type="module" src="../llm-systems/equation-explorer.js"></script>
   <script type="module" src="../llm-systems/math-exercises.js"></script>
+  <script src="../llm-systems/render-guard.js"></script>
 </head>
 <body data-math-lesson="1">
   <a class="skip-link" href="#main">Skip to lesson content</a>
@@ -30,6 +31,7 @@
       <section id="practice"><h2>0.1.4 Decode before seeing help</h2><p>First predict whether the displayed statement describes a type, selects an entry, or transforms an object. Reveal hints only if you need them; then try again with the hints closed.</p><div data-math-exercise="notation"><noscript><p>Practice without JavaScript: translate “Y belongs to the real matrices with 5 rows and 2 columns.” It declares a 5-by-2 matrix with 10 entries; it does not calculate them.</p></noscript></div></section>
       <section id="transfer"><h2>0.1.5 Transfer without a diagram</h2><p>Cover the examples above. Given <span data-math="U\in\mathbb{R}^{5\times3}">U ∈ ℝ^(5 × 3)</span>, explain what is known and unknown. What shape does <span data-math="U^{\mathsf T}">Uᵀ</span> have? Does the declaration tell you the value of <span data-math="U_{2,1}">U₂,₁</span>?</p><details><summary>Check the reference explanation</summary><p>U has 5 rows and 3 columns, with real-valued entries. Its 15 values remain unknown. Its transpose has 3 rows and 5 columns. U with subscript 2,1 selects row 2, column 1 under this lesson's one-based indexing convention; the declaration alone cannot give its value. If you answered “15” for the entry, you counted elements rather than reading one.</p></details><p>Now write your own declaration for a real matrix with 7 token rows and 4 features. A valid reference is <span data-math="E\in\mathbb{R}^{7\times4}">E ∈ ℝ^(7 × 4)</span>; the choice of matrix name is arbitrary.</p><p><a href="../attention/lesson-1.html#s2-1-2">See these declarations in the attention projections.</a></p></section>
       <nav class="pager" aria-label="Previous and next lesson"><a href="./">← Toolkit overview</a><a href="lesson-2.html">Next lesson →</a></nav>
+      <div data-math-progress></div>
       <p class="math-return"><a data-math-return href="../attention/lesson-1.html#s2-1-5">Return to the attention equation</a></p>
     </main>
   </div>
