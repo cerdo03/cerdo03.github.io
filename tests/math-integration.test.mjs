@@ -32,3 +32,15 @@ test('optional toolkit registers as third published course site', async () => {
   assert.match(read('labs/llm-systems/index.html'), /3 published sites/);
   assert.match(read('index.html'), /Collection · 3 sites/);
 });
+
+test('course context retains only encoded allowlisted equation origins', async () => {
+  const shell = read('labs/llm-systems/course-shell.js');
+  assert.match(shell, /course-context\.js/);
+  const { equationContext } = await import('../labs/llm-systems/course-context.js');
+  assert.equal(equationContext('?from=softmax&anything=%22%3E'), '?from=softmax');
+  assert.equal(equationContext('?from=values'), '?from=values');
+  assert.equal(equationContext('?from=https%3A%2F%2Fevil.example'), '');
+  assert.equal(equationContext('?from=%22%3E'), '');
+  assert.equal(equationContext(''), '');
+  assert.doesNotMatch(shell, /location\.search\s*:/);
+});

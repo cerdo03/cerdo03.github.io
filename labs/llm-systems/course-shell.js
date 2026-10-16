@@ -1,5 +1,6 @@
 import {enhanceCourse} from './course-enhancements.js';
 import '../attention/symbols.js';
+import { equationContext } from './course-context.js';
 import { renderMathIn } from './math-renderer.js';
 import { mountEquationExplorers } from './equation-explorer.js';
 // Shared guided reading shell for this collection only. Existing URLs and section anchors remain valid.
@@ -30,6 +31,8 @@ if (typeof document !== 'undefined') {
   const number = Number(document.body.dataset.lesson);
   const mathNumber = Number(document.body.dataset.mathLesson);
   const currentNumber = mathNumber || number;
+  const mathPage = location.pathname.includes('/math-fluency/');
+  const mathSearch = equationContext(location.search);
   const sections = currentNumber ? [...document.querySelectorAll('main > section[id]')] : [];
   const navigationKey = 'llm-course-navigation-v1';
   let navigation = {};
@@ -65,8 +68,8 @@ if (typeof document !== 'undefined') {
     rememberDisclosure(modules, 'modules', false);
     const title = document.createElement('summary');title.textContent = 'Modules';modules.append(title);
     const links = document.createElement('nav');links.setAttribute('aria-label', 'Modules');
-    links.innerHTML = '<ul><li><a href="../math-fluency/">0. Optional math toolkit</a><ul>' + mathLessons.map((text, i) => `<li><a href="../math-fluency/lesson-${i + 1}.html${mathNumber ? location.search : ''}">0.${i + 1} ${text}</a></li>`).join('') + '</ul></li><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';
-    const active = mathNumber ? `../math-fluency/lesson-${mathNumber}.html${location.search}` : location.pathname.includes('/math-fluency/') ? '../math-fluency/' : inference ? '../inference/' : number ? `../attention/lesson-${number}.html` : !location.pathname.includes('llm-systems') ? '../attention/' : null;
+    links.innerHTML = '<ul><li><a href="../math-fluency/">0. Optional math toolkit</a><ul>' + mathLessons.map((text, i) => `<li><a href="../math-fluency/lesson-${i + 1}.html${mathPage ? mathSearch : ''}">0.${i + 1} ${text}</a></li>`).join('') + '</ul></li><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';
+    const active = mathNumber ? `../math-fluency/lesson-${mathNumber}.html${mathSearch}` : location.pathname.includes('/math-fluency/') ? '../math-fluency/' : inference ? '../inference/' : number ? `../attention/lesson-${number}.html` : !location.pathname.includes('llm-systems') ? '../attention/' : null;
     if (active) [...links.querySelectorAll('a')].find(link => link.getAttribute('href') === active)?.setAttribute('aria-current', 'page');
     modules.append(links);sidebar.prepend(modules);
     if (sections.length) {
@@ -137,10 +140,10 @@ if (typeof document !== 'undefined') {
         document.dispatchEvent(new CustomEvent('course:section', { detail: sections[i].id }));
       }
       pager.querySelector('[data-prev]').onclick = () => {
-        if (index > 0) show(index - 1, true); else location.href = `lesson-${currentNumber - 1}.html${mathNumber ? location.search : ''}`;
+        if (index > 0) show(index - 1, true); else location.href = `lesson-${currentNumber - 1}.html${mathPage ? mathSearch : ''}`;
       };
       pager.querySelector('[data-next]').onclick = () => {
-        if (index < sections.length - 1) show(index + 1, true); else location.href = currentNumber === (mathNumber ? 6 : 5) ? `./${mathNumber ? location.search : ''}` : `lesson-${currentNumber + 1}.html${mathNumber ? location.search : ''}`;
+        if (index < sections.length - 1) show(index + 1, true); else location.href = currentNumber === (mathNumber ? 6 : 5) ? `./${mathPage ? mathSearch : ''}` : `lesson-${currentNumber + 1}.html${mathPage ? mathSearch : ''}`;
       };
       window.addEventListener('hashchange', () => { if (sections.some(s => `#${s.id}` === location.hash)) show(sectionIndex(sections.map(s => s.id), location.hash), true); });
       show(index, false);
