@@ -65,7 +65,7 @@
           <li><strong>K and V for every processed position, in every attention layer.</strong> Each layer has its own <var>W</var><sub>K</sub>, <var>W</var><sub>V</sub> and its own input <var>x</var>, so each layer has its own cache entries. With grouped-query attention (Lesson 2.3) each entry has <var>H</var><sub>KV</sub> key heads and <var>H</var><sub>KV</sub> value heads.</li>
           <li><strong>Queries are not cached.</strong> In causal decoding a new token is always appended at the end. Later tokens never ask an old position to attend again, so a past query <var>q</var><sub><var>i</var></sub> is never needed after its own forward pass. Old keys and values, in contrast, are read by <em>every</em> later query.</li>
           <li><strong>Numeric tensors, not token IDs.</strong> An entry is a block of floating-point numbers (for example fp16/bf16), the output of a projection. Storing token IDs would force the model to recompute every layer to get K and V back, which is the work the cache exists to avoid.</li>
-          <li><strong>Tied to position and the entire prefix.</strong> In layer 0, <var>x</var><sub><var>i</var></sub> depends on the token and its position. In every deeper layer, <var>x</var><sub><var>i</var></sub> is the output of earlier attention over the whole prefix 1…<var>i</var>. The same token in a different context therefore produces different K/V in layers above 0. A cache entry is only valid for the exact prefix that produced it.</li>
+          <li><strong>Tied to position and the entire prefix.</strong> With additive absolute positional embeddings, the first-layer input <var>x</var><sub><var>i</var></sub> combines the token embedding with a position embedding. With RoPE instead, that input need not contain a position embedding: position enters by rotating the projected query and key. In a RoPE-only first layer, the cached rotated key depends on position, while the value projection of the same token does not. In every deeper layer, <var>x</var><sub><var>i</var></sub> is the output of earlier attention over the whole prefix 1…<var>i</var>. The same token in a different context therefore produces different K/V in layers above 0. A cache entry is only valid for the exact prefix that produced it.</li>
           <li><strong>Old entries are never recomputed when appending.</strong> Under a causal mask, appending token <var>p</var> cannot change any earlier position's inputs, so <var>k</var><sub>1</sub>…<var>k</var><sub><var>p</var>−1</sub> and <var>v</var><sub>1</sub>…<var>v</var><sub><var>p</var>−1</sub> stay exactly as computed.</li>
         </ul>
         <figure class="diagram">
@@ -80,7 +80,7 @@
           <figcaption>Q compares with the allowed K rows; the resulting weights mix the corresponding V rows. K/V stay in this layer’s cache. The completed block’s updated token vector goes to the next layer.</figcaption>
         </figure>
         <div class="callout">
-          <p><span class="callout-label">RoPE (deeper topic).</span> Many current models use rotary position embeddings: <var>q</var> and <var>k</var> are rotated by angles that depend on their positions just before the dot product, so their score depends on the relative offset. Values are not rotated. Implementations typically cache keys <em>after</em> rotation, so old keys never need re-rotating. Details vary by implementation and are outside this lesson; the toy model below does not model RoPE.</p>
+          <p><span class="callout-label">RoPE (deeper topic).</span> Many current models use rotary position embeddings: <var>q</var> and <var>k</var> are rotated by angles that depend on their positions just before the dot product, so their score depends on the relative offset. Values are not rotated. Implementations typically cache keys <em>after</em> rotation, so appending tokens at unchanged positions does not require re-rotating old keys. Details vary by implementation and are outside this lesson; the toy model below does not model RoPE.</p>
         </div>
       </section>
 
@@ -94,7 +94,7 @@
           <dt><var>L</var></dt><dd>number of attention layers (each has its own cache)</dd>
           <dt><var>T</var></dt><dd>number of positions processed so far (grows by 1 per decode step)</dd>
           <dt><var>H</var><sub>KV</sub></dt><dd>number of key/value heads (equals the query-head count in MHA, 1 in MQA, in between for GQA)</dd>
-          <dt><var>D</var></dt><dd>head dimension, the length of one key or value vector</dd>
+          <dt><var>D</var></dt><dd>head dimension, the length of one key or value vector. Under this lesson’s equal-width assumption, <var>D</var> = d_head = <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub>: query, key and value heads all have the same width.</dd>
         </dl>
         <p>Read it as a hierarchy: the KV cache → one layer → its keys or values → one token position → an <var>H</var><sub>KV</sub> × <var>D</var> slice. That slice is everything one position contributes to one layer's keys (or values).</p>
         <div class="callout limit">
@@ -140,7 +140,7 @@
 
       <section id="s2-4-4" aria-labelledby="s2-4-4-title">
         <h2 id="s2-4-4-title">2.4.4 Reusing the cache during decode</h2>
-        <p>Each decode forward pass processes exactly one new position <var>p</var>, the token sampled at the end of the previous pass. For that position, in each layer:</p>
+        <p>Each decode forward pass processes exactly one new position <var>p</var>, the token sampled at the end of the previous pass. In each layer, the current token produces one query, one key and one value per corresponding head. Its query attends to the cached keys plus its new key; the resulting weights mix the matching values.</p>
         <div class="eq" role="math" aria-label="q p equals x p W Q, k p equals x p W K, v p equals x p W V" data-math="\begin{aligned}q_p&amp;=x_pW_Q\\ k_p&amp;=x_pW_K\\ v_p&amp;=x_pW_V\end{aligned}" data-display="true">
           <var>q</var><sub><var>p</var></sub> = <var>x</var><sub><var>p</var></sub><var>W</var><sub>Q</sub>,  <var>k</var><sub><var>p</var></sub> = <var>x</var><sub><var>p</var></sub><var>W</var><sub>K</sub>,  <var>v</var><sub><var>p</var></sub> = <var>x</var><sub><var>p</var></sub><var>W</var><sub>V</sub>
         </div>
@@ -151,7 +151,7 @@
           <dt><var>p</var></dt><dd>zero-based index in these equations; equals the cache length before this pass. The tracer labels token positions starting at 1, so its label is p + 1</dd>
           <dt><var>K</var><sub>cache</sub>, <var>V</var><sub>cache</sub></dt><dd>the <var>p</var> cached rows for positions 0…<var>p</var>−1, read, not recomputed</dd>
           <dt><var>K</var><sub>0:<var>p</var></sub>, <var>V</var><sub>0:<var>p</var></sub></dt><dd>cached rows plus the new row: <var>p</var> + 1 keys and values</dd>
-          <dt><var>d</var></dt><dd>head dimension (2 in the toy)</dd>
+          <dt><var>d</var></dt><dd>head dimension, the same width as <var>D</var> = d_head = <var>d</var><sub>k</sub> under this lesson’s equal-width assumption (2 in the toy)</dd>
         </dl>
         <p>The new query still has to be scored against all <var>p</var> + 1 keys: that is the attention work, and the cache does not remove it. What the cache removes is recomputing <var>k</var> and <var>v</var> for the <var>p</var> old positions.</p>
         <div class="lab" role="group" aria-labelledby="lab-decode">
@@ -185,17 +185,18 @@
         <div class="lab-body" id="compare-bars"></div>
         <h3>What changes and what does not</h3>
         <ul>
-          <li><strong>Avoided recomputation:</strong> with a cache each decode pass projects 1 position; without one, pass <var>n</var> projects <var>T</var> + <var>n</var>. Over <var>n</var> decode steps the cumulative projection count is O(<var>n</var>) with a cache and O(<var>n</var><sup>2</sup>) without.</li>
-          <li><strong>Remaining attention:</strong> the new token's query scores <var>p</var> + 1 keys either way, so attention score work for the new token is O(<var>n</var>) per step with or without a cache. (A full re-run without a cache would additionally recompute every earlier position's attention row.)</li>
+          <li><strong>Avoided recomputation:</strong> with a cache each decode pass projects 1 position; without one, pass <var>n</var> projects <var>T</var> + <var>n</var>. Over <var>n</var> decode steps, excluding prefill, the cumulative projected-position count is <var>n</var> with a cache and <var>n</var><var>T</var> + <var>n</var>(<var>n</var> + 1)/2 without, where <var>T</var> is the prompt length.</li>
+          <li><strong>Remaining attention:</strong> the new token's query scores <var>p</var> + 1 keys either way, so at decode step <var>n</var> it scores <var>T</var> + <var>n</var> keys, with or without a cache. (A full re-run without a cache would additionally recompute every earlier position's attention row.)</li>
           <li><strong>KV reads:</strong> the cache turns recomputation into memory reads: pass <var>p</var> reads <var>p</var> cached entries per layer. Lesson 2.5 turns this into bytes and bandwidth.</li>
           <li><strong>KV memory:</strong> the cache holds one entry per processed position per layer, growing linearly with sequence length.</li>
         </ul>
+        <p>For a prompt length <var>T</var> and <var>n</var> decode forward passes (excluding prefill), the new queries score <var>n</var><var>T</var> + <var>n</var>(<var>n</var> + 1)/2 keys in total. At fixed head width and head count, decode attention work scales as O(<var>n</var><var>T</var> + <var>n</var><sup>2</sup>). Doubling <var>n</var> gives about 2× work when <var>T</var> greatly exceeds <var>n</var>, and approaches 4× only when <var>n</var> greatly exceeds <var>T</var>. This counts attention work, not elapsed time; it excludes attention rows recomputed for earlier positions in a full uncached re-run.</p>
         <div class="lab" role="group" aria-labelledby="lab-extrapolate">
           <div class="lab-header"><h3 id="lab-extrapolate">Scale the counts up</h3>
             <dl class="lab-guide">
               <div><dt>What this shows</dt><dd>The same counters in closed form for any prompt length <var>T</var> and number of decode steps <var>n</var>, per layer and KV head.</dd></div>
-              <div><dt>Try</dt><dd>Double <var>n</var> and watch which totals double and which roughly quadruple.</dd></div>
-              <div><dt>What to notice</dt><dd>The cache wins on projections, but total cache reads and attended keys still grow quadratically with <var>n</var>. That remaining work is why cache size and reads matter for decode performance (Lesson 2.5).</dd></div>
+              <div><dt>Try</dt><dd>Double <var>n</var> with <var>T</var> fixed, then compare a long prompt with a short prompt. The scaling depends on both lengths.</dd></div>
+              <div><dt>What to notice</dt><dd>Across <var>n</var> decode forward passes after a prompt of length <var>T</var>, the new queries attend to <var>n</var><var>T</var> + <var>n</var>(<var>n</var> + 1)/2 keys in total; reads of old cached entries total <var>n</var><var>T</var> + <var>n</var>(<var>n</var> − 1)/2. These counts exclude prefill. At fixed head width and head count, decode attention work therefore scales as O(<var>n</var><var>T</var> + <var>n</var><sup>2</sup>). Doubling <var>n</var> gives about 2× when the prompt is much longer than the decode, approaching 4× only when decode length greatly exceeds prompt length. These are work counts, not latency predictions.</dd></div>
             </dl></div>
           <div class="lab-controls">
             <label class="field"><span>Prompt length T</span><input type="number" id="ext-prompt" min="1" max="1000000" step="1" value="4"></label>
