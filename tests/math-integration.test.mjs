@@ -25,12 +25,12 @@ test('legacy symbol help excludes authored and generated mathematical markup', (
   assert.match(read('labs/attention/symbols.js'), /node\.closest\('\[data-math\], \.katex, math'\)/);
 });
 
-test('optional toolkit registers as third published course site', async () => {
+test('optional toolkit remains registered alongside course companions', async () => {
   const { sites } = await import('../assets/learning-catalog.js');
   assert.equal(sites['math-fluency'].project, 'llm-systems');
   assert.equal(sites['math-fluency'].path, '/labs/math-fluency/');
-  assert.match(read('labs/llm-systems/index.html'), /3 published sites/);
-  assert.match(read('index.html'), /Collection · 3 sites/);
+  assert.match(read('labs/llm-systems/index.html'), /4 published sites/);
+  assert.match(read('index.html'), /Collection · 4 sites/);
 });
 
 test('course context retains only encoded allowlisted equation origins', async () => {

@@ -3,6 +3,7 @@ export const projects = {
 };
 
 export const sites = {
+  'architecture-explorer': { project: 'llm-systems', title: 'Transformer Architecture Explorer', path: '/labs/attention/architecture-explorer/', tags: ['Attention', '3D'] },
   'math-fluency': { project: 'llm-systems', title: 'Mathematical Notation for Systems Engineers', path: '/labs/math-fluency/', tags: ['Mathematics', 'Attention'] },
   scion: { title: 'Source control, rethought', path: '/labs/scion/', tags: ['Distributed systems', 'Source control'] },
   inference: { project: 'llm-systems', title: 'LLM Inference: Foundations & KV Cache', path: '/labs/inference/', tags: ['Inference', 'KV cache'] },

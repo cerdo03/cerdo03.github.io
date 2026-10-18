@@ -1,0 +1,73 @@
+/* Layout and diagram styling only. The shared theme owns every color. */
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--paper); font-family: var(--body-font); }
+a { color: var(--accent); }
+button, select, input { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-height: 44px; }
+button { cursor: pointer; }
+button:hover, button[aria-pressed="true"], .breadcrumbs [aria-current] { background: var(--accent-soft); border-color: var(--accent); }
+button:disabled { cursor: default; color: var(--muted); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.skip-link { position: absolute; top: -100px; padding: 12px; z-index: 20; background: var(--card); }
+.skip-link:focus { top: 8px; }
+.explorer-intro h1 { margin: 8px 0; }
+.explorer-intro p { max-width: 78ch; }
+.eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+.lede { font-size: 19px; }
+.small { font-size: 13px; color: var(--muted); }
+.explorer-controls { display: flex; flex-wrap: wrap; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); }
+.explorer-controls label { display: grid; gap: 6px; font-size: 13px; flex: 1 1 120px; min-width: 0; }
+.explorer-controls input, .explorer-controls select { width: 100%; }
+.explorer-controls label:first-child { flex-basis: 180px; }
+.explorer-controls label:has(var) { display: block; }
+.explorer-controls label select { display: block; margin-top: 6px; }
+.config-summary { color: var(--muted); font-size: 13px; min-height: 2em; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 310px); gap: 20px; align-items: start; }
+.scene-column { min-width: 0; }
+.breadcrumbs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.breadcrumbs button { font-size: 12px; padding: 6px 9px; }
+.scene-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.scene-toolbar h2 { margin: 0 auto 0 0; font-size: 17px; }
+.scene-toolbar button { font-size: 12px; }
+.scene-wrap { position: relative; height: clamp(360px, 46vw, 540px); overflow: hidden; background: var(--diagram-surface); border: 1px solid var(--line); border-radius: 12px; }
+#scene { position: absolute; inset: 0; }
+#scene canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+.scene-labels { position: absolute; inset: 0; pointer-events: none; }
+.scene-label { position: absolute; transform: translate(-50%, -50%); padding: 4px 7px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); background: var(--card); font-size: 12px; line-height: 1.3; text-align: center; white-space: nowrap; }
+.scene-label.is-selected { border-color: var(--accent); font-weight: 600; }
+.scene-stamp { position: absolute; bottom: 4px; left: 14px; font-size: 11px; color: var(--muted); pointer-events: none; }
+.token-context { font-size: 13px; padding: 10px 0; border-top: 1px solid var(--line); }
+.component-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.component-list button { font-size: 12px; flex: 1 1 145px; text-align: left; }
+.component-list button[data-role="query"] { border-left: 4px solid var(--llm-query); }
+.component-list button[data-role="key"] { border-left: 4px solid var(--llm-key); }
+.component-list button[data-role="value"] { border-left: 4px solid var(--llm-value); }
+.view-shortcuts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.view-shortcuts button { font-size: 12px; }
+.llm-course .inspector { margin: 0; position: sticky; top: 20px; padding: 22px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 32px color-mix(in srgb, var(--ink) 8%, transparent); }
+.inspector h2 { font-size: 21px; line-height: 1.3; margin: 8px 0 14px; }
+.inspector p { font-size: 14px; }
+.inspector .small { font-size: 12px; }
+.formula { padding: 12px; background: var(--surface-alt); border-left: 3px solid var(--accent); font-size: 13px; overflow-wrap: anywhere; }
+.shape-list { display: grid; gap: 8px; font-size: 13px; }
+.shape-list dt { color: var(--muted); }
+.shape-list dd { margin: 0 0 6px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.memory-panel, .reference-panel { margin-top: 28px; padding: 18px; border: 1px solid var(--line); border-radius: 8px; }
+summary { cursor: pointer; min-height: 44px; font-weight: 600; }
+.memory-panel p, .reference-panel p { max-width: 85ch; }
+.memory-bars { display: grid; gap: 12px; }
+.memory-row { display: grid; grid-template-columns: 55px minmax(50px, 1fr) minmax(100px, 160px); align-items: center; gap: 12px; font-size: 13px; }
+.memory-row meter { width: 100%; height: 24px; accent-color: var(--accent); }
+.notation { display: grid; grid-template-columns: max-content 1fr; gap: 8px 20px; }
+.notation dd { margin: 0; }
+footer { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 32px; font-size: 13px; }
+.sym { cursor: help; border-bottom: 1px dotted var(--muted); }
+.symbol-tip { position: fixed; z-index: 40; max-width: min(320px, calc(100vw - 16px)); padding: 10px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; box-shadow: 0 6px 20px color-mix(in srgb, var(--ink) 15%, transparent); font-size: 13px; }
+[hidden] { display: none !important; }
+@media (width <= 1200px) { .workspace { grid-template-columns: minmax(0, 1fr); } .llm-course .inspector { position: static; } }
+@media (width <= 500px) { .scene-wrap { height: 410px; } .scene-label { font-size: 10px; padding: 3px; } .explorer-controls { padding: 10px; gap: 10px; } .memory-row { grid-template-columns: 44px minmax(30px, 1fr) 95px; gap: 6px; } .memory-row span { font-size: 11px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }
+.memory-row meter::-webkit-meter-bar { background: var(--surface-alt); border: 1px solid var(--line); }
+.memory-row meter::-webkit-meter-optimum-value { background: var(--accent); }
+.memory-row meter::-moz-meter-bar { background: var(--accent); }
+
+.scene-wrap[data-dense="true"] { height: 680px; }

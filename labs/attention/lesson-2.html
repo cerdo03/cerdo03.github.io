@@ -59,6 +59,7 @@
           <p><span class="callout-label">Builds on.</span> The single-head equation from <a href="lesson-1.html#s2-1-8">2.1.8</a>: Attention(<var>Q</var>, <var>K</var>, <var>V</var>) = softmax(<var>QK</var><sup>T</sup> / √<var>d</var><sub>k</sub> + <var>M</var>)<var>V</var>, with the row-vector convention (each row is one token position), the causal mask from <a href="lesson-1.html#s2-1-6">2.1.6</a> and learned projections from <a href="lesson-1.html#s2-1-2">2.1.2</a>. Those steps are not repeated here.</p>
           <p><span class="callout-label">Simplifications.</span> One layer, one sequence (no batch dimension), biases omitted, contiguous logical tensors, every head the same size. Toy numbers are labelled as such.</p>
         </div>
+        <p class="course-core"><a href="architecture-explorer/">Explore this inside the 3D Transformer →</a> Follow the full input through Q/K/V and head sharing; later architecture topics are optional.</p>
       </header>
 
       <section id="s2-2-1" aria-labelledby="s2-2-1-title">

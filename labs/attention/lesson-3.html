@@ -54,6 +54,7 @@
         <h1>MHA vs MQA vs GQA</h1>
         <p class="lede"><strong>Learning goal:</strong> explain how multi-head, multi-query and grouped-query attention differ only in how many key/value heads they keep; map any query head to its KV head; and compute how that choice changes the raw KV cache for one sequence.</p>
         <p>In Lesson 2.2 every head had its own query, key and value projections. During decode, the keys and values of every processed token are cached (Module 1), so the number of <em>key/value</em> heads decides how much is stored and read per step. This lesson changes only that number and keeps everything else fixed.</p>
+        <p class="course-core"><a href="architecture-explorer/">Explore this inside the 3D Transformer →</a> Follow the full input through Q/K/V and head sharing; later architecture topics are optional.</p>
       </header>
 
       <section id="s2-3-1" aria-labelledby="s2-3-1-title">

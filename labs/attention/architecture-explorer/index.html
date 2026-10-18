@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore a causal decoder in 3D: token representations, Q/K/V, shared heads, residual paths and tensor shapes.">
+  <link rel="icon" href="data:,">
+  <title>Transformer Architecture Explorer — LLM Systems</title>
+  <link rel="stylesheet" href="../../../assets/theme.css">
+  <link rel="stylesheet" href="explorer.css">
+  <link rel="stylesheet" href="../../llm-systems/course.css">
+  <link rel="stylesheet" href="../../llm-systems/math.css">
+  <link rel="stylesheet" href="../../llm-systems/equation-explorer.css">
+  <script type="module" src="../../../assets/theme.js"></script>
+  <script type="module" src="../../llm-systems/course-shell.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body data-explorer="true">
+  <a class="skip-link" href="#main">Skip to explorer</a>
+  <header class="site-header"><nav aria-label="Site"><a href="../../llm-systems/">Learning LLM Systems</a><a href="../../../">Journal</a></nav></header>
+  <main id="main">
+    <header class="explorer-intro">
+      <p class="eyebrow">Module 2 · Interactive companion</p>
+      <h1>Inside a Transformer</h1>
+      <p class="lede">One vector per token. Two decoder blocks. Follow how attention updates each position.</p>
+      <p>Start from <a href="../lesson-3.html">2.3 · MHA / GQA / MQA</a>; review <a href="../lesson-1.html">2.1 · Self-attention</a> or <a href="../lesson-2.html">2.2 · Multiple heads</a>. Residual paths, normalization, FFN and memory details are optional previews.</p>
+    </header>
+    <noscript><p>JavaScript enables the interactive views. Read the architecture summary and linked lessons below; all course links remain available.</p></noscript>
+    <div class="explorer-controls" role="group" aria-label="Shared model configuration">
+      <label>Layout<select id="layout"><option value="MHA">MHA · separate K/V</option><option value="GQA">GQA · grouped K/V</option><option value="MQA">MQA · one shared K/V</option></select></label>
+      <label>Query heads <var>H</var><sub>q</sub><select id="query-heads"><option>4</option><option selected>8</option><option>16</option><option>32</option></select></label>
+      <label>KV heads <var>H</var><sub>KV</sub><select id="kv-heads" disabled><option selected>8</option></select></label>
+      <label>Head width <var>D</var><select id="head-dim"><option>16</option><option>32</option><option selected>64</option><option>128</option></select></label>
+      <label>Token count <var>T</var><select id="token-count"><option selected>3</option><option>8</option><option>128</option><option>2048</option><option>8192</option></select></label>
+      <label>Inspect position<input id="position" type="number" min="0" max="2" value="2" step="1"></label>
+    </div>
+    <p id="config-summary" class="config-summary" role="status">Schematic model: 2 layers · 8 query heads · 8 KV heads · head width 64 · model width 512.</p>
+    <div class="workspace">
+      <div class="scene-column">
+        <nav id="breadcrumbs" class="breadcrumbs" aria-label="Architecture breadcrumbs"><button type="button" aria-current="page" data-view="overview">Model overview</button></nav>
+        <div class="scene-toolbar"><h2 id="view-title">Model overview</h2><button id="back" type="button" disabled>← Zoom out</button><button id="reset-camera" type="button">Reset camera</button></div>
+        <div class="scene-wrap" id="scene-wrap">
+          <div id="scene" role="img" aria-label="Interactive 3D model. Equivalent component buttons follow below."></div>
+          <div id="scene-labels" class="scene-labels" aria-hidden="true"></div>
+          <p class="scene-stamp">Causal decoder · pre-norm · schematic</p>
+        </div>
+        <p id="renderer-status" class="small">Loading local 3D renderer… Component buttons below work independently of 3D.</p>
+        <p class="small">Drag to orbit · wheel / pinch to zoom · use component buttons with keyboard or touch. Arrows on focused 3D view rotate; + / − zoom; Home resets.</p>
+        <div class="token-context" id="token-context" role="status">Position 2 · “is” · allowed context: positions 0–2.</div>
+        <nav id="components" class="component-list" aria-label="Components in current view"></nav>
+        <div class="view-shortcuts" role="group" aria-label="Explore architecture">
+          <button type="button" data-view="overview">Overview</button><button type="button" data-view="block">Open block</button><button type="button" data-view="attention">Attention</button><button type="button" data-view="heads">Compare heads</button><button type="button" data-view="qkv">Q/K/V</button><button type="button" data-view="ffn">Optional · FFN</button>
+        </div>
+      </div>
+      <section class="inspector" aria-labelledby="inspector-title" tabindex="-1" id="inspector">
+        <p class="eyebrow" id="inspector-kind">Architecture note</p><h2 id="inspector-title" aria-live="polite">Follow one token through the model</h2>
+        <p id="explanation">Choose a component to inspect its role, formula and dimensions. Open a decoder block, then its attention module, to see the head structure.</p>
+        <p id="formula" class="formula"></p><dl id="shapes" class="shape-list"></dl>
+        <button type="button" id="drill" hidden>Open component →</button>
+        <p class="small">One sequence; axes shown as token × head × component where applicable. Shapes are exact for the selected schematic configuration. No learned weights or attention values are simulated.</p>
+        <a href="../lesson-3.html#s2-3-2">Read the head-sharing derivation →</a>
+      </section>
+    </div>
+    <details class="memory-panel" open>
+      <summary>Optional · What changes in the KV cache?</summary>
+      <p>One sequence, two layers, BF16 / FP16 storage (2 bytes per element). Same query count and head width for every comparison; GQA reference uses one KV head per four queries (two per group when there are only four queries). Changing layout describes a different model architecture, not a lossless runtime switch for an existing checkpoint.</p>
+      <div class="memory-bars" id="memory-bars"></div>
+      <p id="memory-equation" class="formula"></p>
+      <p id="memory-note" role="status"></p>
+      <p class="small">Raw K/V payload only. Excludes weights, activations, allocator waste, cache metadata and temporary repetitions of shared K/V. Fewer KV bytes do not guarantee a proportional speedup or equal model quality. This view counts storage for all selected positions, even when inspecting an earlier position.</p>
+      <p><a href="../lesson-4.html">Optional next: 2.4 · Cache internals</a> · <a href="../lesson-5.html">2.5 · Memory and performance</a></p>
+    </details>
+    <details class="reference-panel">
+      <summary>Architecture summary, notation and sources</summary>
+      <p>Token embeddings + learned position embeddings → decoder block 1 → decoder block 2 → final LayerNorm → vocabulary projection → logits. In each pre-norm block: LayerNorm → causal attention → add incoming vector → LayerNorm → FFN → add the vector after attention. The FFN uses Linear → GELU → Linear with 4× hidden width. Other decoder families can use rotary positions, RMSNorm and gated FFNs. There is no encoder or cross-attention here.</p>
+      <p>Attention: <var>O</var> = softmax(<var>Q</var><var>K</var>ᵀ / √<var>D</var> + <var>M</var>)<var>V</var>. Each future position receives mask −∞, so its weight is exactly zero. Softmax is applied over key positions for each query row. Selected query position can attend itself. Causal visibility does not mean every allowed position gets equal weight.</p>
+      <dl class="notation">
+        <dt><var>T</var></dt><dd>Token positions in the selected sequence.</dd><dt><var>H</var><sub>q</sub> / <var>H</var><sub>KV</sub></dt><dd>Query heads / key-value heads; equal groups require divisibility.</dd>
+        <dt><var>D</var></dt><dd>Width of one query, key or value head in this example.</dd><dt><var>d</var><sub>model</sub></dt><dd>Model width; query heads × head width here.</dd><dt><var>L</var> / <var>B</var></dt><dd>Attention layers / bytes per stored element (2 / 2 here).</dd>
+      </dl>
+      <p>Primary references: <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>, <a href="https://github.com/openai/gpt-2/blob/master/src/model.py">GPT-2 pre-norm implementation</a>, <a href="https://arxiv.org/abs/1911.02150">Multi-query attention</a>, <a href="https://arxiv.org/abs/2305.13245">Grouped-query attention</a>. This page combines these ideas into a teaching schematic; it is not a specific pretrained model.</p>
+    </details>
+    <footer><a href="../lesson-3.html">← Return to lesson 2.3</a><a href="../../../">Surya’s journal</a></footer>
+  </main>
+</body>
+</html>
