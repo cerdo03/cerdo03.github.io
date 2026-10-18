@@ -46,7 +46,7 @@ function hide() {
 function annotate(root) {
   const nodes = root.querySelectorAll ? root.querySelectorAll('var:not([data-symbol]), .tensor-tag:not([data-symbol])') : [];
   for (const node of nodes) {
-    if (node.closest('[data-math], .katex, math')) continue;
+    if (node.closest('[data-math], .katex, math, .symbol-tip')) continue;
     const key = node.tagName === 'VAR' ? symbolKey(node) : tensorKey(node);
     if (!key) continue;
     node.dataset.symbol = key;

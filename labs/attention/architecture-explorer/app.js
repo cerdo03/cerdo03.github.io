@@ -1,4 +1,7 @@
+import { mountFocusMode } from './focus.js';
 import { configuration, memoryComparison, memoryText, shapeText, sceneModel, inspect, VIEWS, OPTIONS } from './model.js';
+
+mountFocusMode();
 
 const $=id=>document.getElementById(id),configKeys=['qHeads','kvHeads','headDim','tokens'];
 let config=configuration(),view='overview',selected=null,position=2,layer=0,renderer=null,graph=null;
@@ -18,6 +21,7 @@ function showExplanation(id){
   $('drill').hidden=!target;
   $('drill').textContent=target?`Open ${VIEWS[target]} →`:'Open component →';
   $('drill').onclick=()=>navigate(target,id,true);
+  if($('explorer-dialog').open)$('inspector').scrollTop=0;
 }
 function select(id,activate=false){
   selected=id;renderer?.highlight(id);
@@ -25,7 +29,7 @@ function select(id,activate=false){
   showExplanation(id);
   const node=graph.nodes.find(n=>n.id===id);
   if(activate&&node?.target){navigate(node.target,id,true);return;}
-  if(activate&&!matchMedia('(min-width: 1201px)').matches){$('inspector').focus({preventScroll:true});$('inspector').scrollIntoView({block:'nearest',behavior:'instant'});}
+  if(activate&&!$('explorer-dialog').open&&!matchMedia('(min-width: 1201px)').matches){$('inspector').focus({preventScroll:true});$('inspector').scrollIntoView({block:'nearest',behavior:'instant'});}
 }
 function navigate(next,focusId=null,moveFocus=false){
   if(!VIEWS[next])return;
@@ -39,7 +43,7 @@ function navigate(next,focusId=null,moveFocus=false){
   graph.nodes.forEach(n=>{const b=document.createElement('button');b.type='button';b.dataset.node=n.id;b.dataset.role=n.role;b.setAttribute('aria-pressed','false');b.textContent=n.label+(n.target?' ↗':'');b.addEventListener('click',()=>select(n.id,true));$('components').append(b);});
   const defaultId={overview:null,block:`block-${layer}`,attention:'heads',heads:'heads',qkv:'qkv',ffn:'ffn'}[view];
   showExplanation(defaultId);
-  renderer?.update(graph,{focusId});
+  renderer?.update(graph,{focusId,key:view==='overview'?'overview':`${layer}/${view}`});
   if(moveFocus){$('view-title').tabIndex=-1;$('view-title').focus({preventScroll:true});}
   for(const button of document.querySelectorAll('.view-shortcuts button'))button.setAttribute('aria-pressed',String(button.dataset.view===view));
 }
@@ -86,7 +90,7 @@ $('reset-camera').addEventListener('click',()=>renderer?.reset());
 // UI first: WebGL failure, missing modules, blocked storage or slow graphics cannot hide learning content.
 applyConfiguration('initial');
 import('./scene.js').then(({mountScene})=>{
-  renderer=mountScene($('scene'),$('scene-labels'),select);renderer.update(graph);
+  renderer=mountScene($('scene'),$('scene-labels'),select);renderer.update(graph,{key:view==='overview'?'overview':`${layer}/${view}`});
   $('renderer-status').textContent='3D ready · arrows show dependency direction; sharing edges connect query heads to the K/V they read. In the heads view, Qn labels query head n; KVn labels one key/value head pair. Colors identify roles; labels carry the meaning.';
 }).catch(()=>{
   $('renderer-status').textContent='3D unavailable in this browser. Use the equivalent component buttons below to explore every component, formula and shape.';

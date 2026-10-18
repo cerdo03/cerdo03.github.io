@@ -22,7 +22,7 @@ test('softmax is authored as three distinct typeset stages with contextual suppo
 });
 
 test('legacy symbol help excludes authored and generated mathematical markup', () => {
-  assert.match(read('labs/attention/symbols.js'), /node\.closest\('\[data-math\], \.katex, math'\)/);
+  assert.match(read('labs/attention/symbols.js'), /node\.closest\('\[data-math\], \.katex, math, \.symbol-tip'\)/);
 });
 
 test('optional toolkit remains registered alongside course companions', async () => {

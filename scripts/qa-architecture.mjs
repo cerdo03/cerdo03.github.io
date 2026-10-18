@@ -52,6 +52,38 @@ try {
     assert.equal(overlaps,0,`${count}-head phone label overlap`);
     await page.locator('#scene-wrap').screenshot({path:resolve(out,`phone-heads-${count}.png`)});
   }
+  // Expanded layout keeps the scene and selected info inside the viewport.
+  for(const width of [320,390,768,1280,1600])for(const theme of ['paper','midnight','contrast']) {
+    await page.setViewportSize({width,height:900});await page.goto(base+route);
+    await page.waitForFunction(()=>document.querySelector('#renderer-status').textContent.startsWith('3D ready'));
+    await page.evaluate(t=>document.documentElement.dataset.theme=t,theme);await page.locator('#expand-explorer').click();
+    const bounds=await page.locator('#inspector').boundingBox();assert.ok(bounds.y>=0&&bounds.y+bounds.height<=901,`expanded inspector ${width}/${theme}`);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    if(width<=800)await page.locator('#component-tools > summary').click();
+    await page.locator('[data-node="embedding"]').click();assert.ok(await page.locator('#inspector').evaluate(e=>e.scrollTop)<2);
+    for(let step=0;step<8;step++){await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>document.querySelector('#explorer-dialog').contains(document.activeElement)),true);}
+    if(width===390||width===1280)await page.screenshot({path:resolve(out,`expanded-${theme}-${width}.png`)});
+    await page.keyboard.press('Escape');assert.equal(await page.locator('#explorer-dialog').evaluate(e=>e.open),false);
+    assert.equal(await page.locator('#explorer #component-tools').count(),1);assert.equal(await page.locator('#explorer-dialog #explorer').count(),0);
+  }
+  // Page-filling mode keeps configuration, navigation and inspection in one modal.
+  await page.setViewportSize({width:1440,height:1000});await page.goto(base+route);
+  await page.waitForFunction(()=>document.querySelector('#renderer-status').textContent.startsWith('3D ready'));
+  await page.locator('#expand-explorer').click();
+  assert.equal(await page.locator('#explorer-dialog').evaluate(e=>e.open),true);
+  const modalSize=await page.locator('#explorer-dialog').boundingBox();assert.ok(modalSize.width>=1438&&modalSize.height>=998);
+  assert.equal(await page.locator('#explorer-dialog #layout').count(),1);
+  await page.locator('[data-node="block-0"]').click();await page.locator('[data-node="add1"]').click();
+  assert.match(await page.locator('#inspector-title').textContent(),/attention update/);
+  assert.equal(await page.locator('#explorer-dialog #inspector').isVisible(),true);
+  const modalSymbol=page.locator('#head-dim').locator('..').locator('var');await modalSymbol.focus();
+  assert.equal(await page.locator('#explorer-dialog .symbol-tip').isVisible(),true);
+  assert.equal(await page.locator('.symbol-tip [data-symbol]').count(),0,'symbol help does not annotate its own label');
+  await page.keyboard.press('Escape');assert.equal(await page.locator('#explorer-dialog').evaluate(e=>e.open),false);
+  assert.equal(await page.locator('#expand-explorer').evaluate(e=>e===document.activeElement),true);
+  assert.match(await page.locator('#inspector-title').textContent(),/attention update/);
+  await page.locator('#expand-explorer').click();await page.locator('#expand-explorer').click();
+  assert.equal(await page.locator('#explorer-dialog').evaluate(e=>e.open),false);
   console.log(`Layout matrix: ${report.cases.length} cases passed`);
   await page.setViewportSize({width:1440,height:1100});await page.goto(base+route);
   await page.waitForFunction(()=>document.querySelector('#renderer-status').textContent.startsWith('3D ready'));
@@ -84,6 +116,14 @@ try {
   // Immediate reconfiguration during animation must not resurrect stale nodes.
   await page.emulateMedia({reducedMotion:'no-preference'});await page.locator('[data-node="attention"]').click();await page.selectOption('#head-dim','32');await page.waitForTimeout(800);
   assert.match(await page.locator('#view-title').textContent(),/Causal attention/);assert.equal(await page.locator('.scene-label').filter({hasText:'Project Q / K / V'}).count(),1);
+  await page.locator('.view-shortcuts [data-view="overview"]').click();await page.waitForTimeout(1100);
+  for(const [id,key] of [['block-0','0/block'],['attention','0/attention'],['qkv','0/qkv']]) {
+    await page.locator(`[data-node="${id}"]`).click();await page.waitForTimeout(100);
+    assert.equal(await page.locator('#scene').getAttribute('data-view'),key);
+    assert.equal(await page.locator('#scene').getAttribute('data-motion'),'enter');
+    await page.waitForTimeout(1100);assert.equal(await page.locator('#scene').getAttribute('data-motion'),'idle');
+    assert.ok(await page.locator('.scene-label:not([hidden])').count()>0);
+  }
   // Reset/keyboard/orbit during the initial zoom must still commit the new graph.
   for(const interrupt of ['reset','keyboard','orbit']) {
     await page.locator('.view-shortcuts [data-view="overview"]').click();await page.waitForTimeout(700);

@@ -46,6 +46,11 @@ review and obtain owner approval before any push or deployment.
 
 ## Interaction
 
+- Use **Expand explorer** for a browser-page view containing the same model controls,
+  3D scene and selected-component explanation. Exit or Escape restores the normal
+  course layout, scroll position and keyboard focus. Settings fold on narrow screens;
+  component controls join the inspector in expanded mode. No second canvas or
+  independent model state is created.
 - Open either decoder block, then attention, Q/K/V projections or head sharing.
   Breadcrumbs and Zoom out return through the hierarchy. FFN opens a separate
   optional view. All components also have native HTML buttons.
@@ -60,6 +65,11 @@ review and obtain owner approval before any push or deployment.
   mappings remain in HTML controls and inspector text.
 - Inspectors describe each operation and its shapes. Symbol help reuses the
   collection glossary, supporting hover, focus, tap and Escape.
+- Drill-down places child geometry inside and behind the selected block, keeping
+  its world-space anchor. One continuous logarithmic dolly carries the camera
+  through the entry plane; the surrounding model fades during approach. Back
+  returns to the remembered enclosing space. This is a spatial teaching device,
+  not a claim about physical tensor placement.
 - The renderer runs on demand, without idle animation. Camera transitions honor
   reduced motion; controls and explanations remain available if WebGL or the
   graphics module is unavailable. JavaScript-disabled readers retain a static
@@ -122,6 +132,9 @@ OpenAI's GPT-2 implementation and the MQA/GQA papers.
   Imports the existing Module 2 `gqaMapping` and `kvBytes` implementations.
 - `app.js`: semantic HTML controls, shared model state, inspection and navigation;
   initializes independently of the lazily loaded renderer.
+- `focus.js`: native modal page expansion, shared controls/tooltips/theme button,
+  Escape/Exit, scroll and focus restoration.
+- `spatial.js`: pure nested-space geometry and monotonic, reversible camera path.
 - `scene.js`: Three.js rendering, picking, camera transitions, resizing, theme
   updates and disposal. CPU geometry count scales with head count, not context
   length. No requestAnimationFrame loop while idle.
@@ -147,7 +160,9 @@ Source previews contain no beacon. No publishing workflow has been changed.
 Browser checks cover 320/390/768/1280/1600px, paper/midnight/contrast, all six
 views, dense phone labels, keyboard and canvas selection, both blocks, layouts,
 causal positions, exact memory, navigation query preservation, symbol help,
-reduced motion, interrupted transitions (including reset, keyboard and orbit), renderer failure, disabled WebGL,
+reduced motion, three-level nested camera traversal, expanded mode across five
+widths and three themes, focus containment/restoration, interrupted transitions
+(including reset, keyboard and orbit), renderer failure, disabled WebGL,
 JavaScript-disabled content and blocked storage. They run against actual source
 and can run against the prepared Pages bundle.
 
