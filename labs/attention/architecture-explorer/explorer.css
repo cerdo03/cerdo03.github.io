@@ -71,6 +71,7 @@ footer { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 32px; font-size:
 .memory-row meter::-moz-meter-bar { background: var(--accent); }
 
 .scene-wrap[data-dense="true"] { height: 680px; }
+.scene-wrap[data-dense="true"] .scene-label { font-size: 10px; padding: 3px; }
 .explorer-modebar { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
 .explorer-modebar strong { margin-right: auto; font-size: 14px; }
 .model-settings, .component-tools { border: 0; padding: 0; margin: 0 0 12px; }
@@ -87,7 +88,8 @@ footer { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 32px; font-size:
 .focus-mode .scene-column { display: grid; min-height: 0; grid-template-rows: auto auto minmax(160px, 1fr) auto auto auto; gap: 5px; overflow: auto; }
 .focus-mode .breadcrumbs, .focus-mode .scene-toolbar { margin: 0; gap: 5px; }
 .focus-mode .breadcrumbs button { min-height: 36px; }
-.focus-mode .scene-wrap, .focus-mode .scene-wrap[data-dense="true"] { height: 100%; min-height: 160px; }
+.focus-mode .scene-wrap { height: 100%; min-height: 160px; }
+.focus-mode .scene-wrap[data-dense="true"] { min-height: 600px; }
 .focus-mode #renderer-status { margin: 0; max-height: 2.8em; overflow: auto; font-size: 11px; }
 .focus-mode #renderer-status + p { display: none; }
 .focus-mode .token-context { font-size: 11px; padding: 4px 0; }

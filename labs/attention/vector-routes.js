@@ -82,7 +82,7 @@ export function mountVectorRoutes(root, initialPosition = 2) {
     if(step===1) {
       detail+=text(440,24,`K/V CACHE · L${layer} / H${head}`,'route-column-label')+text(800,24,'CURRENT QUERY','route-column-label');
       for(let i=0;i<3;i++)detail+=edge(158,ys[i],372,ys[i],i<=position,false,'× Wₖ; × Wᵥ');
-      detail+=`<path class="route-edge is-active" d="M158 ${ys[position]} C260 ${ys[position]},240 285,320 285 H744"/>`+text(555,265,'× Wq','route-edge-label');
+      detail+=`<path class="route-edge is-active" d="M158 ${ys[position]} C260 ${ys[position]},240 285,320 285 H744"/>`+text(620,265,'× Wq','route-edge-label');
       for(let i=0;i<3;i++)detail+=input(i)+node(440,ys[i],'K=x×Wₖ; V=x×Wᵥ',`L${layer} · H${head} · ${tokens[i]}`,{active:i<=position,width:210});
       detail+=node(800,285,'Q = x × Wq',`L${layer} · H${head} · ${token}`,{active:true});
     }

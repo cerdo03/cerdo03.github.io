@@ -152,8 +152,8 @@ function heads(s){
  if(stage>=1)graph+=node(235,135,210,'Combined Q projection',['x × WQ: 4 × 4','q₁₁ q₁₂ | q₂₁ q₂₂'],stage===1);
  if(stage>=2)for(let h=0;h<2;h++){
   const y=35+h*215;
-  graph+=edge(445,175,505,y+45,stage>=2,`columns ${h*2+1}–${h*2+2}`);
-  graph+=node(505,y,170,stage>=3?`Head ${h+1} result`:`Head ${h+1} Q`,[stage>=3?h===0?'a₁  a₂':'b₁  b₂':h===0?'q₁₁ q₁₂':'q₂₁ q₂₂',stage>=3?'After its attention':'2 projected components'],stage===2||stage===3);
+  graph+=edge(445,175,505,y+45,stage>=2);
+  graph+=node(505,y,170,stage>=3?`Head ${h+1} result`:`Head ${h+1} Q`,[stage>=3?h===0?'a₁  a₂':'b₁  b₂':h===0?'q₁₁ q₁₂':'q₂₁ q₂₂',stage>=3?'After its attention':'2 projected components',`Projected columns ${h*2+1}–${h*2+2}`],stage===2||stage===3);
   if(stage>=4)graph+=edge(675,y+45,725,175,true);
  }
  if(stage>=4)graph+=node(725,140,160,'Concatenate',['a₁ a₂ b₁ b₂','4 components'],stage===4);

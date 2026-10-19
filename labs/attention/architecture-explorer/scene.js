@@ -1,6 +1,6 @@
 import * as THREE from './vendor/three.module.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import { nestedSpace, dollyFrame } from './spatial.js';
+import { nestedSpace, dollyFrame, captionPosition, layoutNodes, projectionRoute } from './spatial.js';
 
 // Nested diagrams share world coordinates with the block that contains them.
 // Render only on input or during a camera move; no idle animation.
@@ -63,6 +63,16 @@ export function mountScene(host,labels,onSelect) {
       item.element.style.opacity=String(item.ghost?(ghost?.opacity||0):1);
       item.element.hidden=!readable||projected.z>1||projected.z< -1||Math.abs(projected.x)>1||Math.abs(projected.y)>1;
     }
+    const captions=labelNodes.filter(item=>!item.id&&!item.element.hidden);
+    if(captions.length){
+      const viewport=host.getBoundingClientRect();
+      const rectangle=item=>{const box=item.element.getBoundingClientRect();return {x:box.left-viewport.left,y:box.top-viewport.top,width:box.width,height:box.height};};
+      const occupied=labelNodes.filter(item=>item.id&&!item.element.hidden).map(rectangle);
+      for(const item of captions){
+        const box=captionPosition(rectangle(item),occupied,{width:host.clientWidth,height:host.clientHeight});
+        item.element.style.left=`${box.x+box.width/2}px`;item.element.style.top=`${box.y+box.height/2}px`;occupied.push(box);
+      }
+    }
     if(tween)invalidate();
   }
   function build(data,retain=false){
@@ -72,11 +82,8 @@ export function mountScene(host,labels,onSelect) {
       ghost={group,labels:labelNodes,materials,opacity:1};labelNodes.forEach(n=>n.ghost=true);
     }else{disposeGroup(group);labelNodes.forEach(n=>n.element.remove());}
     group=new THREE.Group();scene.add(group);meshes=[];edges=[];labelNodes=[];graph=data;
-    const colors=palette(),byId=new Map(),nodes=data.nodes.map(n=>({...n}));
-    host.parentElement.dataset.dense=String(host.clientWidth<520&&nodes.filter(n=>n.id.startsWith('head-')).length>16);
-    if(host.clientWidth<520&&nodes.some(n=>n.id.startsWith('head-'))){
-      for(const [items,above]of [[nodes.filter(n=>n.id.startsWith('head-')),true],[nodes.filter(n=>n.id.startsWith('kv-')),false]])items.forEach((n,i)=>{const cols=Math.min(items.length,4),rows=Math.ceil(items.length/cols);n.x=(i%cols-(cols-1)/2)*2.6;n.y=above?2+(rows-1-Math.floor(i/cols))*1.6:-2-Math.floor(i/cols)*1.6;});
-    }
+    const colors=palette(),byId=new Map(),nodes=layoutNodes(data.nodes,host.clientWidth);
+    host.parentElement.dataset.dense=String(host.clientWidth<900&&nodes.filter(n=>n.id.startsWith('head-')).length>8);
     function label(text,id,point,width){const element=document.createElement('span');element.className='scene-label';element.textContent=text;labels.append(element);labelNodes.push({element,id,point,width,root:group});}
     nodes.forEach(n=>{
       const head=n.id.startsWith('head-')||n.id.startsWith('kv-'),width=head?2.05:5;
@@ -88,10 +95,11 @@ export function mountScene(host,labels,onSelect) {
     });
     data.edges.forEach(edge=>{
       const a=byId.get(edge.from).position.clone(),b=byId.get(edge.to).position.clone();a.y-=.5;b.y+=.5;
-      const color=edge.residual?colors.key:colors.ink;let curve;
+      const color=edge.residual?colors.key:colors.ink,narrowProjection=host.clientWidth<520&&edge.from==='normalized'&&['q','k','v'].includes(edge.to);let curve;
       if(edge.residual){const x=edge.from==='input'?-4:4;curve=new THREE.CatmullRomCurve3([a,new THREE.Vector3(x,a.y,0),new THREE.Vector3(x,b.y,0),b]);label(edge.label,'',new THREE.Vector3(x,(a.y+b.y)/2,.2),5);}
+      else if(narrowProjection)curve=new THREE.CatmullRomCurve3(projectionRoute(a.toArray(),byId.get(edge.to).position.toArray()).map(point=>new THREE.Vector3(...point)));
       else curve=new THREE.LineCurve3(a,b);
-      const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,edge.residual?32:1,.025,5,false),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.55}));group.add(tube);
+      const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,edge.residual||narrowProjection?32:1,.025,5,false),new THREE.MeshBasicMaterial({color,transparent:true,opacity:.55}));group.add(tube);
       const arrow=new THREE.Mesh(new THREE.ConeGeometry(.09,.24,6),new THREE.MeshBasicMaterial({color,transparent:true}));arrow.position.copy(curve.getPoint(.95));arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),curve.getTangent(.95).normalize());group.add(arrow);edges.push({from:edge.from,to:edge.to,tube,arrow});
     });
     const bounds=new THREE.Box3().setFromObject(group),center=bounds.getCenter(new THREE.Vector3());localSize=bounds.getSize(new THREE.Vector3());
