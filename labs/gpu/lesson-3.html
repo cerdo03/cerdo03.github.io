@@ -21,6 +21,8 @@
 </header>
 <section id="dot-product" aria-labelledby="dot-product-title"><h2 id="dot-product-title">One output, four products</h2><p>Use a tiny invented projection: <var>U</var> [4 × 4] times <var>W</var> [4 × 4] gives <var>Y</var> [4 × 4]. Select an output cell. Reveal each product and accumulate it. Inputs here are illustrative numeric rows, not the learned embeddings from Module 2.</p>
 
+<p class="course-core">A <strong>dot product</strong> multiplies matching entries from a row and a column, then sums the products. An <strong>accumulator</strong> is that running sum. Each <strong>multiply-add</strong> adds one product to it. One <strong>FLOP</strong> is one floating-point arithmetic operation; we count a multiply-add as two FLOPs, even when one fused instruction performs it.</p>
+
 <div class="lab" data-gpu-lab="matmul" role="group" aria-label="Inspect products and sums"><h3>Inspect products and sums</h3><p class="gpu-static">Y[0,0] = 1×1 + 2×0 + 0×2 + 1×1 = 2. Changing output cell changes the selected row and column. A fused multiply-add counts as 2 FLOPs even when implemented as one instruction.</p>
 </div>
 
@@ -33,6 +35,8 @@
         Y[row][col] = acc</code></pre><p>For the tiny example: 16 outputs × 4 terms × 2 FLOPs = 128 FLOPs. This scalar loop is a reference calculation, not a tensor-core implementation.</p>
 </div></details></section>
 <section id="tiling" aria-labelledby="tiling-title"><h2 id="tiling-title">Load a tile, reuse its operands</h2><p>Instead of independently reloading each dot product’s operands, compute a <var>b</var><sub>tile</sub> × <var>b</var><sub>tile</sub> patch of outputs together. One input tile and one weight tile supply many products. Tile size changes data reuse without changing the mathematical result.</p>
+
+<p class="course-core">A <strong>tile</strong> is a small rectangular portion of a matrix. The control chooses a square tile’s side length in elements. A <strong>reduction chunk</strong> covers part of the shared inner dimension: load two operand tiles, add their products to the output accumulators, then continue with the next chunk. The accumulators retain earlier partial sums until every chunk is complete.</p>
 
 <div class="lab" data-gpu-lab="tiling" role="group" aria-label="Count work versus movement"><h3>Count work versus movement</h3><p class="gpu-static">For 4×4 matrices with 4-byte elements: tile side 1 issues 128 operand element loads plus 16 output stores = 576 bytes. Tile side 2 issues 64 loads plus 16 stores = 320 bytes. Tile side 4 issues 32 loads plus 16 stores = 192 bytes. These are logical global-memory demands under the teaching algorithm, not measured HBM traffic.</p>
 </div>

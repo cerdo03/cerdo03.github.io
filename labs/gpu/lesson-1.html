@@ -23,10 +23,16 @@
 
 <div class="course-core gpu-formula"><var>Y</var>[<var>i</var><sub>row</sub>, <var>j</var><sub>col</sub>] = Σ over <var>p</var><sub>sum</sub> from 0 to <var>k</var><sub>inner</sub> − 1 of <var>U</var>[<var>i</var><sub>row</sub>, <var>p</var><sub>sum</sub>] × <var>W</var>[<var>p</var><sub>sum</sub>, <var>j</var><sub>col</sub>]. Here <var>i</var><sub>row</sub> selects a row, <var>j</var><sub>col</sub> a column, and <var>p</var><sub>sum</sub> walks through the shared width.</div>
 
+<div class="course-core"><h3>Work groups and hardware</h3>
+<p>A <strong>kernel</strong> is a GPU function launched to do a task. A <strong>grid</strong> is the collection of blocks in that launch. A <strong>thread</strong> is one logical instance of the function; in this example, it computes one output element.</p>
+<p>A <strong>block</strong> is a group of threads that can share temporary storage (shared memory) and wait for one another at synchronization points. “128 threads per block” means grouping the output work into groups of 128. A block is a work group, not a physical processor.</p>
+<p>An <strong>SM (streaming multiprocessor)</strong> is a hardware unit on an NVIDIA GPU that executes threads from assigned blocks. A <strong>warp</strong> is a group of 32 threads within a block; a <strong>lane</strong> is a thread’s position within its warp, numbered 0–31. One SM can host multiple blocks. The explorer separates this hardware placement from the grid’s logical grouping.</p>
+<p>For the mapping below, <strong>ceil</strong> means round up: any leftover outputs need another block. A <strong>guard</strong> checks whether a thread’s output index is in range before it loads inputs or stores a result.</p></div>
+
 <div class="lab" data-gpu-lab="execution" role="group" aria-label="Map work onto a GPU"><h3>Map work onto a GPU</h3><p class="gpu-static">Example: 1,000 output elements with 128 threads/block need 8 blocks. The last warp has 8 valid output lanes and 24 guarded lanes. A block stays on one SM during ordinary execution; a warp contains 32 CUDA threads.</p>
 </div>
 
-<details class="course-detail"><summary>Kernel, grid, block, warp, lane</summary><div><p>A kernel is a function launched across a grid of blocks. A thread is a logical program instance, not a dedicated physical core. An SM (streaming multiprocessor) hosts blocks and schedules their warps. A warp is a 32-thread execution group on NVIDIA GPUs; lane is its thread position. Ready warps can issue instructions while others wait on dependencies. One SM can host multiple blocks. Blocks need not start together or execute in numerical order.</p>
+<details class="course-detail"><summary>Indexing pseudocode and scheduling details</summary><div><p>A thread is not a dedicated physical core. Ready warps can issue instructions while others wait on dependencies. Blocks need not start together or execute in numerical order. This ordinary mapping keeps a block on one SM; it does not specify which SM or when it runs.</p>
 <pre tabindex="0" aria-label="Pseudocode; scroll horizontally if needed"><code>// Schematic mapping, not an optimized CUDA GEMM.
 flat = blockIdx.x * blockDim.x + threadIdx.x;
 if (flat &lt; rows * columns) {
@@ -39,10 +45,13 @@ if (flat &lt; rows * columns) {
 </div></details></section>
 <section id="residency" aria-labelledby="residency-title"><h2 id="residency-title">Enough work is not enough resources</h2><p>A block needs registers and shared memory to reside on an SM. A larger block or more storage per block can reduce how many warps are resident. More resident warps may help hide latency, but occupancy alone does not measure useful throughput.</p>
 
+<div class="course-core"><p><strong>Resident</strong> means currently allocated space on an SM, whether ready to run or waiting. <strong>Registers</strong> hold a thread’s working values, such as its running sum. <strong>Shared memory</strong> holds values cooperating threads in one block can reuse. Both have limited space.</p>
+<p><strong>Occupancy</strong> is the resident warp count divided by the SM’s maximum resident warp count. The toy SM below has 64 warp slots: 8 resident warps means 8 / 64 = 12.5% occupancy. This counts allocated warps, not how busy they are. KiB means 1,024 bytes; each 32-bit register holds 4 bytes.</p></div>
+
 <div class="lab" data-gpu-lab="residency" role="group" aria-label="Change one resource limit"><h3>Change one resource limit</h3><p class="gpu-static">Toy SM: 2,048 resident threads, 65,536 32-bit registers, 64 KiB shared memory, at most 8 blocks. With 128 threads/block, 64 registers/thread and 32 KiB/block, shared memory limits residency to 2 blocks (8 warps, 12.5% occupancy).</p>
 </div>
 
-<details class="course-detail"><summary>Why this is only a residency upper bound</summary><div><p>Limits are invented and independently rounded for teaching. Real occupancy includes allocation granularity, architecture-specific limits and compiler decisions. The diagram ignores scheduling policy, issue width, instruction latency and register spilling. Occupancy is resident warps divided by the toy maximum of 64 warps; it is not percent of compute units busy. Insufficient blocks in the grid can leave SMs idle even when resource occupancy is high.</p>
+<details class="course-detail"><summary>Why this is only a residency upper bound</summary><div><p>Limits are invented and independently rounded for teaching. Real occupancy includes allocation granularity, architecture-specific limits and compiler decisions. The diagram ignores scheduling policy, issue width, instruction latency and register spilling. Insufficient blocks in the grid can leave SMs idle even when resource occupancy is high.</p>
 <p>Registers hold per-thread state such as the accumulator. More registers can avoid spills or enable reuse; reducing them blindly can add device-memory traffic. Search for a causal trade-off, not maximum occupancy.</p>
 </div></details>
 <div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Double registers/thread. Must throughput improve?</p>
@@ -52,7 +61,9 @@ if (flat &lt; rows * columns) {
 <section id="dependencies" aria-labelledby="dependencies-title"><h2 id="dependencies-title">Parallelism must respect dependencies</h2><p>In “The sky is”, prefill has three supplied token rows. Within one layer, many projections and output elements can run in parallel. The next layer still needs the previous layer’s outputs. During ordinary autoregressive decode, the next input token is unknown until the current step selects it.</p>
 
 <div class="lab"><div class="gpu-flow"><div class="gpu-stage"><strong>Known inputs → projection grid</strong>Many independent dot products across rows and columns.</div><div class="gpu-stage"><strong>Attention and remaining layer work</strong>Dependencies within the layer still apply. Causal masking prevents future-token information flow.</div><div class="gpu-stage"><strong>Next layer → logits → selection</strong>Only after selection can the new token become the next input.</div></div><p>These are data dependencies, not a GPU scheduling trace. A transformer head is not an SM, a token is not a thread, and one layer is not necessarily one kernel.</p>
-</div><div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Two branches of one warp take different paths. Do we get twice the execution resources?</p>
+</div><p class="course-core">A branch chooses a path, such as the true or false side of an <code>if</code>. If lanes in one warp choose different paths, this is <strong>divergence</strong>: each path runs with only its participating lanes active. An <strong>active lane mask</strong> records which lanes participate; branching does not create another warp.</p>
+
+<div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Two branches of one warp take different paths. Do we get twice the execution resources?</p>
 <button type="button" data-answer="correct">No; paths use active lane masks</button> <button type="button" data-answer="wrong">Yes; each branch gets a new warp</button><p class="gpu-feedback" hidden data-feedback data-explanation="Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication."></p>
 <noscript><p>Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication.</p>
 </noscript></div></section>

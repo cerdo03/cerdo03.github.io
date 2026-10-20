@@ -25,6 +25,7 @@ One visual language, two levels of interaction. The homepage is a quiet director
 ### Learning sites
 
 - Start with the learning goal and a concrete example; define terms before using them. Progress from foundations to deeper mechanisms.
+- Keep definitions, prerequisites and explanations required to complete a lesson visible on its main reading path, before or alongside first use and before dependent controls. Reserve disclosures for optional derivations, implementation nuances and deeper study; a learner must not need to open an optional-looking disclosure to understand the current task. Preserve one-concept-at-a-time flow rather than expanding every detail.
 - Include meaningful interactive diagrams, simulations or manipulable examples. Every control must show the resulting change and explain why it happened.
 - Use labeled flows, timelines and before/after comparisons to reveal state, cause, failure and recovery. Decorative movement does not count as teaching.
 - Include predictions/checks with explanatory feedback where useful; do not block navigation behind quizzes.

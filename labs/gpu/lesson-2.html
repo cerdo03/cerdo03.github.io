@@ -21,12 +21,22 @@
 </header>
 <section id="hierarchy" aria-labelledby="hierarchy-title"><h2 id="hierarchy-title">Where an operand lives</h2><p>A value stored in global memory must reach an execution unit before it contributes to a dot product. Storage capacity tells you what fits; traffic tells you how many bytes cross a boundary. They answer different questions.</p>
 
+<div class="course-core"><h3>The storage names in the path</h3><ul>
+<li><strong>Registers:</strong> working values for an individual thread, such as a running sum, stored on the SM.</li>
+<li><strong>Shared memory:</strong> storage on the SM that threads in one block explicitly fill and reuse.</li>
+<li><strong>L1 and L2 caches:</strong> hardware-managed stores of recently used data. L1 is associated with an SM; L2 is shared across the device. A cache hit can avoid fetching data from device memory.</li>
+<li><strong>Device DRAM:</strong> the GPU’s main memory for allocations such as inputs and weights. HBM means high-bandwidth memory, one DRAM technology used by many datacenter GPUs. Global memory names the address space used to access these allocations.</li>
+</ul><p>The transformer <strong>KV cache</strong> is a software data structure, usually allocated in global memory. It is different from the hardware L1/L2 caches. A <strong>load</strong> reads a value; a <strong>store</strong> writes one. A multiply-add multiplies two operands and adds their product to a running sum.</p></div>
+
 <div class="lab" data-gpu-lab="memory" role="group" aria-label="Follow one operand"><h3>Follow one operand</h3><p class="gpu-static">Illustrative tiled path: device memory (often HBM on datacenter GPUs) → cache lookup → block-shared scratchpad → per-thread registers → multiply-add → output store. Not every load uses shared memory. Registers and shared memory are on-chip; L2 is a device-wide cache, not the KV cache.</p>
 </div>
 
-<details class="course-detail"><summary>Memory scopes and limits</summary><div><ul><li><strong>Registers:</strong> per-thread program state on the SM. Excess demand can spill into thread-local memory backed by device memory.</li><li><strong>Shared memory:</strong> explicitly managed storage used by cooperating threads of a block; bank conflicts and synchronization affect its cost.</li><li><strong>L1 / L2:</strong> hardware-managed caches. L1 is associated with an SM; L2 is shared across the device. Details vary by architecture.</li><li><strong>Global address space:</strong> accessible to the kernel’s threads. Device storage may be HBM or another DRAM technology. A global load may hit cache and never fetch HBM.</li></ul><p>A transformer KV cache is a software data structure, usually stored in global memory. Its name does not imply that it fits in hardware L2. Apple unified memory changes the physical organization; these capacity/traffic distinctions still help, while CUDA block and warp details do not transfer verbatim.</p>
+<details class="course-detail"><summary>Spills, hardware variation and unified memory</summary><div><p>Excess register demand can spill into thread-local memory backed by device memory. Shared-memory bank conflicts (competing accesses to the same storage bank) and synchronization affect access cost. Exact cache paths and capacities vary by architecture.</p><p>A software KV cache need not fit in hardware L2. Apple unified memory changes the physical organization; these capacity/traffic distinctions still help, while CUDA block and warp details do not transfer verbatim.</p>
 </div></details></section>
 <section id="coalescing" aria-labelledby="coalescing-title"><h2 id="coalescing-title">Neighboring lanes, neighboring addresses</h2><p>If adjacent lanes request nearby addresses, hardware can service them with fewer memory sectors. Change the address stride before predicting how much useful data each sector carries.</p>
+
+<div class="course-core"><p><strong>Stride</strong> is the distance between neighboring lanes’ addresses, measured here in 4-byte elements: stride 1 steps 4 bytes, stride 8 steps 32 bytes. A <strong>sector</strong> is a 32-byte address region in this teaching model: bytes 0–31, then 32–63, and so on.</p>
+<p><strong>Alignment</strong> describes where the first address falls relative to a sector boundary. Starting byte offset 0 begins on a boundary; offset 4 begins four bytes later. <strong>Coalescing</strong> means combining a warp’s nearby memory requests into fewer transactions. Here we count touched sectors, not measured DRAM traffic.</p></div>
 
 <div class="lab" data-gpu-lab="coalescing" role="group" aria-label="Inspect a warp’s memory requests"><h3>Inspect a warp’s memory requests</h3><p class="gpu-static">Toy transaction model: 32 lanes each load one distinct 4-byte number; 32-byte aligned sectors, no cache reuse. Stride 1 from byte 0 touches 4 sectors (128 bytes); stride 8 touches 32 sectors (1,024 bytes) for the same 128 useful bytes.</p>
 </div>
@@ -38,6 +48,8 @@
 <noscript><p>The 128 useful bytes now span bytes 4 through 131, crossing five 32-byte sectors. Alignment changes demand even at stride 1.</p>
 </noscript></div></section>
 <section id="reuse" aria-labelledby="reuse-title"><h2 id="reuse-title">Reusing bytes takes coordination</h2><p>Several threads can reuse an operand loaded into shared memory. They must wait until the cooperative loads finish, then wait again before overwriting a tile still in use. Faster memory without correct synchronization is a race, not an optimization.</p>
+
+<p class="course-core">A <strong>tile</strong> is a small portion of a matrix loaded for reuse. A <strong>block barrier</strong> is a synchronization point: participating threads wait until the block has reached it and prior shared-memory writes are available to them. This makes a cooperative load safe to reuse. It coordinates threads within a block, not separate blocks.</p>
 
 <div class="lab"><div class="gpu-flow"><div class="gpu-stage"><strong>Cooperative load</strong>Threads load different tile elements into block-shared storage.</div><div class="gpu-stage"><strong>Block barrier</strong>Ensure all required values are available before consuming them.</div><div class="gpu-stage"><strong>Reuse, then barrier</strong>Accumulate with the tile. Ensure consumers finish before the next tile overwrites it.</div></div><p>Ordinary block barriers must be reached by all participating threads consistently. Guard out-of-range loads and stores, not the barrier itself. Separate blocks cannot use an ordinary block barrier to communicate.</p>
 </div>
