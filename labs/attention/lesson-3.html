@@ -223,6 +223,7 @@ for i in range(H_q):
           <li>Vaswani et al., <a href="https://arxiv.org/abs/1706.03762">Attention Is All You Need</a>, arXiv:1706.03762 (2017). Multi-head attention.</li>
           <li>Noam Shazeer, <a href="https://arxiv.org/abs/1911.02150">Fast Transformer Decoding: One Write-Head is All You Need</a>, arXiv:1911.02150 (2019). Multi-query attention.</li>
           <li>Ainslie, Lee-Thorp, de Jong, Zemlyanskiy, Lebrón and Sanghai, <a href="https://arxiv.org/abs/2305.13245">GQA: Training Generalized Multi-Query Transformer Models from Multi-Head Checkpoints</a>, arXiv:2305.13245 (2023). Grouped-query attention and uptraining.</li>
+          <li>Companion <a href="https://github.com/cerdo03/llm-systems-exercises">LLM systems exercises repository</a>: one small Tiny Shakespeare run compared MHA, GQA (two KV groups) and MQA. Test losses were 1.9651, 1.9819 and 1.9902; raw cache counts were 64, 32 and 16 key/value floats per token per block. One seed; this did not measure decode speed. <a href="https://github.com/cerdo03/llm-systems-exercises/blob/main/docs/experiment-results.md#multi-head-vs-grouped-query-vs-multi-query">Full setup, results and caveats</a> · <a href="https://github.com/cerdo03/llm-systems-exercises/blob/main/src/tiny_shakespeare.ipynb">notebook</a>.</li>
         </ul>
       </section>
 
