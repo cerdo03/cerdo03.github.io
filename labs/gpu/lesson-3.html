@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Module 3: Matrix multiplication and tiling. Interactive GPU performance reasoning for LLM inference; analytical models, no GPU required.">
+<title>3.3 Matrix multiplication and tiling — Learning LLM Systems</title>
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="gpu.css">
+<link rel="stylesheet" href="../llm-systems/course.css">
+<script type="module" src="../../assets/theme.js"></script>
+<script type="module" src="gpu.js"></script>
+<script type="module" src="../llm-systems/course-shell.js"></script>
+<script src="../llm-systems/render-guard.js"></script>
+</head>
+<body class="gpu-course" data-gpu-lesson="3">
+<header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a></header>
+<main id="main">
+<header class="lesson-header"><p class="eyebrow">Module 3 · Lesson 3 of 5</p>
+<h1>Matrix multiplication and tiling</h1><p>Keep the answer fixed. Change how many times an operand has to travel.</p>
+</header>
+<section id="dot-product" aria-labelledby="dot-product-title"><h2 id="dot-product-title">One output, four products</h2><p>Use a tiny invented projection: <var>U</var> [4 × 4] times <var>W</var> [4 × 4] gives <var>Y</var> [4 × 4]. Select an output cell. Reveal each product and accumulate it. Inputs here are illustrative numeric rows, not the learned embeddings from Module 2.</p>
+
+<div class="lab" data-gpu-lab="matmul" role="group" aria-label="Inspect products and sums"><h3>Inspect products and sums</h3><p class="gpu-static">Y[0,0] = 1×1 + 2×0 + 0×2 + 1×1 = 2. Changing output cell changes the selected row and column. A fused multiply-add counts as 2 FLOPs even when implemented as one instruction.</p>
+</div>
+
+<details class="course-detail"><summary>Notation → dimensions → loops</summary><div><p><var>Y</var>[<var>i</var><sub>row</sub>,<var>j</var><sub>col</sub>] = Σ over <var>p</var><sub>sum</sub> of <var>U</var>[<var>i</var><sub>row</sub>,<var>p</var><sub>sum</sub>] × <var>W</var>[<var>p</var><sub>sum</sub>,<var>j</var><sub>col</sub>]. The reduction has <var>k</var><sub>inner</sub> terms. There are <var>r</var><sub>rows</sub> × <var>c</var><sub>cols</sub> outputs. Conventional GEMM accounting uses <var>F</var> = 2<var>r</var><sub>rows</sub><var>c</var><sub>cols</sub><var>k</var><sub>inner</sub> FLOPs (one multiply-add per term), even though a mathematical dot product needs only k − 1 additions if initialized from its first product.</p>
+<pre tabindex="0" aria-label="Pseudocode; scroll horizontally if needed"><code>for row in range(rows):
+    for col in range(columns):
+        acc = 0
+        for p in range(reduction):
+            acc += U[row][p] * W[p][col]
+        Y[row][col] = acc</code></pre><p>For the tiny example: 16 outputs × 4 terms × 2 FLOPs = 128 FLOPs. This scalar loop is a reference calculation, not a tensor-core implementation.</p>
+</div></details></section>
+<section id="tiling" aria-labelledby="tiling-title"><h2 id="tiling-title">Load a tile, reuse its operands</h2><p>Instead of independently reloading each dot product’s operands, compute a <var>b</var><sub>tile</sub> × <var>b</var><sub>tile</sub> patch of outputs together. One input tile and one weight tile supply many products. Tile size changes data reuse without changing the mathematical result.</p>
+
+<div class="lab" data-gpu-lab="tiling" role="group" aria-label="Count work versus movement"><h3>Count work versus movement</h3><p class="gpu-static">For 4×4 matrices with 4-byte elements: tile side 1 issues 128 operand element loads plus 16 output stores = 576 bytes. Tile side 2 issues 64 loads plus 16 stores = 320 bytes. Tile side 4 issues 32 loads plus 16 stores = 192 bytes. These are logical global-memory demands under the teaching algorithm, not measured HBM traffic.</p>
+</div>
+
+<details class="course-detail"><summary>Derive the traffic and storage</summary><div><p>For square tiles whose side <var>b</var><sub>tile</sub> divides all dimensions, there are (<var>r</var><sub>rows</sub>/<var>b</var><sub>tile</sub>)(<var>c</var><sub>cols</sub>/<var>b</var><sub>tile</sub>) output tiles. Each streams <var>k</var><sub>inner</sub>/<var>b</var><sub>tile</sub> pairs of input tiles. Each pair holds 2<var>b</var><sub>tile</sub>² elements. Total operand loads = 2<var>r</var><sub>rows</sub><var>c</var><sub>cols</sub><var>k</var><sub>inner</sub>/<var>b</var><sub>tile</sub>. Add <var>r</var><sub>rows</sub><var>c</var><sub>cols</sub> output stores, then multiply by element bytes.</p>
+<p>Two single-buffered input tiles consume 2<var>b</var><sub>tile</sub>² × element bytes in shared memory. Accumulators also need registers. Doubling <var>b</var><sub>tile</sub> increases this shared storage fourfold; double buffering would consume more. Our model omits caches, padding, spills, synchronization cost and traffic between shared memory and registers. It assumes the old output is not read (GEMM beta = 0).</p>
+<pre tabindex="0" aria-label="Pseudocode; scroll horizontally if needed"><code>for each output_tile:
+    accumulators = 0
+    for each reduction_tile:
+        cooperatively load U_tile and W_tile
+        block_barrier()
+        accumulate products into registers
+        block_barrier()  // finish before overwriting tiles
+    store output_tile</code></pre></div></details>
+<div class="course-core gpu-check" data-check><p><strong>Predict:</strong> A larger tile always runs faster?</p>
+<button type="button" data-answer="correct">No; reuse trades against resources</button> <button type="button" data-answer="wrong">Yes; fewer loads guarantees speed</button><p class="gpu-feedback" hidden data-feedback data-explanation="More reuse lowers logical load demand, but larger shared/register demand can reduce residency. Synchronization, edge tiles, tensor-core layouts and cache behavior affect the result."></p>
+<noscript><p>More reuse lowers logical load demand, but larger shared/register demand can reduce residency. Synchronization, edge tiles, tensor-core layouts and cache behavior affect the result.</p>
+</noscript></div></section>
+<section id="attention-link" aria-labelledby="attention-link-title"><h2 id="attention-link-title">Why this matters for attention</h2><p>Attention also multiplies matrices. Materializing a full score/weight matrix in device memory can add substantial traffic. A fused, tiled algorithm can avoid storing that full intermediate there while preserving the attention computation.</p>
+
+<div class="lab"><div class="gpu-flow"><div class="gpu-stage"><strong>Separate operations</strong>Score matrix → write intermediate → read it for normalization/value mixing.</div><div class="gpu-stage"><strong>IO-aware tiled attention</strong>Bring in blocks of keys/values, update an output accumulator and normalization state, avoid a full device-memory score matrix.</div></div><p>This is the motivation behind <a href="https://arxiv.org/abs/2205.14135">FlashAttention</a>, not its complete algorithm. Online softmax must update running normalization correctly; merely tiling ordinary softmax independently would change the answer. Exact attention here refers to the algorithm, not bitwise-identical floating-point results.</p>
+</div><p class="course-core">Data movement can change even when the number of useful mathematical operations stays similar. Next, turn that observation into a bound.</p>
+</section>
+
+<p class="course-core"><a href="./">Module 3 overview</a> · <a href="../attention/lesson-5.html">Revisit KV memory</a></p>
+
+</main>
+<footer><span>Analytical teaching models. No GPU execution or measured performance.</span> <a href="../../">Back to the journal</a></footer>
+</body>
+</html>

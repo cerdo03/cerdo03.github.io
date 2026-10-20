@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Module 3: GPU execution. Interactive GPU performance reasoning for LLM inference; analytical models, no GPU required.">
+<title>3.1 GPU execution — Learning LLM Systems</title>
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="gpu.css">
+<link rel="stylesheet" href="../llm-systems/course.css">
+<script type="module" src="../../assets/theme.js"></script>
+<script type="module" src="gpu.js"></script>
+<script type="module" src="../llm-systems/course-shell.js"></script>
+<script src="../llm-systems/render-guard.js"></script>
+</head>
+<body class="gpu-course" data-gpu-lesson="1">
+<header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a></header>
+<main id="main">
+<header class="lesson-header"><p class="eyebrow">Module 3 · Lesson 1 of 5</p>
+<h1>GPU execution</h1><p>Trace a projection from mathematical work to logical threads and physical resources.</p>
+</header>
+<section id="execution" aria-labelledby="execution-title"><h2 id="execution-title">One equation, many independent outputs</h2><p>For a projection, <var>U</var> [<var>r</var><sub>rows</sub> × <var>k</var><sub>inner</sub>] multiplies weights <var>W</var> [<var>k</var><sub>inner</sub> × <var>c</var><sub>cols</sub>] to produce <var>Y</var> [<var>r</var><sub>rows</sub> × <var>c</var><sub>cols</sub>]. Each output is a dot product. Different outputs can be computed independently once the inputs exist.</p>
+
+<div class="course-core gpu-formula"><var>Y</var>[<var>i</var><sub>row</sub>, <var>j</var><sub>col</sub>] = Σ over <var>p</var><sub>sum</sub> from 0 to <var>k</var><sub>inner</sub> − 1 of <var>U</var>[<var>i</var><sub>row</sub>, <var>p</var><sub>sum</sub>] × <var>W</var>[<var>p</var><sub>sum</sub>, <var>j</var><sub>col</sub>]. Here <var>i</var><sub>row</sub> selects a row, <var>j</var><sub>col</sub> a column, and <var>p</var><sub>sum</sub> walks through the shared width.</div>
+
+<div class="lab" data-gpu-lab="execution" role="group" aria-label="Map work onto a GPU"><h3>Map work onto a GPU</h3><p class="gpu-static">Example: 1,000 output elements with 128 threads/block need 8 blocks. The last warp has 8 valid output lanes and 24 guarded lanes. A block stays on one SM during ordinary execution; a warp contains 32 CUDA threads.</p>
+</div>
+
+<details class="course-detail"><summary>Kernel, grid, block, warp, lane</summary><div><p>A kernel is a function launched across a grid of blocks. A thread is a logical program instance, not a dedicated physical core. An SM (streaming multiprocessor) hosts blocks and schedules their warps. A warp is a 32-thread execution group on NVIDIA GPUs; lane is its thread position. Ready warps can issue instructions while others wait on dependencies. One SM can host multiple blocks. Blocks need not start together or execute in numerical order.</p>
+<pre tabindex="0" aria-label="Pseudocode; scroll horizontally if needed"><code>// Schematic mapping, not an optimized CUDA GEMM.
+flat = blockIdx.x * blockDim.x + threadIdx.x;
+if (flat &lt; rows * columns) {
+    row = flat / columns; col = flat % columns;
+    acc = 0;
+    for (p = 0; p &lt; reduction; ++p)
+        acc += U[row][p] * W[p][col];
+    Y[row][col] = acc;
+}</code></pre><p>The multiply-add loop has an accumulator dependency. Parallel output elements do not eliminate that dependency. Optimized kernels distribute work differently and can use tensor cores for matrix fragments; this one-thread-per-output sketch explains indexing only.</p>
+</div></details></section>
+<section id="residency" aria-labelledby="residency-title"><h2 id="residency-title">Enough work is not enough resources</h2><p>A block needs registers and shared memory to reside on an SM. A larger block or more storage per block can reduce how many warps are resident. More resident warps may help hide latency, but occupancy alone does not measure useful throughput.</p>
+
+<div class="lab" data-gpu-lab="residency" role="group" aria-label="Change one resource limit"><h3>Change one resource limit</h3><p class="gpu-static">Toy SM: 2,048 resident threads, 65,536 32-bit registers, 64 KiB shared memory, at most 8 blocks. With 128 threads/block, 64 registers/thread and 32 KiB/block, shared memory limits residency to 2 blocks (8 warps, 12.5% occupancy).</p>
+</div>
+
+<details class="course-detail"><summary>Why this is only a residency upper bound</summary><div><p>Limits are invented and independently rounded for teaching. Real occupancy includes allocation granularity, architecture-specific limits and compiler decisions. The diagram ignores scheduling policy, issue width, instruction latency and register spilling. Occupancy is resident warps divided by the toy maximum of 64 warps; it is not percent of compute units busy. Insufficient blocks in the grid can leave SMs idle even when resource occupancy is high.</p>
+<p>Registers hold per-thread state such as the accumulator. More registers can avoid spills or enable reuse; reducing them blindly can add device-memory traffic. Search for a causal trade-off, not maximum occupancy.</p>
+</div></details>
+<div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Double registers/thread. Must throughput improve?</p>
+<button type="button" data-answer="correct">No; residency may fall</button> <button type="button" data-answer="wrong">Yes; more storage is always faster</button><p class="gpu-feedback" hidden data-feedback data-explanation="Register demand can reduce resident blocks. It may also avoid spills or enable reuse. Only measured execution reveals the net effect."></p>
+<noscript><p>Register demand can reduce resident blocks. It may also avoid spills or enable reuse. Only measured execution reveals the net effect.</p>
+</noscript></div></section>
+<section id="dependencies" aria-labelledby="dependencies-title"><h2 id="dependencies-title">Parallelism must respect dependencies</h2><p>In “The sky is”, prefill has three supplied token rows. Within one layer, many projections and output elements can run in parallel. The next layer still needs the previous layer’s outputs. During ordinary autoregressive decode, the next input token is unknown until the current step selects it.</p>
+
+<div class="lab"><div class="gpu-flow"><div class="gpu-stage"><strong>Known inputs → projection grid</strong>Many independent dot products across rows and columns.</div><div class="gpu-stage"><strong>Attention and remaining layer work</strong>Dependencies within the layer still apply. Causal masking prevents future-token information flow.</div><div class="gpu-stage"><strong>Next layer → logits → selection</strong>Only after selection can the new token become the next input.</div></div><p>These are data dependencies, not a GPU scheduling trace. A transformer head is not an SM, a token is not a thread, and one layer is not necessarily one kernel.</p>
+</div><div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Two branches of one warp take different paths. Do we get twice the execution resources?</p>
+<button type="button" data-answer="correct">No; paths use active lane masks</button> <button type="button" data-answer="wrong">Yes; each branch gets a new warp</button><p class="gpu-feedback" hidden data-feedback data-explanation="Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication."></p>
+<noscript><p>Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication.</p>
+</noscript></div></section>
+
+<p class="course-core"><a href="./">Module 3 overview</a> · <a href="../attention/lesson-5.html">Revisit KV memory</a></p>
+
+</main>
+<footer><span>Analytical teaching models. No GPU execution or measured performance.</span> <a href="../../">Back to the journal</a></footer>
+</body>
+</html>

@@ -4,6 +4,22 @@
 // changes between lessons, so the surrounding prose defines them instead.
 
 export const glossary = {
+  U: 'Left matrix: input rows [r × k] in the GPU examples',
+  W: 'Right matrix: projection weights [k × c] in the GPU examples',
+  Y: 'Matrix product U W, with shape [r × c]',
+  r_rows: 'Number of input/output rows in the GPU examples',
+  c_cols: 'Number of output columns in the GPU examples',
+  k_inner: 'Reduction width: input columns and weight rows in the GPU examples',
+  i_row: 'Output row index in the GPU matrix product (zero-based)',
+  j_col: 'Output column index in the GPU matrix product (zero-based)',
+  p_sum: 'Summation index over the reduction width (zero-based)',
+  b_tile: 'Square tile side length in the GPU teaching model',
+  F: 'Floating-point operations; multiply-add counts as two FLOPs',
+  E: 'Bytes transferred at the explicitly chosen memory boundary',
+  I: 'Arithmetic intensity F / E, in FLOP per byte',
+  P: 'Compute ceiling for the chosen operation and precision, in FLOP per second',
+  BW: 'Bandwidth ceiling at the chosen memory boundary, in bytes per second',
+
   T: 'Sequence length (number of token positions)',
   T_i: 'Cached length of sequence i',
   d_model: 'Model (hidden) width',
@@ -42,11 +58,14 @@ export const glossary = {
 export const tensorRoles = { q: 'Q', k: 'K', v: 'V', w: 'A', o: 'O', mask: 'M' };
 
 /** Glossary key for a <var> element, or null when the symbol has no shared definition. */
+const gpuSymbols = new Set(['U', 'W', 'Y', 'r_rows', 'c_cols', 'k_inner', 'i_row', 'j_col', 'p_sum', 'b_tile', 'F', 'E', 'I', 'P', 'BW']);
+
 export function symbolKey(node) {
   const base = node.textContent.trim();
   const next = node.nextSibling;
   const sub = next && next.nodeType === 1 && next.tagName === 'SUB' ? next.textContent.trim() : '';
   const key = sub ? `${base}_${sub}` : base;
+  if (gpuSymbols.has(key) && !node.closest?.('.gpu-course')) return null;
   return Object.hasOwn(glossary, key) ? key : null;
 }
 

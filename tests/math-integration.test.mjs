@@ -29,8 +29,8 @@ test('optional toolkit remains registered alongside course companions', async ()
   const { sites } = await import('../assets/learning-catalog.js');
   assert.equal(sites['math-fluency'].project, 'llm-systems');
   assert.equal(sites['math-fluency'].path, '/labs/math-fluency/');
-  assert.match(read('labs/llm-systems/index.html'), /4 published sites/);
-  assert.match(read('index.html'), /Collection · 4 sites/);
+  assert.match(read('labs/llm-systems/index.html'), /5 sites/);
+  assert.match(read('index.html'), /Collection · 5 sites/);
 });
 
 test('course context retains only encoded allowlisted equation origins', async () => {

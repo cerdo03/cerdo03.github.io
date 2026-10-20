@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Module 3: Arithmetic intensity and roofline. Interactive GPU performance reasoning for LLM inference; analytical models, no GPU required.">
+<title>3.4 Arithmetic intensity and roofline — Learning LLM Systems</title>
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="gpu.css">
+<link rel="stylesheet" href="../llm-systems/course.css">
+<script type="module" src="../../assets/theme.js"></script>
+<script type="module" src="gpu.js"></script>
+<script type="module" src="../llm-systems/course-shell.js"></script>
+<script src="../llm-systems/render-guard.js"></script>
+</head>
+<body class="gpu-course" data-gpu-lesson="4">
+<header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a></header>
+<main id="main">
+<header class="lesson-header"><p class="eyebrow">Module 3 · Lesson 4 of 5</p>
+<h1>Arithmetic intensity and roofline</h1><p>Predict a limiting resource from units and assumptions, then ask what could falsify the prediction.</p>
+</header>
+<section id="intensity" aria-labelledby="intensity-title"><h2 id="intensity-title">How much work per byte?</h2><p>Arithmetic intensity connects a workload to a memory boundary. Count floating-point operations <var>F</var> and transferred bytes <var>E</var>, then divide. Always name whether those bytes cross HBM, L2, shared memory or another boundary.</p>
+<div class="course-core gpu-formula"><var>I</var> = <var>F</var> / <var>E</var> · units: FLOP/byte.<br>Example: 128 FLOPs / 320 bytes = 0.4 FLOP/byte for the tile-side-2 logical traffic from 3.3.</div>
+<div class="lab"><p>That 0.4 is not automatically an HBM intensity: cache hits can remove HBM reads. Below we explicitly assume bytes fetched from or written to device DRAM, using an optimistic one-read input/weight model. Compare analytical counts with hardware counters before calling it measured intensity.</p>
+</div>
+<details class="course-detail"><summary>Best-case projection traffic</summary><div><p>For <var>U</var> [<var>r</var><sub>rows</sub> × <var>k</var><sub>inner</sub>] times <var>W</var> [<var>k</var><sub>inner</sub> × <var>c</var><sub>cols</sub>], <var>F</var> = 2<var>r</var><sub>rows</sub><var>c</var><sub>cols</sub><var>k</var><sub>inner</sub>. If each input and weight is fetched once from DRAM and each output is written once, <var>E</var> = element bytes × (<var>r</var><sub>rows</sub><var>k</var><sub>inner</sub> + <var>k</var><sub>inner</sub><var>c</var><sub>cols</sub> + <var>r</var><sub>rows</sub><var>c</var><sub>cols</sub>). This is an optimistic cold-data traffic assumption, not a promise that any kernel achieves it. Repeated loads can increase it; data already in cache can reduce it. Bias, old-output reads, conversions and workspace are excluded.</p>
+</div></details></section>
+<section id="roofline" aria-labelledby="roofline-title"><h2 id="roofline-title">Two resource bounds, one roof</h2><p>If a device sustains at most <var>P</var> FLOP/s and <var>BW</var> byte/s, execution needs at least enough time for both resources. With ideal overlap, the larger resource time is the lower bound. Real time can be much larger.</p>
+<div class="course-core gpu-formula">time ≥ max(<var>F</var>/<var>P</var>, <var>E</var>/<var>BW</var>)<br>attainable FLOP/s ≤ min(<var>P</var>, <var>BW</var> × <var>I</var>)<br>ridge intensity = <var>P</var>/<var>BW</var></div>
+<div class="lab" data-gpu-lab="roofline" role="group" aria-label="Move a projection across the roofline"><h3>Move a projection across the roofline</h3><p class="gpu-static">Hypothetical dense device: 100 TFLOP/s, 1 TB/s; ridge = 100 FLOP/byte. One row of a 4096×4096 two-byte projection has intensity about 1 FLOP/byte. With 512 rows, intensity is 409.6 FLOP/byte under the stated one-read assumption. No device is benchmarked.</p>
+</div>
+
+<details class="course-detail"><summary>Units, precision and interpretation</summary><div><p>Tera uses decimal 10¹² here: TFLOP/s and TB/s. Divide FLOPs by FLOP/s to obtain seconds, then multiply by 1,000 for milliseconds. Do not mix GB/s and GiB/s. Count a multiply-add as two FLOPs consistently in work and device throughput.</p>
+<p>Select a ceiling matching precision, matrix instructions and dense versus sparse work. A sparse advertised tensor-core peak cannot be used as a dense FP32 ceiling. The sliders describe a hypothetical device, not any released GPU; changing storage bytes holds compute ceiling fixed for comparison, whereas real hardware often changes compute rates with precision.</p>
+<p>Below the ridge, bandwidth sets this model’s roof; above it, compute does. Near the ridge both matter. A point below both ceilings may be limited by launch latency, dependency chains, occupancy, shape, synchronization or another memory level. A roofline label is a hypothesis about a chosen operation and boundary, not proof of the actual bottleneck.</p>
+</div></details>
+<div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Below the ridge, double compute ceiling while keeping bandwidth fixed. Lower ideal time?</p>
+<button type="button" data-answer="correct">No; memory time stays limiting</button> <button type="button" data-answer="wrong">Yes; twice compute means twice speed</button><p class="gpu-feedback" hidden data-feedback data-explanation="The maximum of compute time and memory time stays at memory time. Reducing bytes or increasing bandwidth changes that limiting term. Actual execution still needs measurement."></p>
+<noscript><p>The maximum of compute time and memory time stays at memory time. Reducing bytes or increasing bandwidth changes that limiting term. Actual execution still needs measurement.</p>
+</noscript></div></section>
+<section id="falsify" aria-labelledby="falsify-title"><h2 id="falsify-title">A prediction you can disprove</h2><p>Suppose the model says memory time dominates. Predict that reducing transferred bytes will matter more than raising peak math rate. Then try to disprove that prediction: if traffic falls but runtime does not, inspect the next limit.</p>
+
+<div class="lab"><ol><li>Fix the tensor shapes, precision, operation and memory boundary.</li><li>Calculate work and traffic; state cache/reuse assumptions.</li><li>Change one cause: rows, tile size, layout or bytes per value.</li><li>Compare result correctness, measured time and transferred bytes.</li><li>Explain disagreement; do not relabel the graph as a benchmark.</li></ol><p>Without GPU access, complete steps 1–3 and write expected outcomes. Leave measured time and counters explicitly “not measured”. A CPU experiment can validate correctness and counting logic; it cannot establish CUDA performance.</p>
+</div></section>
+
+<p class="course-core"><a href="./">Module 3 overview</a> · <a href="../attention/lesson-5.html">Revisit KV memory</a></p>
+
+</main>
+<footer><span>Analytical teaching models. No GPU execution or measured performance.</span> <a href="../../">Back to the journal</a></footer>
+</body>
+</html>

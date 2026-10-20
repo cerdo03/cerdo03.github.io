@@ -1,0 +1,56 @@
+/* Topic layout only. Shared shell and global theme own navigation and palette. */
+.gpu-course main { min-height: 75vh; }
+.gpu-course p, .gpu-course li { max-width: 80ch; }
+.gpu-course a { color: var(--accent); }
+.gpu-course h3 { margin-top: 1.5em; }
+.gpu-course .gpu-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 16px; margin: 16px 0; }
+.gpu-controls label { display: grid; gap: 5px; font-size: 0.9rem; }
+.gpu-course select, .gpu-course input, .gpu-course button { color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 5px; padding: 9px 12px; font: inherit; }
+.gpu-course button { cursor: pointer; }
+.gpu-course button:disabled { opacity: 0.6; cursor: default; }
+.gpu-course button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.gpu-course .gpu-flow { display: grid; gap: 8px; margin: 20px 0; }
+.gpu-flow .gpu-stage { border: 1px solid var(--line); background: var(--surface-alt); border-radius: 6px; padding: 12px 16px; }
+.gpu-stage strong { display: block; }
+.gpu-stage + .gpu-stage::before { content: '↓'; display: block; color: var(--accent); }
+.gpu-course .gpu-stage.is-active { border-color: var(--accent); background: var(--accent-soft); }
+.gpu-course .gpu-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 12px; }
+.gpu-metrics div { padding: 12px; border-left: 3px solid var(--accent); background: var(--surface-alt); overflow-wrap: anywhere; }
+.gpu-metrics strong { display: block; }
+.gpu-course .gpu-lanes { display: grid; grid-template-columns: repeat(8,minmax(0,1fr)); gap: 4px; margin: 12px 0; }
+.gpu-lanes span { border: 1px solid var(--line); padding: 6px 2px; text-align: center; font-size: 0.85rem; background: var(--accent-soft); }
+.gpu-lanes .masked { background: var(--surface-alt); color: var(--muted); text-decoration: line-through; }
+.gpu-course .gpu-table-scroll { overflow-x: auto; margin: 16px 0; }
+.gpu-course table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+.gpu-course th, .gpu-course td { text-align: left; border-bottom: 1px solid var(--line); padding: 8px; }
+.gpu-course caption { text-align: left; color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
+.gpu-course .gpu-matrices { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 16px; }
+.gpu-course .gpu-matrices table { text-align: center; table-layout: fixed; }
+.gpu-course .gpu-matrices td { border: 1px solid var(--line); text-align: center; padding: 0; }
+.gpu-course .gpu-matrices button { width: 100%; border: 0; padding: 12px 3px; border-radius: 0; }
+.gpu-course .gpu-matrices .selected { background: var(--accent-soft); }
+.gpu-course .gpu-matrices .used { outline: 2px solid var(--accent); outline-offset: -3px; }
+.gpu-course .gpu-formula { padding: 16px; background: var(--surface-alt); border-left: 3px solid var(--accent); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.gpu-course .gpu-plot { display: block; width: 100%; max-width: 780px; height: auto; color: var(--ink); }
+.gpu-plot text { fill: currentcolor; font-family: var(--body-font); font-size: 13px; }
+.gpu-plot .axis { stroke: var(--muted); fill: none; }
+.gpu-plot .roof { stroke: var(--accent); stroke-width: 3; fill: none; }
+.gpu-plot .point { fill: var(--ink); stroke: var(--card); stroke-width: 2; }
+.gpu-course .gpu-note { font-size: 0.9rem; color: var(--muted); }
+.gpu-course pre { max-width: 100%; overflow-x: auto; padding: 16px; background: var(--surface-alt); border: 1px solid var(--line); }
+.gpu-course .gpu-check { border-top: 1px solid var(--line); padding-top: 16px; margin-top: 24px; }
+.gpu-course .gpu-feedback { padding: 12px; background: var(--accent-soft); }
+.gpu-course .gpu-static { padding: 12px; border: 1px solid var(--line); }
+.gpu-course .gpu-lesson-list { display: grid; gap: 20px; padding-left: 24px; }
+.gpu-course .gpu-lesson-list a { font-weight: 600; }
+@media (max-width: 500px) {
+  .gpu-course .gpu-controls { align-items: stretch; }
+  .gpu-controls label { width: 100%; }
+  .gpu-course .gpu-matrices { grid-template-columns: 1fr; }
+  .gpu-course .gpu-metrics { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 500px) {
+  .gpu-course .gpu-lanes { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
+.gpu-course .gpu-resident-slots { grid-template-columns: repeat(8,minmax(0,1fr)); }
+.gpu-course .gpu-matrices th { text-align: center; font-size: 0.8rem; padding: 8px 2px; }

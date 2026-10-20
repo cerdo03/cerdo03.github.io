@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Module 3: Memory and movement. Interactive GPU performance reasoning for LLM inference; analytical models, no GPU required.">
+<title>3.2 Memory and movement — Learning LLM Systems</title>
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="gpu.css">
+<link rel="stylesheet" href="../llm-systems/course.css">
+<script type="module" src="../../assets/theme.js"></script>
+<script type="module" src="gpu.js"></script>
+<script type="module" src="../llm-systems/course-shell.js"></script>
+<script src="../llm-systems/render-guard.js"></script>
+</head>
+<body class="gpu-course" data-gpu-lesson="2">
+<header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a></header>
+<main id="main">
+<header class="lesson-header"><p class="eyebrow">Module 3 · Lesson 2 of 5</p>
+<h1>Memory and movement</h1><p>A GPU cannot compute with bytes that have not arrived. Track the path, scope and reuse of one operand.</p>
+</header>
+<section id="hierarchy" aria-labelledby="hierarchy-title"><h2 id="hierarchy-title">Where an operand lives</h2><p>A value stored in global memory must reach an execution unit before it contributes to a dot product. Storage capacity tells you what fits; traffic tells you how many bytes cross a boundary. They answer different questions.</p>
+
+<div class="lab" data-gpu-lab="memory" role="group" aria-label="Follow one operand"><h3>Follow one operand</h3><p class="gpu-static">Illustrative tiled path: device memory (often HBM on datacenter GPUs) → cache lookup → block-shared scratchpad → per-thread registers → multiply-add → output store. Not every load uses shared memory. Registers and shared memory are on-chip; L2 is a device-wide cache, not the KV cache.</p>
+</div>
+
+<details class="course-detail"><summary>Memory scopes and limits</summary><div><ul><li><strong>Registers:</strong> per-thread program state on the SM. Excess demand can spill into thread-local memory backed by device memory.</li><li><strong>Shared memory:</strong> explicitly managed storage used by cooperating threads of a block; bank conflicts and synchronization affect its cost.</li><li><strong>L1 / L2:</strong> hardware-managed caches. L1 is associated with an SM; L2 is shared across the device. Details vary by architecture.</li><li><strong>Global address space:</strong> accessible to the kernel’s threads. Device storage may be HBM or another DRAM technology. A global load may hit cache and never fetch HBM.</li></ul><p>A transformer KV cache is a software data structure, usually stored in global memory. Its name does not imply that it fits in hardware L2. Apple unified memory changes the physical organization; these capacity/traffic distinctions still help, while CUDA block and warp details do not transfer verbatim.</p>
+</div></details></section>
+<section id="coalescing" aria-labelledby="coalescing-title"><h2 id="coalescing-title">Neighboring lanes, neighboring addresses</h2><p>If adjacent lanes request nearby addresses, hardware can service them with fewer memory sectors. Change the address stride before predicting how much useful data each sector carries.</p>
+
+<div class="lab" data-gpu-lab="coalescing" role="group" aria-label="Inspect a warp’s memory requests"><h3>Inspect a warp’s memory requests</h3><p class="gpu-static">Toy transaction model: 32 lanes each load one distinct 4-byte number; 32-byte aligned sectors, no cache reuse. Stride 1 from byte 0 touches 4 sectors (128 bytes); stride 8 touches 32 sectors (1,024 bytes) for the same 128 useful bytes.</p>
+</div>
+
+<details class="course-detail"><summary>Define the boundary before counting</summary><div><p>This explorer counts distinct 32-byte sectors touched by one warp instruction. It does not predict HBM transactions, cache hit rate, latency or speedup. Real transaction rules depend on instruction width, alignment and GPU architecture. The byte offset changes alignment; stride is measured in elements, not bytes. The requested addresses remain distinct in this example.</p>
+</div></details>
+<div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Contiguous loads start 4 bytes past a sector boundary. Still exactly 4 sectors?</p>
+<button type="button" data-answer="correct">No; now 5 sectors</button> <button type="button" data-answer="wrong">Yes; stride alone decides</button><p class="gpu-feedback" hidden data-feedback data-explanation="The 128 useful bytes now span bytes 4 through 131, crossing five 32-byte sectors. Alignment changes demand even at stride 1."></p>
+<noscript><p>The 128 useful bytes now span bytes 4 through 131, crossing five 32-byte sectors. Alignment changes demand even at stride 1.</p>
+</noscript></div></section>
+<section id="reuse" aria-labelledby="reuse-title"><h2 id="reuse-title">Reusing bytes takes coordination</h2><p>Several threads can reuse an operand loaded into shared memory. They must wait until the cooperative loads finish, then wait again before overwriting a tile still in use. Faster memory without correct synchronization is a race, not an optimization.</p>
+
+<div class="lab"><div class="gpu-flow"><div class="gpu-stage"><strong>Cooperative load</strong>Threads load different tile elements into block-shared storage.</div><div class="gpu-stage"><strong>Block barrier</strong>Ensure all required values are available before consuming them.</div><div class="gpu-stage"><strong>Reuse, then barrier</strong>Accumulate with the tile. Ensure consumers finish before the next tile overwrites it.</div></div><p>Ordinary block barriers must be reached by all participating threads consistently. Guard out-of-range loads and stores, not the barrier itself. Separate blocks cannot use an ordinary block barrier to communicate.</p>
+</div>
+
+<details class="course-detail"><summary>Capacity, traffic, bandwidth, latency</summary><div><p>Capacity uses bytes; bandwidth uses bytes/second; latency uses seconds per dependent access. A 1 GiB tensor read ten times can create about 10 GiB of logical reads while occupying only 1 GiB. Hardware caches may reduce HBM reads. Shared-memory reuse can reduce global-load demand while consuming scarce on-chip storage. Lower HBM traffic does not guarantee lower time when another resource becomes limiting.</p>
+</div></details>
+<p class="course-core">Next: count exactly what a tiled matrix product reuses.</p>
+</section>
+
+<p class="course-core"><a href="./">Module 3 overview</a> · <a href="../attention/lesson-5.html">Revisit KV memory</a></p>
+
+</main>
+<footer><span>Analytical teaching models. No GPU execution or measured performance.</span> <a href="../../">Back to the journal</a></footer>
+</body>
+</html>

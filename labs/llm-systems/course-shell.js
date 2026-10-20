@@ -7,6 +7,7 @@ import { mountEquationExplorers } from './equation-explorer.js';
 const moduleBase = new URL('../', import.meta.url);
 const explorerPage = typeof document !== 'undefined' && !!document.body.dataset.explorer;
 const mathLessons = ['Notation grammar', 'Indices and reductions', 'Dimensions and transpose', 'Softmax and stability', 'Transformer equations', 'Write equations'];
+const gpuLessons = ['GPU execution', 'Memory and movement', 'Matrix multiplication and tiling', 'Arithmetic intensity and roofline', 'Prefill, decode and evidence'];
 const lessons = ['Self-attention', 'Multi-head attention', 'MHA / MQA / GQA', 'KV-cache internals', 'Memory and performance'];
 export function sectionIndex(ids, hash) { const index = ids.indexOf(hash.replace(/^#/, '')); return index < 0 ? 0 : index; }
 
@@ -32,7 +33,9 @@ if (typeof document !== 'undefined') {
   const inference = !!document.getElementById('curriculum');
   const number = Number(document.body.dataset.lesson);
   const mathNumber = Number(document.body.dataset.mathLesson);
-  const currentNumber = mathNumber || number;
+  const gpuNumber = Number(document.body.dataset.gpuLesson);
+  const gpuPage = location.pathname.includes('/gpu/');
+  const currentNumber = gpuNumber || mathNumber || number;
   const mathPage = location.pathname.includes('/math-fluency/');
   const mathSearch = equationContext(location.search);
   const sections = currentNumber ? [...document.querySelectorAll('main > section[id]')] : [];
@@ -70,8 +73,8 @@ if (typeof document !== 'undefined') {
     rememberDisclosure(modules, 'modules', false);
     const title = document.createElement('summary');title.textContent = 'Modules';modules.append(title);
     const links = document.createElement('nav');links.setAttribute('aria-label', 'Modules');
-    links.innerHTML = '<ul><li><a href="../math-fluency/">0. Optional math toolkit</a><ul>' + mathLessons.map((text, i) => `<li><a href="../math-fluency/lesson-${i + 1}.html${mathPage ? mathSearch : ''}">0.${i + 1} ${text}</a></li>`).join('') + '</ul></li><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '<li><a href="../attention/architecture-explorer/">Optional · Architecture explorer</a></li></ul></li></ul>';
-    const active = explorerPage ? '../attention/architecture-explorer/' : mathNumber ? `../math-fluency/lesson-${mathNumber}.html${mathSearch}` : location.pathname.includes('/math-fluency/') ? '../math-fluency/' : inference ? '../inference/' : number ? `../attention/lesson-${number}.html` : !location.pathname.includes('llm-systems') ? '../attention/' : null;
+    links.innerHTML = '<ul><li><a href="../math-fluency/">0. Optional math toolkit</a><ul>' + mathLessons.map((text, i) => `<li><a href="../math-fluency/lesson-${i + 1}.html${mathPage ? mathSearch : ''}">0.${i + 1} ${text}</a></li>`).join('') + '</ul></li><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '<li><a href="../attention/architecture-explorer/">Optional · Architecture explorer</a></li></ul></li><li><a href="../gpu/">3. GPU architecture and performance</a><ul>' + gpuLessons.map((text, i) => `<li><a href="../gpu/lesson-${i + 1}.html">3.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';
+    const active = gpuPage ? (gpuNumber ? `../gpu/lesson-${gpuNumber}.html` : '../gpu/') : explorerPage ? '../attention/architecture-explorer/' : mathNumber ? `../math-fluency/lesson-${mathNumber}.html${mathSearch}` : location.pathname.includes('/math-fluency/') ? '../math-fluency/' : inference ? '../inference/' : number ? `../attention/lesson-${number}.html` : !location.pathname.includes('llm-systems') ? '../attention/' : null;
     if (active) [...links.querySelectorAll('a')].find(link => link.getAttribute('href') === active)?.setAttribute('aria-current', 'page');
     // Resolve the shared hierarchy from its module URL, including nested companion pages.
     for (const link of links.querySelectorAll('a')) { const url = new URL(link.getAttribute('href'), new URL('attention/', moduleBase));link.href = url.pathname + url.search + url.hash; }
@@ -169,7 +172,7 @@ if (typeof document !== 'undefined') {
     document.querySelector('main')?.prepend(existingHeader);
     existingHeader.replaceChildren();
     const home = document.createElement('a');home.href = new URL('llm-systems/', moduleBase).pathname;home.textContent = 'Learning LLM Systems';existingHeader.append(home);
-    const context = document.createElement('span');context.textContent = explorerPage ? 'Attention · Architecture explorer' : mathNumber ? `Mathematical notation · ${mathLessons[mathNumber - 1]}` : location.pathname.includes('/math-fluency/') ? 'Optional math toolkit' : inference ? 'Inference fundamentals' : number ? `Attention · ${lessons[number - 1]}` : location.pathname.includes('llm-systems') ? 'Modules' : 'Attention and KV cache';existingHeader.append(context);
+    const context = document.createElement('span');context.textContent = gpuPage ? (gpuNumber ? `GPU systems · ${gpuLessons[gpuNumber - 1]}` : 'GPU architecture and performance') : explorerPage ? 'Attention · Architecture explorer' : mathNumber ? `Mathematical notation · ${mathLessons[mathNumber - 1]}` : location.pathname.includes('/math-fluency/') ? 'Optional math toolkit' : inference ? 'Inference fundamentals' : number ? `Attention · ${lessons[number - 1]}` : location.pathname.includes('llm-systems') ? 'Modules' : 'Attention and KV cache';existingHeader.append(context);
     if (themeButton) existingHeader.append(themeButton);
     if (!themeButton) { const observer = new MutationObserver(() => { const toggle = document.querySelector('.theme-toggle');if (toggle) { if (toggle.parentElement !== existingHeader) existingHeader.append(toggle);observer.disconnect(); } });observer.observe(document.body, {childList: true, subtree: true}); }
   }

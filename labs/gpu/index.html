@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Module 3: GPU Architecture and Performance Engineering. Interactive GPU performance reasoning for LLM inference; analytical models, no GPU required.">
+<title>Module 3 · GPU Architecture and Performance Engineering</title>
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="gpu.css">
+<link rel="stylesheet" href="../llm-systems/course.css">
+<script type="module" src="../../assets/theme.js"></script>
+<script type="module" src="gpu.js"></script>
+<script type="module" src="../llm-systems/course-shell.js"></script>
+<script src="../llm-systems/render-guard.js"></script>
+</head>
+<body class="gpu-course">
+<header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a></header>
+<main id="main">
+<header class="lesson-header"><p class="eyebrow">Module 3</p>
+<h1>GPU Architecture and Performance Engineering</h1><p>Learn to predict a bottleneck from operations, shapes and data movement—then identify the evidence needed to test it.</p>
+</header>
+<section id="goal" aria-labelledby="goal-title"><h2 id="goal-title">From equations to hardware</h2><p>You already know what attention computes. Now ask: which work runs together, which bytes move, and which resource prevents it running faster? Start from one projection, trace it onto a GPU, then test a performance hypothesis.</p>
+
+<p><strong>Ready to start?</strong> Begin with 3.1 after checking the prerequisites below. You need matrix shapes, a dot product, prefill/decode and KV-cache basics. Mathematical fluency can develop alongside the course: <a href="../math-fluency/lesson-2.html">sums</a> · <a href="../math-fluency/lesson-3.html">shapes</a>. These lessons do not certify implementation mastery.</p>
+
+<p>Each lesson has a few concepts, a manipulable example, optional derivations and a prediction check. No score, prerequisite gate or local CUDA install. CPU/Mac learners can study every example in a browser. NVIDIA terms are used explicitly; Apple/AMD hardware differs.</p>
+</section>
+<section id="lessons" aria-labelledby="lessons-title"><h2 id="lessons-title">Five short lessons</h2><ol class="gpu-lesson-list"><li><a href="lesson-1.html">3.1 GPU execution</a><p>Map independent outputs to threads, warps, blocks and SMs. Separate parallel work from dependencies.</p>
+</li><li><a href="lesson-2.html">3.2 Memory and movement</a><p>Follow an operand through memory; distinguish capacity, traffic and coalescing.</p>
+</li><li><a href="lesson-3.html">3.3 Matrix multiplication and tiling</a><p>Compute one output, then reuse a tile. Count work and transferred elements.</p>
+</li><li><a href="lesson-4.html">3.4 Arithmetic intensity and roofline</a><p>Derive a resource lower bound; change compute and bandwidth independently.</p>
+</li><li><a href="lesson-5.html">3.5 Prefill, decode and evidence</a><p>Change row count, batch and context. Turn a bottleneck prediction into a falsifiable experiment.</p>
+</li></ol></section>
+<section id="notation" aria-labelledby="notation-title"><h2 id="notation-title">Notation</h2><p>Hover, focus or tap a symbol for its meaning; Escape dismisses help. This table remains available as a reference. Subscripts spell out roles: rows, cols and inner are dimension counts; row, col and sum are indices.</p>
+<section class="gpu-table-scroll" tabindex="0" aria-label="GPU notation"><table><caption>One shared glossary across the collection</caption><thead><tr><th scope="col">Symbol</th><th scope="col">Meaning</th></tr></thead><tbody><tr><td><var>U</var></td><td>Left matrix: input rows [r × k] in the GPU examples</td></tr><tr><td><var>W</var></td><td>Right matrix: projection weights [k × c] in the GPU examples</td></tr><tr><td><var>Y</var></td><td>Matrix product U W, with shape [r × c]</td></tr><tr><td><var>r</var><sub>rows</sub></td><td>Number of input/output rows in the GPU examples</td></tr><tr><td><var>c</var><sub>cols</sub></td><td>Number of output columns in the GPU examples</td></tr><tr><td><var>k</var><sub>inner</sub></td><td>Reduction width: input columns and weight rows in the GPU examples</td></tr><tr><td><var>i</var><sub>row</sub></td><td>Output row index in the GPU matrix product (zero-based)</td></tr><tr><td><var>j</var><sub>col</sub></td><td>Output column index in the GPU matrix product (zero-based)</td></tr><tr><td><var>p</var><sub>sum</sub></td><td>Summation index over the reduction width (zero-based)</td></tr><tr><td><var>b</var><sub>tile</sub></td><td>Square tile side length in the GPU teaching model</td></tr><tr><td><var>F</var></td><td>Floating-point operations; multiply-add counts as two FLOPs</td></tr><tr><td><var>E</var></td><td>Bytes transferred at the explicitly chosen memory boundary</td></tr><tr><td><var>I</var></td><td>Arithmetic intensity F / E, in FLOP per byte</td></tr><tr><td><var>P</var></td><td>Compute ceiling for the chosen operation and precision, in FLOP per second</td></tr><tr><td><var>BW</var></td><td>Bandwidth ceiling at the chosen memory boundary, in bytes per second</td></tr></tbody></table></section>
+</section>
+<section id="references" aria-labelledby="references-title"><h2 id="references-title">Sources and boundaries</h2><p>Original teaching examples derive from the following primary references. Invented resource limits and hardware ceilings are labeled in place. Calculated times are lower bounds, never benchmark results.</p>
+<ul>
+<li><a href="https://docs.nvidia.com/cuda/cuda-programming-guide/02-basics/writing-cuda-kernels.html">NVIDIA CUDA Programming Guide: SIMT kernels</a> — execution, memory scopes and synchronization.</li>
+<li><a href="https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/">NVIDIA CUDA Best Practices Guide</a> — coalescing, reuse and occupancy.</li>
+<li><a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-matrix-multiplication/index.html">NVIDIA Matrix Multiplication Background</a> — shapes, tiling and resource limits.</li>
+<li><a href="https://docs.nvidia.com/deeplearning/performance/dl-performance-gpu-background/index.html">NVIDIA GPU Performance Background</a> — throughput versus bandwidth.</li>
+<li><a href="https://www2.eecs.berkeley.edu/Pubs/TechRpts/2008/EECS-2008-134.html">Williams, Waterman and Patterson: Roofline</a> — resource ceilings, not a latency oracle.</li>
+<li><a href="https://arxiv.org/abs/2205.14135">FlashAttention</a> — attention tiling and reduced HBM traffic; deeper kernel study follows this module.</li></ul><p>Not covered here: full CUDA implementation, profiling practice on physical hardware, tensor-core layouts, distributed inference, or a complete decoder latency model. These are next experiments, not implicit claims of this course.</p>
+</section>
+
+<p class="course-core"><a href="./">Module 3 overview</a> · <a href="../attention/lesson-5.html">Revisit KV memory</a></p>
+
+</main>
+<footer><span>Analytical teaching models. No GPU execution or measured performance.</span> <a href="../../">Back to the journal</a></footer>
+</body>
+</html>
