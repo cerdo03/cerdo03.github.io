@@ -40,15 +40,15 @@ function setup(root) {
   root.append(controls,body,output);
   return { controls,body,output };
 }
-function steps(host, maximum, render) {
+function steps(host, maximum, render, compact = false) {
   let step = 0;
   const bar = element('div',undefined,'gpu-controls');
   const back = element('button','Previous operation'), next = element('button','Next operation'), all = element('button','Show all'), reset = element('button','Reset operations');
-  for (const button of [back,next,all,reset]) { button.type = 'button';bar.append(button); }
-  const paint = () => { back.disabled = step === 0;next.disabled = step === maximum;render(step); };
+  for (const button of compact ? [back,next,all] : [back,next,all,reset]) { button.type = 'button';bar.append(button); }
+  const paint = () => { back.disabled = step === 0;next.disabled = step === maximum;all.textContent = compact && step === maximum ? 'Step by step' : 'Show all';render(step); };
   back.onclick = () => { step = Math.max(0,step - 1);paint(); };
   next.onclick = () => { step = Math.min(maximum,step + 1);paint(); };
-  all.onclick = () => { step = maximum;paint(); };
+  all.onclick = () => { step = compact && step === maximum ? 0 : maximum;paint(); };
   reset.onclick = () => { step = 0;paint(); };
   host.append(bar);paint();
   return () => { step = 0;paint(); };
@@ -68,7 +68,7 @@ function execution(root) {
       cell.setAttribute('aria-label',`Lane ${lane}: ${valid?`writes output ${index}`:'out of range; no output store'}`);lanes.append(cell);
     }
     output.textContent=`Operation ${step+1} of 4. ${step===3?'Tail guards prevent out-of-range work; they do not create extra useful lanes.':'Reveal the next mapping. No schedule or runtime is being simulated.'}`;
-  });
+  },true);
 }
 function residency(root) {
   const {controls,body,output}=setup(root), values=element('div',undefined,'gpu-metrics'),scene=element('div',undefined,'gpu-flow'),slots=element('div',undefined,'gpu-lanes');body.append(values,scene,slots);
@@ -79,22 +79,15 @@ function residency(root) {
     flow(scene,[['Toy SM resource budgets','2,048 threads · 65,536 32-bit registers · 64 KiB shared · 8 blocks maximum'],['Each resource permits this many blocks',`Threads: ${a.limits.threads}; registers: ${a.limits.registers}; shared memory: ${a.limits.shared}; block cap: 8.`],['Minimum wins',`${a.residentBlocks} resident blocks × ${threads.value} threads/block / 2,048 threads = ${num(a.occupancy*100)}%.`]]);
     slots.replaceChildren();
     slots.classList.add('gpu-resident-slots');
-    slots.setAttribute('aria-label','Toy SM: 64 warp slots. W indicates a resident warp; dash indicates an empty slot.');
+    slots.setAttribute('aria-label','Toy SM: 64 warp slots. Each resident slot names its block and warp within that block; dash indicates an empty slot. This packing does not show a physical placement or execution order.');
     for(let warp=0;warp<64;warp++){
       const resident=warp<a.residentBlocks*a.warps;
-      const slot=element('span',resident?`W${warp}`:'—',resident?'':'masked');
+      const slot=element('span',resident?`Block ${Math.floor(warp/a.warps)} · W${warp%a.warps}`:'—',resident?'':'masked');
       slot.title=resident?`Block ${Math.floor(warp/a.warps)}, warp ${warp%a.warps}`:'Unallocated warp slot';slots.append(slot);
     }
     const limiting=Object.entries(a.limits).filter(([,v])=>v===a.residentBlocks).map(([key])=>key).join(', ');
-    output.textContent=`Limiting resource(s): ${limiting}. W = resident warp; — = unallocated slot. Toy upper bound with enough blocks; no prediction of execution time. Change one resource and explain the new minimum.`;
+    output.textContent=`Limiting resource(s): ${limiting}. Block labels identify membership; W is the warp index within that block; — = unallocated slot. Slot order is illustrative, not physical placement or execution order. Toy upper bound with enough blocks; no prediction of execution time. Change one resource and explain the new minimum.`;
   }draw();
-}
-function memory(root) {
-  const {body,output}=setup(root),scene=element('div',undefined,'gpu-flow');body.append(scene);
-  steps(root,4,step=>{
-    flow(scene,[['Global allocation in device DRAM','Weights and inputs exist before this kernel. Datacenter GPUs often use HBM; other GPUs may use different DRAM.'],['Hardware cache lookup','Conceptual L2 / SM-local L1 lookup. A hit can avoid a DRAM fetch; exact path depends on instructions and hardware.'],['Cooperative load → shared memory','In this tiled path, a block stages operands for reuse. A barrier makes loaded values safe to consume. Not every kernel uses this stage.'],['Shared → registers → multiply-add','Threads read operands, update per-thread accumulators. Registers are not shared addressable storage.'],['Store output','The completed output goes to global memory, through the applicable store/cache path. This is a scope diagram, not a cycle-accurate route.']],step);
-    output.textContent=`Operation ${step+1} of 5. ${['Choose a memory boundary before counting traffic.','A global-memory load is not necessarily an HBM read.','Shared memory is explicit block-local storage, unlike a hardware cache.','Reusing operands may reduce global-load demand.','Capacity and per-step traffic remain different quantities.'][step]}`;
-  });
 }
 function coalescing(root) {
   const {controls,body,output}=setup(root),values=element('div',undefined,'gpu-metrics'),lanes=element('div',undefined,'gpu-lanes');body.append(values,lanes);
@@ -198,7 +191,7 @@ function kv(root) {
     output.textContent=`${num(a.kvBytes)} raw KV bytes per step under perfect grouped-query reuse. Doubling context or sequences doubles read payload and work here; reducing KV heads reduces payload but leaves query-head work unchanged. Not full attention traffic, HBM measurement or token latency.`;
   }draw();
 }
-const mounts={execution,residency,memory,coalescing,matmul,tiling,roofline:roof,phases,kv};
+const mounts={execution,residency,coalescing,matmul,tiling,roofline:roof,phases,kv};
 for(const root of document.querySelectorAll('[data-gpu-lab]'))mounts[root.dataset.gpuLab]?.(root);
 for(const root of document.querySelectorAll('[data-check]'))for(const button of root.querySelectorAll('button'))button.addEventListener('click',()=>{
   for(const sibling of root.querySelectorAll('button'))sibling.setAttribute('aria-pressed',String(sibling===button));

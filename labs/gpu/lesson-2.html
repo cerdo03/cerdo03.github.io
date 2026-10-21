@@ -28,7 +28,15 @@
 <li><strong>Device DRAM:</strong> the GPU’s main memory for allocations such as inputs and weights. HBM means high-bandwidth memory, one DRAM technology used by many datacenter GPUs. Global memory names the address space used to access these allocations.</li>
 </ul><p>The transformer <strong>KV cache</strong> is a software data structure, usually allocated in global memory. It is different from the hardware L1/L2 caches. A <strong>load</strong> reads a value; a <strong>store</strong> writes one. A multiply-add multiplies two operands and adds their product to a running sum.</p></div>
 
-<div class="lab" data-gpu-lab="memory" role="group" aria-label="Follow one operand"><h3>Follow one operand</h3><p class="gpu-static">Illustrative tiled path: device memory (often HBM on datacenter GPUs) → cache lookup → block-shared scratchpad → per-thread registers → multiply-add → output store. Not every load uses shared memory. Registers and shared memory are on-chip; L2 is a device-wide cache, not the KV cache.</p>
+<div class="lab" data-gpu-lab="memory" role="group" aria-label="Operand storage scopes"><h3>One operand: storage scopes and optional staging</h3>
+<p>Compare a global load used directly by a thread with a tiled kernel that explicitly stages operands in shared memory. These are storage scopes, not a mandatory hardware route. Exact cache and instruction paths vary by hardware.</p>
+<div class="gpu-memory-scopes">
+<div><h4>Global load</h4><p>Inputs and weights occupy global allocations backed by device DRAM, often HBM on datacenter GPUs. Hardware caches such as device-wide L2 and SM-local L1 can serve loads: a cache hit can avoid a DRAM fetch. Not every instruction uses every cache.</p></div>
+<div><h4>Optional shared-memory staging</h4><p>A tiled kernel can cooperatively load operands into block-local shared memory for reuse. A block barrier makes the staged values safe to consume; another barrier is needed before overwriting values still in use. A direct per-thread load can skip this staging.</p></div>
+<div><h4>Per-thread computation</h4><p>Threads use operands in registers and update their multiply-add accumulators. In the tiled example, threads read the staged shared-memory values first. Registers are per-thread working storage, not shared addressable storage.</p></div>
+<div><h4>Output store</h4><p>Completed results are stored to global memory through the applicable store/cache path. This does not imply each store immediately writes HBM.</p></div>
+</div>
+<p>Choose a memory boundary before counting traffic. Shared memory is explicitly managed block-local storage; hardware caches are managed by hardware. Reuse can reduce global-load demand. Capacity, logical requests and actual DRAM traffic remain different quantities.</p>
 </div>
 
 <details class="course-detail"><summary>Spills, hardware variation and unified memory</summary><div><p>Excess register demand can spill into thread-local memory backed by device memory. Shared-memory bank conflicts (competing accesses to the same storage bank) and synchronization affect access cost. Exact cache paths and capacities vary by architecture.</p><p>A software KV cache need not fit in hardware L2. Apple unified memory changes the physical organization; these capacity/traffic distinctions still help, while CUDA block and warp details do not transfer verbatim.</p>
