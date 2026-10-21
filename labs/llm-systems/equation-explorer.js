@@ -1,9 +1,10 @@
 import { renderMath } from './math-renderer.js';
 import { glossary } from '../attention/glossary.js';
-import { stableSoftmax, mountMathExercises, dot, rawKvBytes, toMiB } from './math-exercises.js';
+import { stableSoftmax, dot, rawKvBytes, toMiB } from './math-exercises.js';
 import { projectionTrace, valueTrace } from './visual-model.js';
 export const equationDefinitions={
  'softmax-stable':{
+  prediction:"Before revealing: for invented scores [4, 8, 2, 6], predict the maximum, largest weight and whether shifting all scores changes ideal probabilities.",
   tex:String.raw`a_j=\frac{e^{z_j-m}}{\sum_k e^{z_k-m}}`,
   label:'Stable softmax: each shifted exponential divided by their sum',
   purpose:'Turn a row of scores into nonnegative weights that sum to one, while avoiding exponential overflow.',
@@ -12,29 +13,34 @@ export const equationDefinitions={
   practice:'softmax',origin:'softmax',lesson:4,
  },
  'qkv-projection':{
+  prediction:"Before revealing: separate invented input x = [1, 2], with W_Q rows [1, 0] and [2, 1]. Predict the two query components and output shape.",
   tex:String.raw`Q=XW_Q,\qquad K=XW_K,\qquad V=XW_V`,label:'Queries, keys and values are learned projections of input representations',
   purpose:'Create three distinct views of the same token representations for matching and value mixing.',symbols:{X:'',Q:'',K:'',V:'',W_Q:'',W_K:'',W_V:''},
   steps:['Each row of X represents one token. Right-multiplying by a learned projection mixes its components.','For X shaped T × d_model and W_Q shaped d_model × d_k, Q has shape T × d_k. K has the same key width; V may have a different value width.','The input is shared, but the projection matrices are distinct. These equations describe a head, not three copies of one computed vector.'],practice:'transformer',origin:'projections',lesson:5,
  },
  'attention-scores':{
+  prediction:"Before revealing: separate invented q = [1, 2], keys [2, 0] and [0, 1], key width 2. Predict the score-row shape and divide each dot product by √2.",
   tex:String.raw`S_{\mathrm{scaled}}=\frac{QK^{\mathsf T}}{\sqrt{d_k}}`,label:'Scaled query-key dot products form attention scores',
   purpose:'Compare every query with each key, scaled by the square root of the shared key width.',symbols:{Q:'',K:'',d_k:'',S_scaled:''},
   steps:['Transpose changes K from T_k × d_k into d_k × T_k.','Matrix multiplication reduces over the shared component dimension d_k. The output has shape T_q × T_k.','Divide each score by the positive scalar √d_k. This preserves shape and controls score scale; these scores are not yet probabilities.'],practice:'shapes',origin:'scores',lesson:3,
  },
  'masked-attention':{
+  prediction:"Before revealing: invented scaled scores [2, 1, 9]; the third key is in the future and blocked. Predict its weight and how the first two weights renormalize.",
   tex:String.raw`A=\operatorname{softmax}_{\mathrm{row}}(S_{\mathrm{scaled}}+M)`,label:'Row softmax normalizes allowed scores after adding the mask',
   purpose:'Normalize allowed key positions and assign exact zero weight to blocked positions.',symbols:{A:'',S_scaled:'',M:''},
-  steps:['Add zero at allowed positions and negative infinity at blocked positions. A causal row allows keys at or before its query position.','Normalize each row independently. An allowed finite score may get a very small positive ideal weight; a masked negative-infinity score gets exactly zero.','At least one position must remain allowed. An all-masked row has no probability distribution and is rejected in this teaching implementation.'],practice:'softmax',origin:'masking',lesson:4,
+  steps:['Add zero at allowed positions and negative infinity at blocked positions. A causal row allows keys at or before its query position.','Normalize each row independently. An allowed finite score may get a very small positive ideal weight; a masked negative-infinity score gets exactly zero.','At least one position must remain allowed. An all-masked row has no probability distribution and is rejected in this teaching implementation.'],practice:'masked-attention',practiceSection:'mask-practice',origin:'masking',lesson:5,
  },
  'weighted-values':{
+  prediction:"Before revealing: separate invented weights [0.25, 0.75] and value rows [2, 4], [6, 0]. Predict both components of the weighted output.",
   tex:String.raw`O=AV,\qquad O_{ij}=\sum_{k=1}^{T_k}A_{ik}V_{kj}`,label:'An output component sums attention weights times corresponding value components',
   purpose:'Mix value rows using each query row’s attention weights.',symbols:{O:'',A:'',V:'','i':'Free index: selects one query row','j':'Free index: selects one output component','k':'Bound index: visits key/value positions'},
   steps:['Hold i and j fixed to read one scalar output. The sum index k visits key/value positions.','Aᵢₖ supplies one weight and Vₖⱼ the corresponding value component. Multiply paired entries and add.','If A is T_q × T_k and V is T_k × d_v, O is T_q × d_v. Values may be negative; attention weights are nonnegative.'],practice:'indices',origin:'values',lesson:2,
  },
  'kv-memory':{
+  prediction:"Before revealing: invented dimensions are 32 layers, 4096 cached positions, 8 KV heads, 128 elements per head and 2 bytes per element, for one sequence. Count both keys and values; predict raw bytes and MiB.",
   tex:String.raw`M_{\mathrm{KV}}=2\,L\,T\,H_{\mathrm{KV}}\,D\,B`,label:'Raw key-value cache bytes equal two times layers, tokens, key-value heads, head dimension and bytes per element',
   purpose:'Count the raw stored key and value elements for one sequence, then convert elements to bytes.',symbols:{M_KV:'',L:'',T:'',H_KV:'',D:'',B:''},
-  steps:['The factor 2 counts both key and value tensors. Multiply by layers, cached tokens, KV heads and elements per head.','B converts stored elements to bytes. Query head count is not substituted for KV head count in grouped-query attention.','This is raw tensor storage for one sequence. Runtime allocation, metadata, fragmentation and other model memory are excluded. MiB uses 2²⁰ bytes, unlike decimal MB.'],practice:'transformer',origin:'kv',lesson:5,
+  steps:['The factor 2 counts both key and value tensors. Multiply by layers, cached tokens, KV heads and elements per head.','B converts stored elements to bytes. Query head count is not substituted for KV head count in grouped-query attention.','This is raw tensor storage for one sequence. Runtime allocation, metadata, fragmentation and other model memory are excluded. MiB uses 2²⁰ bytes, unlike decimal MB.'],practice:'kv-memory',practiceSection:'kv-practice',origin:'kv',lesson:5,
  },
 };
 export function computeExample(id){
@@ -48,6 +54,7 @@ export function computeExample(id){
 }
 function node(tag,text){const item=document.createElement(tag);if(text)item.textContent=text;return item;}
 function disclosure(title){const details=node('details');details.append(node('summary',title));return details;}
+let exampleId=0;
 export function mountEquationExplorers(root=document){
  const hosts=[...(root.matches?.('[data-equation]')?[root]:[]),...root.querySelectorAll('[data-equation]')];
  for(const host of hosts){
@@ -57,17 +64,18 @@ export function mountEquationExplorers(root=document){
   renderMath(equation,definition.tex,{displayMode:true,label:definition.label});
   const key=node('dl');key.className='explorer-key';
   for(const [symbol,meaning] of Object.entries(definition.symbols)){key.append(node('dt',symbol),node('dd',glossary[symbol]||meaning));}host.append(key);
-  const decode=disclosure('Decode');for(const step of definition.steps)decode.append(node('p',step));
+  const understand=disclosure('Understand this equation');for(const step of definition.steps)understand.append(node('p',step));
   if(host.dataset.equation==='softmax-stable'){
    for(const [title,tex] of [['Original softmax',String.raw`a_j=\frac{e^{z_j}}{\sum_k e^{z_k}}`],['Choose row maximum',String.raw`m=\max_k z_k`],['Numerically stable form',String.raw`a_j=\frac{e^{z_j-m}}{\sum_k e^{z_k-m}}`]]){
-    const stage=node('div');decode.append(node('p',title),stage);renderMath(stage,tex,{displayMode:true,label:title});
+    const stage=node('div');understand.append(node('p',title),stage);renderMath(stage,tex,{displayMode:true,label:title});
    }
   }
-  const compute=disclosure('Compute'),prediction=node('p',host.dataset.equation==='softmax-stable'?'Before revealing: predict m for [4, 8, 2, 6], the largest weight, and whether shifting all scores changes ideal probabilities.':'Before revealing: identify the output shape, reduced axis or storage unit, then work through the example independently.'),reveal=disclosure('Reveal numerical example');
-  reveal.append(node('p',computeExample(host.dataset.equation)));compute.append(prediction,reveal);
-  const practice=disclosure('Practice'),exercise=node('div');exercise.dataset.mathExercise=definition.practice;practice.append(exercise);
-  const learn=node('a','Read the optional math toolkit');learn.href=`../math-fluency/lesson-${definition.lesson}.html?from=${definition.origin}`;
-  const understand=disclosure('Understand this equation');understand.append(decode,compute,practice,learn);host.append(understand);mountMathExercises(host);
+  const prediction=node('p',definition.prediction),reveal=node('button','Reveal numerical example'),example=node('p',computeExample(host.dataset.equation));
+  reveal.type='button';example.hidden=true;example.id=`equation-example-${++exampleId}`;example.dataset.equationExample='';example.setAttribute('role','status');
+  reveal.setAttribute('aria-controls',example.id);reveal.setAttribute('aria-expanded','false');
+  reveal.addEventListener('click',()=>{example.hidden=!example.hidden;reveal.setAttribute('aria-expanded',String(!example.hidden));reveal.textContent=example.hidden?'Reveal numerical example':'Hide numerical example';});
+  const learn=node('a','Practice this concept');learn.href=`../math-fluency/lesson-${definition.lesson}.html?from=${definition.origin}#${definition.practiceSection||'practice'}`;
+  understand.append(prediction,reveal,example,learn);host.append(understand);
  }
  return hosts;
 }
