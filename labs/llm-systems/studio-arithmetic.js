@@ -1,4 +1,4 @@
-import {attentionState,promptTokens,representations} from '../inference/guide-model.js';
+import {attentionState,attentionWeights,promptTokens,representations} from '../inference/guide-model.js';
 import {projectionTrace,valueTrace} from './visual-model.js';
 const revealOrder={projections:['input','matrices','term:0','term:1','sum','outputs'],scores:['input','term:0','term:1','sum','scale','mask','normalize','weights'],values:['input','term:0','term:1','term:2','sum']};
 export function studioVisibility(type,phase='input'){
@@ -7,6 +7,8 @@ export function studioVisibility(type,phase='input'){
  const index=selected==='all'?order.length-1:Math.max(0,order.indexOf(selected));
  return order.slice(0,index+1);
 }
+const scoreScopes={dot:['input','term:0','term:1','sum'],scale:['sum','scale'],softmax:['scale','normalize','weights'],mask:['scale','mask','normalize','weights']};
+const scopeNotes={dot:'Compute one raw dot product per key. Scaling and normalization follow in later concepts.',scale:'Known dot products are carried forward. Divide each by √2; normalization comes next.',softmax:'No causal mask in this isolated softmax example: all three scaled scores participate. The next concept excludes future positions before normalization.',mask:'Apply the causal mask before softmax: future scores become −∞, their shares become exactly zero, and allowed shares renormalize.'};
 const matrices={Q:[[1,0],[0,1]],K:[[0,1],[1,0]],V:[[2,0],[0,1]]};
 const n=value=>Number.isFinite(value)?String(Number(value.toFixed(3))):'−∞';
 const share=value=>value>0&&value<.001?'<0.001':n(value);
@@ -16,6 +18,12 @@ const symbol=key=>`<span class="sym" data-symbol="${key}" aria-describedby="sym-
 export function studioModel(type,state={},rows=representations){
  const position=[0,1,2].includes(state.position)?state.position:2,component=state.component===1?1:0,role=['Q','K','V'].includes(state.role)?state.role:'V',key=[0,1,2].includes(state.key)?state.key:position;
  const a=attentionState(position,undefined,rows),outputs={Q:a.q,K:a.keys[position],V:a.values[position]};
+ const scoreScope=type==='scores'&&scoreScopes[state.scoreScope]?state.scoreScope:null,causal=!scoreScope||scoreScope==='mask';
+ if(type==='scores'&&!causal){
+  a.scores=a.keys.map(k=>a.q.reduce((sum,q,i)=>sum+q*k[i],0)/Math.sqrt(2));
+  a.weights=attentionWeights(a.scores);
+  a.output=[0,1].map(d=>a.values.reduce((sum,v,j)=>sum+a.weights[j]*v[d],0));
+ }
  let terms,total,steps;
  if(type==='projections'){
   ({terms,total}=projectionTrace(a.x,matrices[role],component));
@@ -23,11 +31,16 @@ export function studioModel(type,state={},rows=representations){
  }else if(type==='scores'){
   terms=a.q.map((q,i)=>q*a.keys[key][i]);total=terms.reduce((sum,x)=>sum+x,0);
   steps=[{id:'input',label:'One query and the three key vectors'},...terms.map((_,i)=>({id:`term:${i}`,label:`Multiply matching Q/K component ${i+1}`})),{id:'sum',label:'Add products for each key → dot products'},{id:'scale',label:'Divide the dot product by √2'},{id:'mask',label:key>position?'Future position → masked score −∞':'This position is allowed by the causal mask'},{id:'normalize',label:'Exponentiate masked scores and add the exponentials'},{id:'weights',label:'Divide each exponential by the shared sum → attention shares'}];
+  if(scoreScope){
+   steps=steps.filter(step=>scoreScopes[scoreScope].includes(step.id));
+   if(!causal)steps=steps.map(step=>step.id==='normalize'?{...step,label:'Exponentiate scaled scores and add the exponentials'}:step);
+   if(scoreScope!=='dot')steps[0]={...steps[0],label:scoreScope==='scale'?'Known dot products':scoreScope==='softmax'?'Known scaled scores':'Known scaled scores before masking'};
+  }
  }else if(type==='values'){
   ({terms,total}=valueTrace(a.values,a.weights,component));
   steps=[{id:'input',label:'Value vectors and their attention shares'},...terms.map((_,i)=>({id:`term:${i}`,label:`Share for “${promptTokens[i]}” × V component ${component+1}`})),{id:'sum',label:`Add contributions → head result[${component+1}]`}];
  }else throw new RangeError('Unknown studio arithmetic type.');
- return {...a,type,position,component,role,key,matrices,outputs,terms,total,steps};
+ return {...a,type,position,component,role,key,matrices,outputs,terms,total,steps,scoreScope,causal};
 }
 const picks=(values,kind,role)=>`<div class="studio-vector">${values.map((v,c)=>`<button type="button" data-pick="${kind==='projection'?`projection:${role}:${c}`:`component:${c}`}" aria-label="${kind==='projection'?`${role}[${c+1}]`:`Result[${c+1}]`}" aria-pressed="false">${esc(n(v))}</button>`).join('')}</div>`;
 export function studioMarkup(type,m){
@@ -36,9 +49,9 @@ export function studioMarkup(type,m){
   equation=`${symbol('Q')} = ${symbol('x')} × ${symbol('W_Q')}; ${symbol('K')} = ${symbol('x')} × ${symbol('W_K')}; ${symbol('V')} = ${symbol('x')} × ${symbol('W_V')}`;
   board=`<div class="studio-input" data-source><strong>Incoming ${symbol('x')} · ${promptTokens[m.position]}</strong><div class="studio-vector">${m.x.map((v,i)=>`<span class="studio-number" data-input="${i}">${esc(n(v))}</span>`).join('')}</div></div><div class="studio-lanes" data-reveal="matrices">${['Q','K','V'].map(r=>`<section class="studio-lane" data-role="${r}"><div class="studio-matrix-zone" data-reveal="matrices" data-matrix><strong>${symbol(`W_${r}`)}</strong><div class="studio-matrix">${matrices[r].map((row,i)=>row.map((v,j)=>`<span data-row="${i}" data-column="${j}">${v}</span>`).join('')).join('')}</div></div><div class="studio-output" data-reveal="outputs" data-output><span class="studio-label">${{Q:'Query',K:'Key',V:'Value'}[r]}</span><div class="studio-full-vector">${symbol(r)} = ${esc(vec(m.outputs[r]))}</div>${picks(m.outputs[r],'projection',r)}</div></section>`).join('')}</div>`;
  }else if(type==='scores'){
-  equation=`scoreⱼ = Σᵢ(${symbol('Q')}ᵢ × ${symbol('K')}ⱼᵢ) ÷ √2; shares = softmax(masked scores)`;
+  equation=m.scoreScope==='dot'?`dotⱼ = Σᵢ(${symbol('Q')}ᵢ × ${symbol('K')}ⱼᵢ)`:m.scoreScope==='scale'?'scaled scoreⱼ = dotⱼ ÷ √2':m.scoreScope==='softmax'?'shares = softmax(scaled scores)':`scoreⱼ = Σᵢ(${symbol('Q')}ᵢ × ${symbol('K')}ⱼᵢ) ÷ √2; shares = softmax(masked scores)`;
   const maximum=Math.max(...m.scores),exps=m.scores.map(s=>Math.exp(s-maximum));
-  board=`<div class="studio-lanes">${m.keys.map((k,j)=>`<section class="studio-lane" data-role="K" data-index="${j}" data-score><strong>${j+1}: ${promptTokens[j]}</strong><div class="studio-full-vector">${symbol('Q')} ${esc(vec(m.q))}</div><div class="studio-full-vector">${symbol('K')} ${esc(vec(k))}</div><button type="button" data-reveal="sum" data-pick="key:${j}" aria-label="Inspect score for ${promptTokens[j]}" aria-pressed="false">dot ≈ ${n(m.q.reduce((sum,q,i)=>sum+q*k[i],0))}</button><div class="studio-score" data-reveal="scale">÷ √2 ≈ ${n(m.q.reduce((sum,q,i)=>sum+q*k[i],0)/Math.sqrt(2))}</div><div class="studio-mask" data-reveal="mask">${j>m.position?'Future key → masked −∞':'Allowed by causal mask'}</div></section>`).join('')}</div><div class="studio-normalizer" data-reveal="normalize" data-normalizer><strong>Softmax · whole allowed row</strong><div>exp(score − maximum) ≈ ${esc(vec(exps))}</div><div>Divide each by sum ≈ ${n(exps.reduce((sum,x)=>sum+x,0))}</div></div><div class="studio-weights" data-reveal="weights">${m.weights.map((w,j)=>`<div data-weight><strong>${promptTokens[j]}</strong><span>${esc(share(w))}</span></div>`).join('')}</div>`;
+  board=`<div class="studio-lanes">${m.keys.map((k,j)=>`<section class="studio-lane" data-role="K" data-index="${j}" data-score><strong>${j+1}: ${promptTokens[j]}</strong><div class="studio-full-vector">${symbol('Q')} ${esc(vec(m.q))}</div><div class="studio-full-vector">${symbol('K')} ${esc(vec(k))}</div><button type="button" data-reveal="sum" data-pick="key:${j}" aria-label="Inspect score for ${promptTokens[j]}" aria-pressed="false">dot ≈ ${n(m.q.reduce((sum,q,i)=>sum+q*k[i],0))}</button><div class="studio-score" data-reveal="scale">÷ √2 ≈ ${n(m.q.reduce((sum,q,i)=>sum+q*k[i],0)/Math.sqrt(2))}</div>${m.causal?`<div class="studio-mask" data-reveal="mask">${j>m.position?'Future key → masked −∞':'Allowed by causal mask'}</div>`:''}</section>`).join('')}</div><div class="studio-normalizer" data-reveal="normalize" data-normalizer><strong>Softmax · ${m.causal?'whole allowed row':'whole unmasked row'}</strong>${m.scoreScope==='softmax'?'<p>No causal mask: normalize all three scores.</p>':''}<div>exp(score − maximum) ≈ ${esc(vec(exps))}</div><div>Divide each by sum ≈ ${n(exps.reduce((sum,x)=>sum+x,0))}</div></div><div class="studio-weights" data-reveal="weights">${m.weights.map((w,j)=>`<div data-weight><strong>${promptTokens[j]}</strong><span>${esc(share(w))}</span></div>`).join('')}</div>`;
  }else{
   equation=`head result = Σⱼ (shareⱼ × ${symbol('V')}ⱼ)`;
   board=`<div class="studio-lanes">${m.values.map((v,j)=>`<section class="studio-lane" data-role="V" data-index="${j}" data-value><strong>${promptTokens[j]} · ${symbol('V')}</strong><div data-value-source><div class="studio-full-vector">${esc(vec(v))}</div><div class="studio-product">× share ${esc(share(m.weights[j]))}</div></div><div class="studio-output" data-reveal="term:${j}" data-contribution><span class="studio-label">Contribution${j>m.position?' · masked':''}</span><div class="studio-full-vector">≈ ${esc(vec(v.map(x=>x*m.weights[j])))}</div></div></section>`).join('')}</div><div class="studio-result" data-reveal="sum" data-result><strong>head result ≈ ${esc(vec(m.output))}</strong>${picks(m.output,'component')}</div>`;
@@ -50,7 +63,7 @@ function detail(m){
  const expressions=m.terms.map((value,i)=>m.type==='projections'?`${n(m.x[i])} × ${n(matrices[m.role][i][m.component])} ≈ ${n(value)}`:m.type==='scores'?`${n(m.q[i])} × ${n(m.keys[m.key][i])} ≈ ${n(value)}`:`${share(m.weights[i])} × ${n(m.values[i][m.component])} ≈ ${n(value)}`);
  let terms=expressions.map((term,i)=>`<span data-reveal="term:${i}" data-step="term:${i}">${esc(term)}</span>`).join('');
  terms+=`<span data-reveal="sum" data-step="sum">${esc(m.terms.map(n).join(' + '))} ≈ ${n(m.total)}</span>`;
- if(m.type==='scores')terms+=`<span data-reveal="scale" data-step="scale">${n(m.total)} ÷ √2 ≈ ${n(m.total/Math.sqrt(2))}</span><span data-reveal="mask" data-step="mask">${m.key>m.position?'masked → −∞':'Allowed position'}</span><span data-reveal="weights" data-step="weights">share ≈ ${esc(share(m.weights[m.key]))}</span>`;
+ if(m.type==='scores')terms+=`<span data-reveal="scale" data-step="scale">${n(m.total)} ÷ √2 ≈ ${n(m.total/Math.sqrt(2))}</span>${m.causal?`<span data-reveal="mask" data-step="mask">${m.key>m.position?'masked → −∞':'Allowed position'}</span>`:''}<span data-reveal="weights" data-step="weights">share ≈ ${esc(share(m.weights[m.key]))}</span>`;
  return `<div class="studio-detail" data-reveal="term:0"><div class="studio-detail-head"><strong>${esc(title)}</strong></div><div class="studio-calculation">${terms}</div></div>`;
 }
 export function studioConnector(source,target,origin={left:0,top:0}){
@@ -77,7 +90,7 @@ export function mountStudio(root,type,options={}){
   if(signature===drawKey&&!animate)return;drawKey=signature;
   svg.querySelectorAll('path').forEach(path=>path.getAnimations().forEach(animation=>animation.cancel()));svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${box.width} ${box.height}`);
   if(box.width<600)return;
-  const visible=studioVisibility(type,phase);
+  const visible=studioVisibility(type,phase==='all'?model.steps.at(-1).id:phase);
   const connect=(from,to,gate,active,role='')=>{
    if(!visible.includes(gate))return;
    const curve=studioConnector(from.getBoundingClientRect(),to.getBoundingClientRect(),box);
@@ -94,7 +107,7 @@ export function mountStudio(root,type,options={}){
   if(type==='values')root.querySelectorAll('[data-value]').forEach(lane=>{connect(lane.querySelector('[data-value-source]'),lane.querySelector('[data-contribution]'),`term:${lane.dataset.index}`,phase===`term:${lane.dataset.index}`,'V');connect(lane.querySelector('[data-contribution]'),root.querySelector('[data-result]'),'sum',phase==='sum','V');});
  }
  function update(animate=false,initial=false){
-  const steps=activeSteps(),visible=studioVisibility(type,phase),delayed=animate&&!reduced();
+  const steps=activeSteps(),visible=studioVisibility(type,phase==='all'?model.steps.at(-1).id:phase),delayed=animate&&!reduced();
   const linked=type==='projections'?['matrices','term:0','term:1','outputs']:type==='scores'?['normalize','weights']:['term:0','term:1','term:2','sum'];
   const travel=delayed&&root.querySelector('.studio-board').getBoundingClientRect().width>=600?650:0;
   root.querySelectorAll('[data-reveal]').forEach(el=>{
@@ -107,7 +120,7 @@ export function mountStudio(root,type,options={}){
   root.querySelectorAll('.studio-matrix span').forEach(el=>{const selected=el.closest('[data-role]').dataset.role===state.role&&Number(el.dataset.column)===state.component;el.classList.toggle('studio-column',selected);el.classList.toggle('is-current',selected&&steps.includes(`term:${el.dataset.row}`));});
   root.querySelectorAll('[data-pick]').forEach(button=>{const pick=button.dataset.pick,selected=pick===`projection:${state.role}:${state.component}`||pick===`component:${state.component}`||pick===`key:${state.key}`;button.setAttribute('aria-pressed',String(selected));});
   root.querySelectorAll('[data-value]').forEach(el=>el.classList.toggle('is-current',steps.includes(`term:${el.dataset.index}`)));
-  const stage=root.querySelector('.studio-stage');stage.textContent=phase==='all'?'Complete calculation':`${Math.max(0,model.steps.findIndex(s=>s.id===phase))+1} / ${model.steps.length} · ${phase==='products'?'Multiply matching components':model.steps.find(s=>s.id===phase)?.label||model.steps[0].label}`;
+  const stage=root.querySelector('.studio-stage');stage.textContent=phase==='all'?(model.scoreScope?'Complete local calculation':'Complete calculation'):`${Math.max(0,model.steps.findIndex(s=>s.id===phase))+1} / ${model.steps.length} · ${phase==='products'?'Multiply matching components':model.steps.find(s=>s.id===phase)?.label||model.steps[0].label}`;
   root.querySelector('[data-studio-back]').disabled=phase==='all'||phase===model.steps[0].id;
   root.querySelector('[data-studio-next]').disabled=phase==='all'||phase===model.steps.at(-1).id||delayed;
   root.querySelector('[data-studio-all]').textContent=phase==='all'?'Step by step':'Show all';
@@ -116,16 +129,17 @@ export function mountStudio(root,type,options={}){
  }
  function render(focus,animate=false){
   cancel();drawKey='';
-  model=studioModel(type,state,rows());state={position:model.position,component:model.component,role:model.role,key:model.key};
+  model=studioModel(type,{...state,scoreScope:options.scoreScope},rows());state={position:model.position,component:model.component,role:model.role,key:model.key};
   if(phase==='overview')phase='input';
+  if(phase!=='all'&&phase!=='products'&&!model.steps.some(step=>step.id===phase))phase=model.steps[0].id;
   root.classList.add('studio-arithmetic','teaching-visual');root.style.setProperty('--role-color',`var(--llm-${{Q:'query',K:'key',V:'value'}[type==='scores'?'K':type==='values'?'V':state.role]})`);
-  root.innerHTML=`${options.embedded?'':`<div class="route-toolbar"><label>Inspect position<select data-studio-position>${promptTokens.map((t,i)=>`<option value="${i}" ${i===state.position?'selected':''}>${i+1}: ${t}</option>`).join('')}</select></label></div><div class="route-stage">Prefill · layer 1 · head 1 · ${promptTokens[state.position]}</div>`}<div class="studio-navigation"><button type="button" data-studio-back>← Previous</button><button type="button" data-studio-next>Next →</button><button type="button" data-studio-all>Show all</button></div><p class="studio-stage" role="status"></p>${studioMarkup(type,model)}<details class="visual-assumptions"><summary>Toy assumptions</summary><p>Invented first-layer, one-head example. Full-precision calculations; displayed values rounded. Earlier K/V stay unchanged. Future positions receive exactly zero share.</p></details>`;
+  root.innerHTML=`${options.embedded?'':`<div class="route-toolbar"><label>Inspect position<select data-studio-position>${promptTokens.map((t,i)=>`<option value="${i}" ${i===state.position?'selected':''}>${i+1}: ${t}</option>`).join('')}</select></label></div><div class="route-stage">Prefill · layer 1 · head 1 · ${promptTokens[state.position]}</div>`}<div class="studio-navigation"><button type="button" data-studio-back>← Previous</button><button type="button" data-studio-next>Next →</button><button type="button" data-studio-all>Show all</button></div><p class="studio-stage" role="status"></p>${model.scoreScope?`<p class="small">${scopeNotes[model.scoreScope]} <a href="../inference/#scores">Review complete causal score calculation</a>.</p>`:''}${studioMarkup(type,model)}<details class="visual-assumptions"><summary>Toy assumptions</summary><p>Invented first-layer, one-head example. Full-precision calculations; displayed values rounded. Earlier K/V stay unchanged. ${model.causal?'Future positions receive exactly zero share.':'This local example has not applied a causal mask.'}</p></details>`;
   if(options.embedded){root.querySelector('[data-studio-next]').hidden=true;root.querySelector('[data-studio-back]').hidden=true;root.querySelector('.studio-stage').hidden=true;}
   root.querySelector('[data-studio-position]')?.addEventListener('change',event=>{state.position=Number(event.target.value);state.key=state.position;phase='input';options.onPosition?.(state.position);render('[data-studio-position]');});
   root.querySelectorAll('[data-pick]').forEach(button=>button.onclick=()=>{const [field,value,column]=button.dataset.pick.split(':');if(field==='projection'){state.role=value;state.component=Number(column);}if(field==='component')state.component=Number(value);if(field==='key')state.key=Number(value);options.onSelect?.(state);render(`[data-pick="${button.dataset.pick}"]`);});
   root.querySelector('[data-studio-next]').onclick=()=>{if(busy)return;const index=model.steps.findIndex(step=>step.id===phase);phase=model.steps[Math.min(index+1,model.steps.length-1)].id;update(true);};
   root.querySelector('[data-studio-back]').onclick=()=>{cancel();const index=model.steps.findIndex(step=>step.id===phase);phase=model.steps[Math.max(0,index-1)].id;update();};
-  root.querySelector('[data-studio-all]').onclick=()=>{cancel();phase=phase==='all'?'input':'all';update();options.onOverview?.(phase==='all');};
+  root.querySelector('[data-studio-all]').onclick=()=>{cancel();phase=phase==='all'?model.steps[0].id:'all';update();options.onOverview?.(phase==='all');};
   update(animate,true);if(focus)root.querySelector(focus)?.focus({preventScroll:true});
  }
  const observer=new win.ResizeObserver(()=>draw());

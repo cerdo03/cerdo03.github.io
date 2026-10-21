@@ -243,7 +243,8 @@ export function mountLearningVisual(root,type,options={}){
   }});
   owners.set(root,cleanup);return cleanup;
  }
- let s={stage:options.stage??0,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:options.pass??0,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,inspect:false,change:type==='validity'?-1:2};
+ const minimum=type==='heads'?options.minStage??0:0,scopedHeads=type==='heads'&&minimum>0;
+ let s={stage:options.stage??minimum,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:options.pass??0,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,inspect:false,change:type==='validity'?-1:2};
  let timer=null,disposed=false;
  const stop=()=>{if(timer)clearInterval(timer);timer=null;};
  owners.set(root,()=>{disposed=true;stop();window.removeEventListener('storage',storage);});
@@ -251,9 +252,10 @@ export function mountLearningVisual(root,type,options={}){
  function render(focus){
   const previous=flowSnapshot(root);
   const view=visualView(type,s,rows(),options);
+  if(scopedHeads)view.max=Math.min(view.max,options.maxStage??view.max);
   const scope=['projections','scores','values'].includes(type)?`Prefill · layer 1 · head 1 · ${promptTokens[s.position]}`:type==='sharing'?'Prefill · layer 1 · is':type==='prediction'?'Prefill · is · two-layer numeric toy':type==='heads'?'One position · two-head schematic':type==='request'?`${s.pass===0?'Prefill':`Decode ${s.pass}`} · layer 1 · head 1`:'Compatible requests · token-level reuse';
   root.classList.add('teaching-visual');root.classList.toggle('is-playing',!!timer);
-  root.innerHTML=`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions"><button type="button" data-command="reset" aria-label="Reset diagram">↺</button><button type="button" data-command="back" ${s.stage===0?'disabled':''}>← Previous</button><button type="button" data-command="play">${timer?'Pause':'Play'}</button><button type="button" data-command="next" ${s.stage===view.max&&!(type==='request'&&s.pass<(options.answer||['blue','today','.']).length-1)?'disabled':''}>${s.stage===view.max&&type==='request'?'Next pass →':'Next →'}</button></div>`:''}</div><div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage+1} / ${view.max+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
+  root.innerHTML=`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions">${scopedHeads?'':'<button type="button" data-command="reset" aria-label="Reset diagram">↺</button>'}<button type="button" data-command="back" ${s.stage===minimum?'disabled':''}>← Previous</button>${scopedHeads?'':`<button type="button" data-command="play">${timer?'Pause':'Play'}</button>`}<button type="button" data-command="next" ${s.stage===view.max&&!(type==='request'&&s.pass<(options.answer||['blue','today','.']).length-1)?'disabled':''}>${s.stage===view.max&&type==='request'?'Next pass →':'Next →'}</button></div>`:''}</div><div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage-minimum+1} / ${view.max-minimum+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${scopedHeads?'<p><a href="#s2-2-1">Review complete split/join trace</a></p>':''}${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
   renderVisualMath(root, type);
   root.querySelectorAll('[data-field]').forEach(control=>control.onchange=()=>{
    stop();const field=control.dataset.field;s[field]=field==='role'?control.value:Number(control.value);
@@ -266,8 +268,8 @@ export function mountLearningVisual(root,type,options={}){
   root.querySelectorAll('[data-command]').forEach(button=>button.onclick=()=>{
    const command=button.dataset.command;
    if(command==='play'){
-    if(timer)stop();else{if(s.stage===view.max)s.stage=0;timer=setInterval(()=>{if(disposed||!root.isConnected||!root.getClientRects().length){stop();return;}if(s.stage>=visualView(type,s,rows(),options).max){stop();render();return;}s.stage++;render();},1600);}
-   }else{stop();if(command==='overview')s.inspect=false;if(command==='reset'){s.stage=0;s.inspect=false;}if(command==='back')s.stage=Math.max(0,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(type==='request'){s.pass++;s.stage=0;}}}
+    if(timer)stop();else{if(s.stage===view.max)s.stage=minimum;timer=setInterval(()=>{if(disposed||!root.isConnected||!root.getClientRects().length){stop();return;}if(s.stage>=visualView(type,s,rows(),options).max){stop();render();return;}s.stage++;render();},1600);}
+   }else{stop();if(command==='overview')s.inspect=false;if(command==='reset'){s.stage=minimum;s.inspect=false;}if(command==='back')s.stage=Math.max(minimum,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(type==='request'){s.pass++;s.stage=0;}}}
    render(command==='overview'?`[data-pick="${type==='projections'?`projection:${s.role}:${s.component}`:type==='scores'?`key:${s.key}`:`component:${s.component}`}"]`:`[data-command="${command}"]`);
   });
   root.querySelectorAll('[data-pick]').forEach(target=>{

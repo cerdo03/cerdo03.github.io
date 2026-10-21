@@ -68,3 +68,20 @@ test('connector curves stay in the gap between source and destination card edges
   }
  }
 });
+test('local score lessons carry known results and stop at their own transformation',async()=>{
+ const {studioModel}=await import(moduleURL);
+ const scopes={dot:['input','term:0','term:1','sum'],scale:['sum','scale'],softmax:['scale','normalize','weights'],mask:['scale','mask','normalize','weights']};
+ for(const [scoreScope,expected] of Object.entries(scopes))assert.deepEqual(studioModel('scores',{position:1,scoreScope}).steps.map(step=>step.id),expected);
+});
+test('isolated softmax normalizes every scaled score before causal masking is introduced',async()=>{
+ const {studioModel,studioMarkup}=await import(moduleURL);
+ const m=studioModel('scores',{position:1,key:2,scoreScope:'softmax'});
+ assert.ok(m.scores.every(Number.isFinite));assert.ok(m.weights.every(w=>w>0));
+ assert.ok(Math.abs(m.weights.reduce((sum,w)=>sum+w,0)-1)<1e-12);
+ const html=studioMarkup('scores',m);
+ assert.doesNotMatch(html,/data-reveal="mask"|masked −∞|whole allowed row/);
+ assert.match(html,/No causal mask/);
+ const masked=studioModel('scores',{position:1,key:2,scoreScope:'mask'});
+ assert.equal(masked.weights[2],0);assert.equal(masked.scores[2],-Infinity);
+ assert.ok(masked.weights[0]>m.weights[0]);
+});

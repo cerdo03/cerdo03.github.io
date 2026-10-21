@@ -8,7 +8,7 @@ export function enhanceCourse(doc){
   root.replaceChildren();mountLearningVisual(root,type,options);
  };
  if(number===2){
-  replace('s2-2-1','heads');replace('s2-2-2','heads',{stage:2});replace('s2-2-4','heads',{stage:4});
+  replace('s2-2-1','heads');replace('s2-2-2','heads',{minStage:1,maxStage:2});replace('s2-2-4','heads',{minStage:3,maxStage:5});
  }
  if(number===3)replace('s2-3-2','sharing');
  if(number===4){

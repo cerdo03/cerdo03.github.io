@@ -79,7 +79,7 @@ function renderAll() {
       if(experiment)root.append(experiment);
       mountVectorRoutes(diagram, i);
     } else if(stage>=3&&stage<=7){
-      mountLearningVisual(root,stage===7?'values':'scores',{stage:stage===5?4:[4,6].includes(stage)?3:0,rows:state.rows,onPosition:position=>{state.position=position;save();}});
+      mountLearningVisual(root,stage===7?'values':'scores',{scoreScope:({3:'dot',4:'scale',5:'softmax',6:'mask'})[stage],rows:state.rows,onPosition:position=>{state.position=position;save();}});
     }
   }
 }
