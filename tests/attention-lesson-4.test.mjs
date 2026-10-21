@@ -112,7 +112,7 @@ test('knowledge check rewards the new-query reasoning and explains misconception
 
 test('lesson page wires every widget container and states counter definitions', () => {
   const html = readFileSync('labs/attention/lesson-4.html', 'utf8');
-  for (const id of ['hier-layer', 'hier-position', 'hier-slice', 'prefill-mask', 'prefill-cache', 'decode-step', 'decode-reset', 'decode-cache', 'decode-stages', 'decode-output', 'compare-table', 'ext-prompt', 'ext-steps', 'kv-check']) {
+  for (const id of ['hier-keys', 'hier-values', 'hier-slice', 'prefill-mask', 'prefill-cache', 'decode-step', 'decode-reset', 'decode-cache', 'decode-stages', 'decode-output', 'compare-table', 'ext-prompt', 'ext-steps', 'kv-check']) {
     assert.match(html, new RegExp(`id="${id}"`), id);
   }
   assert.match(html, /token positions whose K\/V projections are computed in that forward pass/);

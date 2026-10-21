@@ -218,7 +218,7 @@ function simpleTable(doc, { caption, head, rows, rowHeader = true, className }) 
     body.append(ui.el(doc, 'tr', { className: row.className }, cells));
   }
   table.append(body);
-  return ui.el(doc, 'div', { className: 'table-scroll' }, [table]);
+  return ui.el(doc, 'section', { className: 'table-scroll', attrs: { tabindex: '0', 'aria-label': caption || 'Worked table' } }, [table]);
 }
 
 function para(doc, text) { return ui.el(doc, 'p', { text }); }
@@ -252,7 +252,6 @@ function mountContext(root) {
 
 function mountProjections(root) {
   const doc = root.ownerDocument;
-  const controls = root.querySelector('[data-part="controls"]');
   const body = root.querySelector('[data-part="body"]');
   const output = root.querySelector('[data-part="output"]');
   const { Q, K, V } = projections();
@@ -281,7 +280,6 @@ function mountProjections(root) {
       ui.el(doc, 'ul', {}, lines),
     );
   }
-  controls.replaceChildren(radioGroup(doc, { legend: 'Input token', name: 'l1-proj', labels: TOY.tokens, checked: 2, onChange: render }));
   render(2);
 }
 
@@ -293,7 +291,6 @@ function mountScoreExplorer(root, softRoot) {
   const controls = root.querySelector('[data-part="controls"]');
   const body = root.querySelector('[data-part="body"]');
   const output = root.querySelector('[data-part="output"]');
-  const softControls = softRoot?.querySelector('[data-part="controls"]');
   const softBody = softRoot?.querySelector('[data-part="body"]');
   const softOutput = softRoot?.querySelector('[data-part="output"]');
 
@@ -303,9 +300,10 @@ function mountScoreExplorer(root, softRoot) {
     return select;
   };
   const select = makeSelect('l1-score-query');
-  const softSelect = softRoot ? makeSelect('l1-soft-query') : null;
+  softRoot?.querySelector('[data-score-reference]')?.addEventListener('click', () => {
+    for (let parent = root.parentElement; parent; parent = parent.parentElement) if (parent.tagName === 'DETAILS') parent.open = true;
+  });
   controls.replaceChildren(ui.el(doc, 'label', {className: 'field', attrs: {for: 'l1-score-query'}}, [ui.el(doc, 'span', {text: 'Inspect fixed query row'}), select]));
-  if (softControls) softControls.replaceChildren(ui.el(doc, 'label', {className: 'field', attrs: {for: 'l1-soft-query'}}, [ui.el(doc, 'span', {text: 'Inspect fixed query row (same example)'}), softSelect]));
   const scoreTable = ui.el(doc, 'div');
   const scoreBars = ui.el(doc, 'div');
   body.replaceChildren(scoreTable, ui.el(doc, 'h4', { text: 'Raw scores sⱼ = q · kⱼ' }), scoreBars);
@@ -315,7 +313,6 @@ function mountScoreExplorer(root, softRoot) {
 
   function syncInputs() {
     select.value = String(state.query);
-    if (softSelect) softSelect.value = String(state.query);
   }
 
   function render() {
@@ -365,7 +362,6 @@ function mountScoreExplorer(root, softRoot) {
   }
 
   select.addEventListener('change', () => chooseQuery(Number(select.value)));
-  softSelect?.addEventListener('change', () => chooseQuery(Number(softSelect.value)));
   syncInputs();
   render();
 }
@@ -454,7 +450,6 @@ function mountMask(root) {
 
 function mountOutput(root) {
   const doc = root.ownerDocument;
-  const controls = root.querySelector('[data-part="controls"]');
   const body = root.querySelector('[data-part="body"]');
   const output = root.querySelector('[data-part="output"]');
   const tableWrap = ui.el(doc, 'div');
@@ -476,7 +471,6 @@ function mountOutput(root) {
       ? `Only one key is visible, so o${ROLE_SUB[i]} equals v${ROLE_SUB[i]} = ${ui.fmtVector(r.output, 3)} exactly.`
       : `The largest weight is on "${TOY.tokens4[r.top]}" (${ui.fmtNumber(r.weights[r.top], 3)}), contributing ${ui.fmtVector(r.contributions[r.top], 3)}. The other ${active - 1} visible positions still add ${ui.fmtVector(r.rest, 3)}, so the output is a blend, not a copy of one value vector.`));
   }
-  controls.replaceChildren(radioGroup(doc, { legend: 'Output row (query position)', name: 'l1-out', labels: TOY.tokens4.map((t, i) => `${i + 1} ${t}`), checked: 3, onChange: render }));
   render(3);
 }
 

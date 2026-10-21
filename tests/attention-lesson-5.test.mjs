@@ -71,6 +71,7 @@ test('aggregate scales with N and K/V halves stay equal', () => {
 });
 
 test('presets are labelled as styles and MHA-style needs 4× the GQA-style example', () => {
+  assert.deepEqual(PRESETS.map(p => p.id), ['a', 'c', 'd']);
   const a = PRESETS.find((p) => p.id === 'a');
   const c = PRESETS.find((p) => p.id === 'c');
   const mem = (p) => computeKvMemory({ ...DEFAULT_CONFIG, layers: p.layers, kvHeads: p.kvHeads, headDim: p.headDim }).total;

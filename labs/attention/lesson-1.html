@@ -109,14 +109,15 @@
         <p><strong>Toy example.</strong> Take <var>T</var> = 3 tokens (“animal”, “was”, “tired”) and <var>d</var><sub>model</sub> = <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub> = 2. The third input row is <var>x</var><sub>3</sub> = <span class="num" data-num="x3">[1, 1]</span>. Multiplying it by the three toy matrices gives <var>q</var><sub>3</sub> = <span class="num" data-num="q3">[1, 2]</span>, <var>k</var><sub>3</sub> = <span class="num" data-num="k3">[1, 3]</span> and <var>v</var><sub>3</sub> = <span class="num" data-num="v3">[1, 1]</span>: one input, three different vectors.</p>
         <div class="lab" id="lab-proj" role="group" aria-labelledby="lab-proj-title">
           <div class="lab-header">
-            <h3 id="lab-proj-title">Projection inspector</h3>
+            <h3 id="lab-proj-title">Worked projection: tired</h3>
+            <p>Separate 3-token toy: “animal / was / tired”. The fixed worked row is “tired”, x₃ = [1, 1]. Its matrices and numbers differ from the main “The sky is” model.</p>
             <dl class="lab-guide">
               <div><dt>What this shows</dt><dd>The toy input matrix <var>X</var>, the three learned matrices, and the resulting <var>Q</var>, <var>K</var>, <var>V</var> with the selected row highlighted and its arithmetic written out.</dd></div>
-              <div><dt>Try</dt><dd>Select each input token in turn and compare its <var>q</var>, <var>k</var> and <var>v</var>.</dd></div>
+              <div><dt>Try</dt><dd>Follow the highlighted “tired” row through each matrix and compare its <var>q</var>, <var>k</var> and <var>v</var>.</dd></div>
               <div><dt>What to notice</dt><dd>The same input row produces three different vectors. Because the projections are linear and <var>x</var><sub>3</sub> = <var>x</var><sub>1</sub> + <var>x</var><sub>2</sub> here, every projection of “tired” is the sum of the projections of “animal” and “was”.</dd></div>
             </dl>
           </div>
-          <div class="lab-controls" data-part="controls"></div>
+
           <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. <var>W</var><sub>Q</sub> = [[1, 0], [0, 2]], <var>W</var><sub>K</sub> = [[2, 1], [−1, 2]], <var>W</var><sub>V</sub> = [[1, −1], [0, 2]], <var>X</var> = [[1, 0], [0, 1], [1, 1]].</p></noscript></div>
           <div class="lab-output" data-part="output" aria-live="polite"></div>
           <p class="lab-assumptions">Assumptions: invented toy values; <var>d</var><sub>model</sub> = <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub> = 2; biases omitted; one head. Matrices are fixed because in a model they are learned, not chosen per input.</p>
@@ -212,13 +213,14 @@
         <div class="lab" id="lab-softmax" role="group" aria-labelledby="lab-softmax-title">
           <div class="lab-header">
             <h3 id="lab-softmax-title">Attention-score explorer, continued: softmax</h3>
+            <p>Separate 3-token “animal / was / tired” toy. This table follows the query selected in its score explorer, independently of the main “The sky is” model.</p>
             <dl class="lab-guide">
               <div><dt>What this shows</dt><dd>The same query and keys as the explorer in 2.1.3, carried through scaling, the max shift, exponentials and normalisation, with scores and weights side by side.</dd></div>
-              <div><dt>Try</dt><dd>Change the query row here, or edit <var>q</var> in 2.1.3: for example [4, 4] versus [0.5, 0.5].</dd></div>
+              <div><dt>Try</dt><dd>Change the alternate query row in the technical detail of 2.1.3; this table follows that selection.</dd></div>
               <div><dt>What to notice</dt><dd>Doubling <var>q</var> doubles every score and makes the weights sharper; the column <var>z</var><sub>j</sub> − <var>m</var> is always ≤ 0 with one entry exactly 0.</dd></div>
             </dl>
           </div>
-          <div class="lab-controls" data-part="controls"></div>
+          <p><a href="#s2-1-3" data-score-reference>Change alternate query</a> in the score explorer’s technical detail. Its chosen row is named in the table caption below.</p>
           <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. The worked example above gives the same numbers for <var>q</var><sub>3</sub>.</p></noscript></div>
           <div class="lab-output" data-part="output" aria-live="polite"></div>
           <p class="lab-assumptions">Assumptions: this panel shares its state with the explorer in 2.1.3 (it is one widget with two views); scale 1/√2 because <var>d</var><sub>k</sub> = 2; no mask yet.</p>
@@ -272,14 +274,15 @@
         <p>The top-weighted position supplies most of the output, but the other three still add <span class="num" data-num="out-rest">[0.128, 0.032]</span>. Because the weights are non-negative and sum to 1, every output row is a <em>convex combination</em> of the visible value rows: a point inside the region they span, pulled toward the heavily weighted ones.</p>
         <div class="lab" id="lab-output" role="group" aria-labelledby="lab-output-title">
           <div class="lab-header">
-            <h3 id="lab-output-title">Output row inspector</h3>
+            <h3 id="lab-output-title">Worked output: tired</h3>
+            <p>Separate causal 4-token toy: “The animal was tired”. This fixed calculation uses the fourth row, “tired”; it is not the main “The sky is” model.</p>
             <dl class="lab-guide">
               <div><dt>What this shows</dt><dd>For one row of the causal 4-token example: each weight, each value vector, each weighted contribution and their sum, plus the full output matrix <var>O</var>.</dd></div>
-              <div><dt>Try</dt><dd>Select each output row, starting with “The”.</dd></div>
+              <div><dt>Try</dt><dd>Follow the “tired” weights into all four value contributions and their sum.</dd></div>
               <div><dt>What to notice</dt><dd>“The” sees only itself, so its output equals its value vector. Later rows blend several values; masked positions contribute nothing.</dd></div>
             </dl>
           </div>
-          <div class="lab-controls" data-part="controls"></div>
+
           <div class="lab-body" data-part="body"><noscript><p>This example needs JavaScript. The worked example above gives the full calculation for “tired”.</p></noscript></div>
           <div class="lab-output" data-part="output" aria-live="polite"></div>
           <p class="lab-assumptions">Assumptions: causal weights from 2.1.6; toy value vectors; <var>d</var><sub>v</sub> = 2; one head, so <var>O</var> is the layer's attention output before any output projection.</p>

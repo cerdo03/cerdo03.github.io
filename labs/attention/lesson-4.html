@@ -101,26 +101,28 @@
           <p><span class="callout-label">Conceptual, not physical.</span> This order is a way to reason about contents, not a universal memory layout. Hugging Face-style caches typically keep one tensor per layer shaped [<var>B</var>, <var>H</var><sub>KV</sub>, <var>T</var>, <var>D</var>]; serving engines such as <a href="https://docs.vllm.ai/">vLLM</a> store K/V in fixed-size blocks (paged layouts), and attention kernels may require their own orderings. The planned Module 3 covers physical layouts. The element count is the same either way.</p>
         </div>
         <div class="lab" role="group" aria-labelledby="lab-hierarchy">
-          <div class="lab-header"><h3 id="lab-hierarchy">Cache hierarchy explorer</h3><p>Structural example: 4 layers, 2 KV heads and 4 components per head. Tensor indices start at 0; the numbers are placeholders for indexing. The numerical trace below uses the shared 2-component toy and counts token positions from 1.</p>
-            <dl class="lab-guide">
-              <div><dt>What this shows</dt><dd>A toy cache with <var>L</var> = 4, <var>T</var> = 4, <var>H</var><sub>KV</sub> = 2, <var>D</var> = 4. Picking a layer, a position and K or V indexes the 4-D tensor down to one [<var>H</var><sub>KV</sub>, <var>D</var>] slice.</dd></div>
-              <div><dt>Try</dt><dd>Change the layer while keeping the position fixed, then switch K to V.</dd></div>
-              <div><dt>What to notice</dt><dd>Every (layer, position) pair owns a separate slice of the same shape. The slice size depends only on <var>H</var><sub>KV</sub> and <var>D</var>, never on how long the sequence is.</dd></div>
-            </dl></div>
-          <div class="lab-controls">
-            <label class="field"><span>Layer index ℓ (starts at 0)</span><select id="hier-layer"></select></label>
-            <label class="field"><span>Token index t (starts at 0)</span><select id="hier-position"></select></label>
-            <fieldset class="segmented"><legend>Tensor</legend>
-              <label><input type="radio" name="hier-kind" value="k" checked>Keys (K)</label>
-              <label><input type="radio" name="hier-kind" value="v">Values (V)</label>
-            </fieldset>
+          <div class="lab-header"><h3 id="lab-hierarchy">One indexed cache slice</h3>
+            <p>Structural example: each K or V tensor has shape [4 layers, 4 token positions, 2 KV heads, 4 components]. Fixing layer ℓ = 1 and position t = 2 leaves both heads and all components: shape [2, 4]. Indices start at 0, so this is the second layer and third token, “is”. A colon keeps the whole axis.</p>
+            <p>Keys determine query–key scores; values supply the vectors mixed using attention weights. Both slices below belong to the same layer and position. These are placeholder indexing values, not projections from a trained model or the shared 2-component numeric trace.</p>
+            <p>This is a conceptual layout, not a physical storage order required by an attention kernel.</p>
           </div>
-          <div class="lab-body">
-            <p id="hier-path"></p>
-            <div id="hier-slice"></div>
+          <div class="lab-body node-grid" id="hier-slice">
+            <section id="hier-keys" class="table-scroll" tabindex="0" aria-label="K indexed slice">
+              <table class="matrix t-k">
+                <caption>K_cache[ℓ=1, t=2, :, :] — keys, shape [2, 4]</caption>
+                <thead><tr><td class="matrix-corner"></td><th scope="col">d0</th><th scope="col">d1</th><th scope="col">d2</th><th scope="col">d3</th></tr></thead>
+                <tbody><tr><th scope="row">KV head 0</th><td>0.8</td><td>-0.9</td><td>-0.7</td><td>-0.5</td></tr><tr><th scope="row">KV head 1</th><td>-0.8</td><td>-0.6</td><td>-0.4</td><td>-0.2</td></tr></tbody>
+              </table>
+            </section>
+            <section id="hier-values" class="table-scroll" tabindex="0" aria-label="V indexed slice">
+              <table class="matrix t-v">
+                <caption>V_cache[ℓ=1, t=2, :, :] — values, shape [2, 4]</caption>
+                <thead><tr><td class="matrix-corner"></td><th scope="col">d0</th><th scope="col">d1</th><th scope="col">d2</th><th scope="col">d3</th></tr></thead>
+                <tbody><tr><th scope="row">KV head 0</th><td>0</td><td>0.2</td><td>0.4</td><td>0.6</td></tr><tr><th scope="row">KV head 1</th><td>0.3</td><td>0.5</td><td>0.7</td><td>0.9</td></tr></tbody>
+              </table>
+            </section>
           </div>
-          <div class="lab-output" id="hier-output" aria-live="polite"></div>
-          <p class="lab-assumptions">Assumptions: toy values from a fixed formula (not a trained model); fp16 storage at 2 bytes per element; one sequence, no batch dimension; contiguous logical tensor; allocator overhead ignored.</p>
+          <p class="lab-output" id="hier-output">Each slice has 2 × 4 = 8 elements, or 16 bytes at FP16 (2 bytes per element). A whole K or V tensor has 4 × 4 × 2 × 4 = 128 elements, or 256 bytes. One position across all 4 layers, both K and V: 2 × 4 × 2 × 4 × 2 = 128 bytes.</p>
         </div>
       </section>
 

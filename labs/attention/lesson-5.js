@@ -18,7 +18,6 @@ export const PRECISIONS = Object.freeze([
 /** Hypothetical, illustrative configurations. Not specifications of any named model. */
 export const PRESETS = Object.freeze([
   Object.freeze({ id: 'a', label: 'Example A (GQA-style)', layers: 32, kvHeads: 8, headDim: 128, note: '32 layers, 8 KV heads, D = 128' }),
-  Object.freeze({ id: 'b', label: 'Example B (GQA-style, deeper)', layers: 40, kvHeads: 8, headDim: 128, note: '40 layers, 8 KV heads, D = 128' }),
   Object.freeze({ id: 'c', label: 'Example C (MHA-style)', layers: 32, kvHeads: 32, headDim: 128, note: '32 layers, 32 KV heads (one per query head), D = 128' }),
   Object.freeze({ id: 'd', label: 'Example D (MQA-style)', layers: 32, kvHeads: 1, headDim: 128, note: '32 layers, 1 shared KV head, D = 128' }),
 ]);
@@ -120,7 +119,6 @@ export function niceStep(max, count = 4) {
 }
 
 export const CHART_DEFAULTS = Object.freeze({ layers: 32, headDim: 128, bytesPerElem: 2, kvHeads: 8, referenceKvHeads: 32, maxContext: 32768, sequences: 1 });
-export const CHART_CONTEXTS = Object.freeze([4096, 8192, 32768, 131072]);
 
 /**
  * Data for the memory-vs-context chart. Memory is linear in T in this model, so the
@@ -300,7 +298,8 @@ function drawChart(doc, svgEl, data, maxContext) {
     grid.append(svg(doc, 'line', { x1: left, x2: left + plotW, y1: y(v), y2: y(v) }));
     grid.append(svg(doc, 'text', { x: left - 8, y: y(v) + 4, 'text-anchor': 'end', class: 'chart-tick' }, fmtNumber(v, 2)));
   }
-  for (const T of data.xTicks) {
+  for (const [index, T] of data.xTicks.entries()) {
+    if (width < 520 && index % 2 === 1) continue;
     grid.append(svg(doc, 'text', { x: x(T), y: top + plotH + 20, 'text-anchor': 'middle', class: 'chart-tick' }, fmtTokens(T)));
   }
   grid.append(svg(doc, 'line', { class: 'chart-axis', x1: left, x2: left + plotW, y1: top + plotH, y2: top + plotH }));
@@ -326,6 +325,7 @@ function drawChart(doc, svgEl, data, maxContext) {
   const endCur = cur.points.at(-1);
   const endRef = ref.points.at(-1);
   const [yCur, yRef] = separateLabels(y(endCur.value), y(endRef.value));
+  const labelOffset = Math.max(0, top + 14 - Math.min(yCur, yRef));
   const labels = svg(doc, 'g', { class: 'chart-end-labels', 'aria-hidden': 'true' });
   const endLabel = (s, end, yPos, cls) => {
     const t = svg(doc, 'text', { x: left + plotW + 10, y: yPos, class: cls });
@@ -333,7 +333,7 @@ function drawChart(doc, svgEl, data, maxContext) {
     t.append(svg(doc, 'tspan', { x: left + plotW + 10, dy: 15 }, formatBytes(end.bytes)));
     return t;
   };
-  labels.append(endLabel(cur, endCur, yCur, 'chart-end current'), endLabel(ref, endRef, yRef, 'chart-end reference'));
+  labels.append(endLabel(cur, endCur, yCur + labelOffset, 'chart-end current'), endLabel(ref, endRef, yRef + labelOffset, 'chart-end reference'));
   nodes.push(labels);
   // Keep the static <title>/<desc> (referenced by aria-labelledby); replace only the drawing.
   svgEl.replaceChildren(svgEl.querySelector('title'), svgEl.querySelector('desc'), ...nodes);
@@ -342,12 +342,6 @@ function drawChart(doc, svgEl, data, maxContext) {
 function mountChart(doc) {
   const root = doc.getElementById('kv-chart-lab');
   if (!root) return;
-  const inputs = {
-    kvHeads: doc.getElementById('chart-kv-heads'),
-    referenceKvHeads: doc.getElementById('chart-ref-heads'),
-    maxContext: doc.getElementById('chart-max-context'),
-    sequences: doc.getElementById('chart-sequences'),
-  };
   const svgEl = doc.getElementById('kv-chart');
   const errorBox = doc.getElementById('chart-errors');
   const output = doc.getElementById('chart-output');
@@ -355,33 +349,31 @@ function mountChart(doc) {
   const headCur = doc.getElementById('chart-col-current');
   const headRef = doc.getElementById('chart-col-ref');
 
+  const configNote = doc.getElementById('chart-config');
+  function pause(message) {
+    errorBox.hidden = false;
+    errorBox.textContent = message;
+    svgEl.setAttribute('hidden', '');
+    tableBody.replaceChildren();
+    output.replaceChildren();
+    configNote.textContent = 'Chart paused until a valid, exactly representable comparison is available.';
+  }
+
   function render() {
-    const errors = [];
-    const parse = (input, key, label, max) => {
-      const r = parseIntegerField(input.value, key);
-      let error = r.error ? r.error.replace(LIMITS[key].label, label) : null;
-      if (!error && r.value > max) error = `${label}: must be between 1 and ${fmtInt(max)} (got ${fmtInt(r.value)}).`;
-      input.setAttribute('aria-invalid', error ? 'true' : 'false');
-      if (error) { errors.push(error); return null; }
-      return r.value;
-    };
-    const kvHeads = parse(inputs.kvHeads, 'kvHeads', 'KV heads (H_KV)', LIMITS.kvHeads.max);
-    const referenceKvHeads = parse(inputs.referenceKvHeads, 'kvHeads', 'Reference KV heads', 128);
-    const sequences = parse(inputs.sequences, 'sequences', 'Concurrent sequences (N)', LIMITS.sequences.max);
-    const maxContext = Number(inputs.maxContext.value);
-    if (errors.length) {
-      errorBox.hidden = false;
-      errorBox.replaceChildren(el(doc, 'strong', { text: 'Chart paused: ' }), el(doc, 'ul', {}, errors.map((e) => el(doc, 'li', { text: e }))));
-      return;
-    }
-    errorBox.hidden = true;
-    const shared = validateConfig({layers: doc.getElementById('calc-layers').value, kvHeads: doc.getElementById('calc-kv-heads').value, headDim: doc.getElementById('calc-head-dim').value, seqLen: doc.getElementById('calc-seq-len').value, bytesPerElem: doc.getElementById('calc-bytes').value, sequences: doc.getElementById('calc-sequences').value});
-    if (!shared.ok) { errorBox.hidden = false;errorBox.textContent = 'Chart paused: correct the model configuration in the calculator.';return; }
+    const shared = validateConfig(Object.fromEntries(Object.entries(FIELD_IDS).map(([key, id]) => [key, doc.getElementById(id).value])));
+    if (!shared.ok) { pause('Chart paused: correct the model configuration in the calculator.'); return; }
     const config = shared.config;
+    const { kvHeads, sequences } = config;
+    const referenceKvHeads = CHART_DEFAULTS.referenceKvHeads;
+    const maxContext = Math.max(CHART_DEFAULTS.maxContext, config.seqLen);
     let data;
-    try { data = chartData({ ...config, kvHeads: config.kvHeads, referenceKvHeads, maxContext, sequences: config.sequences }); } catch { errorBox.hidden = false;errorBox.textContent = 'Chart paused: this range exceeds exact integer arithmetic. Reduce the model size, concurrency or chart range.';svgEl.hidden = true;return; }
-    svgEl.hidden = false;
+    try { data = chartData({ ...config, referenceKvHeads, maxContext }); }
+    catch { pause('Chart paused: this comparison exceeds exact integer arithmetic. Reduce the model size, concurrency or context in the calculator.'); return; }
+    errorBox.hidden = true;
+    errorBox.textContent = '';
+    svgEl.removeAttribute('hidden');
     drawChart(doc, svgEl, data, maxContext);
+    configNote.textContent = `Shared calculator configuration: L = ${config.layers}, D = ${config.headDim}, B = ${config.bytesPerElem} bytes, N = ${fmtInt(sequences)}. Both lines vary T from 0 to ${fmtInt(maxContext)}; selected T = ${fmtInt(config.seqLen)}. The y-axis uses binary units; exact bytes are in the table.`;
     const [cur, ref] = data.series;
     const endCur = cur.points.at(-1);
     const endRef = ref.points.at(-1);
@@ -405,24 +397,15 @@ function mountChart(doc) {
       el(doc, 'td', { className: 'num', text: `${formatBytes(ref.points[i].bytes)} (${fmtInt(ref.points[i].bytes)} B)` }),
     ])));
   }
-  const sync = () => { inputs.kvHeads.value = doc.getElementById('calc-kv-heads').value;inputs.sequences.value = doc.getElementById('calc-sequences').value;render(); };
-  inputs.kvHeads.closest('label').hidden = true;inputs.sequences.closest('label').hidden = true;
-  root.addEventListener('input', render);
-  root.addEventListener('change', render);
-  doc.addEventListener('kv:config', sync);
-  doc.addEventListener('course:section', sync);
-  sync();
+  doc.addEventListener('kv:config', render);
+  doc.addEventListener('course:section', render);
+  // Invalid fields do not emit kv:config; pause the chart on those edits too.
+  doc.getElementById('kv-calculator').addEventListener('input', render);
+  doc.getElementById('kv-calculator').addEventListener('change', render);
   let lastWidth = svgEl.parentElement.clientWidth;
   doc.defaultView?.addEventListener('resize', () => {
     const w = svgEl.parentElement.clientWidth;
     if (Math.abs(w - lastWidth) > 20) { lastWidth = w; render(); }
-  });
-  doc.getElementById('chart-reset').addEventListener('click', () => {
-    inputs.kvHeads.value = doc.getElementById('calc-kv-heads').value;
-    inputs.referenceKvHeads.value = CHART_DEFAULTS.referenceKvHeads;
-    inputs.maxContext.value = CHART_DEFAULTS.maxContext;
-    inputs.sequences.value = doc.getElementById('calc-sequences').value;
-    render();
   });
   render();
 }

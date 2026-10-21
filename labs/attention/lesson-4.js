@@ -1,7 +1,7 @@
 import {decodeReferenceStage} from '../llm-systems/visual-model.js';
 // Lesson 2.4: KV-cache internals.
 // Pure view models (exported, testable in Node) + DOM mounting guarded by `typeof document`.
-// Widgets: 2.4.2 hierarchy explorer, 2.4.3 static prefill view, 2.4.4 decode step tracer
+// Widgets: 2.4.2 indexed hierarchy example, 2.4.3 static prefill view, 2.4.4 decode step tracer
 // (primary), 2.4.5 with/without-cache counts and closed-form extrapolation, knowledge check.
 import * as math from './attention-math.js';
 import * as ui from './ui.js';
@@ -9,14 +9,14 @@ import * as kvSim from './kv-sim.js';
 import {representations} from '../inference/guide-model.js';
 function sharedEmbeddings() { try { const rows = JSON.parse(localStorage.getItem('inference-course-v4'))?.embeddings;if (Array.isArray(rows) && rows.length === 3 && rows.every(row=>Array.isArray(row)&&row.length===2&&row.every(x=>Number.isFinite(x)&&Math.abs(x)<=4))) return rows; } catch { /* Optional storage. */ }return representations.map(row=>[...row]); }
 
-const { fmtNumber, fmtWeight, fmtVector, fmtInt, fmtShape, el, tensorTag, renderBars, createKnowledgeCheck } = ui;
+const { fmtNumber, fmtWeight, fmtVector, fmtInt, el, tensorTag, renderBars, createKnowledgeCheck } = ui;
 const { createKvSim, toyCacheValue, SIM_ASSUMPTIONS } = kvSim;
 
 export const lesson = Object.freeze({ number: 4, math, ui, kvSim });
 
-// ---------------------------------------------------------------- 2.4.2 hierarchy explorer
+// ---------------------------------------------------------------- 2.4.2 indexed hierarchy example
 
-/** Toy conceptual cache dimensions for the hierarchy explorer. */
+/** Toy conceptual cache dimensions for the indexed hierarchy example. */
 export const HIERARCHY_DIMS = Object.freeze({ layers: 4, positions: 4, kvHeads: 2, headDim: 4 });
 export const HIERARCHY_BYTES_PER_ELEMENT = math.BYTES_PER_ELEMENT.fp16;
 
@@ -245,40 +245,6 @@ function cacheTable(doc, rows, { caption, withStatus = true }) {
   return el(doc, 'div', { className: 'table-scroll', attrs: { tabindex: '0', role: 'region', 'aria-label': caption } }, [table]);
 }
 
-function mountHierarchy(doc) {
-  const layerSelect = doc.getElementById('hier-layer');
-  const positionSelect = doc.getElementById('hier-position');
-  if (!layerSelect || !positionSelect) return;
-  const prompt = kvSim.DEFAULT_PROMPT;
-  for (let l = 0; l < HIERARCHY_DIMS.layers; l += 1) layerSelect.append(el(doc, 'option', { text: `ℓ = ${l}`, attrs: { value: String(l) } }));
-  for (let t = 0; t < HIERARCHY_DIMS.positions; t += 1) positionSelect.append(el(doc, 'option', { text: `t = ${t} ("${prompt[t]}")`, attrs: { value: String(t) } }));
-  const pathEl = doc.getElementById('hier-path');
-  const sliceEl = doc.getElementById('hier-slice');
-  const out = doc.getElementById('hier-output');
-
-  function render() {
-    const kind = doc.querySelector('input[name="hier-kind"]:checked')?.value ?? 'k';
-    const view = sliceView({ kind, layer: Number(layerSelect.value), position: Number(positionSelect.value) });
-    const wordKind = kind === 'k' ? 'Keys' : 'Values';
-    pathEl.replaceChildren(
-      doc.createTextNode(`KV cache ${fmtShape(['L=4', 'T=4', 'H_KV=2', 'D=4'])} → layer ${view.layer} → ${wordKind} → token ${view.position} ("${prompt[view.position]}") → slice ${fmtShape(view.shape)}`),
-    );
-    ui.renderMatrix(sliceEl, view.values, {
-      label: `${view.path}, shape ${fmtShape(view.shape)} (toy values)`,
-      rowLabels: Array.from({ length: view.shape[0] }, (_, h) => `KV head ${h}`),
-      colLabels: Array.from({ length: view.shape[1] }, (_, d) => `d${d}`),
-      role: kind,
-      digits: 1,
-    });
-    out.textContent = `${view.path} has shape ${fmtShape(view.shape)}: ${view.elements} elements, ${view.bytes} bytes at fp16. The whole ${view.tensorName} ${fmtShape(view.fullShape)} has ${view.fullElements} elements (${view.fullBytes} bytes); `
-      + `one position across all ${HIERARCHY_DIMS.layers} layers, keys and values together, costs ${view.perPositionBothBytes} bytes.`;
-  }
-  layerSelect.addEventListener('change', render);
-  positionSelect.addEventListener('change', render);
-  for (const radio of doc.querySelectorAll('input[name="hier-kind"]')) radio.addEventListener('change', render);
-  render();
-}
-
 function mountPrefill(doc) {
   const maskEl = doc.getElementById('prefill-mask');
   const cacheEl = doc.getElementById('prefill-cache');
@@ -451,7 +417,6 @@ function mountExtrapolation(doc) {
 }
 
 export function mount(doc) {
-  mountHierarchy(doc);
   mountPrefill(doc);
   const highlight = mountComparison(doc);
   mountDecode(doc, highlight);
