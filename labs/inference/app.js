@@ -34,8 +34,8 @@ function draw(focus){
  if(!saved.scenes[id])saved.scenes[id]={event:['decode','recap'].includes(id)?(id==='decode'?2:3):0,version};
  const state=saved.scenes[id],root=$('#scene');
  disposeVisual(root);root.classList.remove('teaching-visual','is-playing');
- const visualTypes={prefill:'request',decode:'request',recap:'request',cache:'request',qkv:'projections',scores:'scores',mix:'values',handoff:'prediction',validity:'validity',prefix:'prefix'};
- if(visualTypes[id]){root.replaceChildren();mountLearningVisual(root,visualTypes[id],{rows:saved.embeddings,pass:['decode','cache'].includes(id)?1:0,onPosition:position=>{saved.attention={position};persist();}});return;}
+ const visualTypes={prefill:'request',decode:'request',recap:'recap',cache:'request',qkv:'projections',scores:'scores',mix:'values',handoff:'prediction',validity:'validity',prefix:'prefix'};
+ if(visualTypes[id]){root.replaceChildren();mountLearningVisual(root,visualTypes[id],{rows:saved.embeddings,requestScope:{prefill:'prefill',cache:'cache'}[id],requestReview:'#decode',pass:['decode','cache'].includes(id)?1:0,onPosition:position=>{saved.attention={position};persist();}});return;}
  if(id==='attention'){root.replaceChildren();mountVectorRoutes(root);return;}
  if(['qkv','scores','mix'].includes(id)){delete state.first;state.position=saved.attention?.position??state.position??2;saved.attention={position:state.position};}
  const expanded=new Set([...root.querySelectorAll('details')].filter(d=>d.open).map(d=>d.querySelector('summary').textContent));

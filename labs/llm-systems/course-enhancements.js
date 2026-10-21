@@ -15,7 +15,7 @@ export function enhanceCourse(doc){
   const prefill=doc.getElementById('s2-4-3');
   const depth=prefill?.querySelector(':scope > .course-detail > div');
   if(depth)depth.prepend(...prefill.querySelectorAll(':scope > .course-core'));
-  replace('s2-4-3','request',{prompt:['The','sky','is','blue'],answer:['and','the','sun','shines','.']});
+  replace('s2-4-3','request',{requestScope:'prefill',prompt:['The','sky','is','blue'],answer:['and','the','sun','shines','.']});
   const section=doc.getElementById('s2-4-4'),existing=section?.querySelector('.lab');
   if(existing){
    // Retain the detailed simulator and its links to projection counters in place.
@@ -26,7 +26,7 @@ export function enhanceCourse(doc){
    existing.querySelector('.lab-guide').hidden=true;
    existing.querySelector('.lab-header h3').textContent='Expanded numeric state';
    const root=doc.createElement('div');root.className='lab';detail.before(root);
-   mountLearningVisual(root,'request',{pass:1,minPass:1,prompt:['The','sky','is','blue'],answer:['and','the','sun','shines','.'],onFrame:frame=>doc.dispatchEvent(new CustomEvent('course:decode-frame',{detail:frame}))});
+   mountLearningVisual(root,'request',{requestScope:'decode',prompt:['The','sky','is','blue'],answer:['and','the','sun','shines','.'],onFrame:frame=>doc.dispatchEvent(new CustomEvent('course:decode-frame',{detail:frame}))});
   }
  }
 }

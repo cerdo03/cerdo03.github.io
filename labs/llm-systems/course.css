@@ -327,3 +327,10 @@
 @media (max-width: 640px) {
   .llm-course .studio-projections [data-output] { margin-top: 0; }
 }
+
+/* Pair foreground and background for scoped request controls. */
+.llm-course [data-scoped-request] .visual-actions button:hover:not(:disabled),
+.llm-course [data-scoped-request] .visual-actions button:focus-visible:not(:disabled) {
+  color: var(--on-accent);
+  background: var(--accent);
+}

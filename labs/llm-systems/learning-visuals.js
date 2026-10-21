@@ -137,14 +137,17 @@ function request(s,rows,options){
  if(s.stage===5)graph+=`<path class="route-edge ${s.stage===5?'is-active':''}" d="M 885 ${resultY+35} H 895 V ${bottom-15} H 210 V ${bottom}"/><path class="visual-arrow ${s.stage===5?'is-active':''}" transform="translate(210 ${bottom}) rotate(90)" d="M -6 -4 L 0 0 L -6 4"/>`;
 
  const titles=['New input','Calculate Q/K/V','Read keys and score','Mix values','Store new K/V','Choose next token'];
- const controls=select('pass','Pass',Array.from({length:(options.answer||['blue','today','.']).length},(_,p)=>[p,p===0?'Prefill':`Decode ${p}`]).filter(([p])=>p>=(options.minPass||0)),s.pass)+select('query',s.pass===0?'Inspect prompt query':'Current query',f.input.map((t,i)=>[i,t]),Math.min(s.query,f.input.length-1),s.pass!==0);
+ const scope=options.requestScope;
+ const passes=select('pass','Pass',Array.from({length:(options.answer||['blue','today','.']).length},(_,p)=>[p,p===0?'Prefill':`Decode ${p}`]).filter(([p])=>p>=(scope==='decode'?1:options.minPass||0)),s.pass);
+ const queries=select('query','Inspect prompt query',f.input.map((t,i)=>[i,t]),Math.min(s.query,f.input.length-1));
+ const controls=(scope==='prefill'||scope==='cache'?'':passes)+(s.pass===0?queries:'');
  const captions=[s.pass===0?'All prompt positions are supplied together. Select a query to inspect its allowed keys.':`“${f.input[0]}” was chosen in the preceding pass. It now enters the model; earlier positions supply cached K/V.`,
  'Multiply each new position’s x by three learned matrices: Q = x × WQ, K = x × WK, V = x × WV. Each output component is a sum of products. Q/K score compatibility; V supplies information. Old cache rows are not used to create these new projections.',
  'For each allowed key, multiply matching Q/K components, add them, then divide by √2: one score per key. Later positions are masked. Softmax converts the allowed scores into shares summing to 1.',
  'Multiply each V component by that position’s softmax share, then add contributions component by component. This head result continues through the model; it never replaces cached K/V.',
  'Store the new K/V rows. Earlier rows retain exactly the same numbers. The drawing groups operations for teaching; real engines may store new K/V before attention.',
  `The final-layer output supplies vocabulary scores, then a token is chosen. “${f.next}” is scripted for this trace and remains outside the cache until its next pass.`];
- return {graph:svg(graph,height,'New input, fresh projections, cache reads, head result and chosen output'),controls,max:5,title:titles[s.stage],caption:captions[s.stage],note:'One first-layer head shown; every layer has its own cache. Trace continuation is scripted, not predicted by this tiny head.'};
+ return {graph:svg(graph,height,'New input, fresh projections, cache reads, head result and chosen output'),controls,max:scope==='cache'?4:5,title:titles[s.stage],caption:scope==='cache'&&s.stage===1?'Known input: “blue” is being processed. Its fresh Q/K/V are shown; the three earlier cached rows stay unchanged. Next compares reading those rows, computing a head result, and storing only the new K/V.':captions[s.stage],note:'One first-layer head shown; every layer has its own cache. Trace continuation is scripted, not predicted by this tiny head.'};
 }
 function heads(s){
  const stage=s.stage;let graph=node(15,135,165,'Whole incoming x',['x₁ x₂ x₃ x₄'],stage===0);
@@ -210,20 +213,31 @@ function prediction(s,rows){
  return {graph:svg(graph,470,'Toy block output calculated through vocabulary projection, probabilities and token selection'),controls:select('candidate','Inspect vocabulary column',p.tokens.map((t,i)=>[i,t]),j,stage<2),max:4,caption:['At “is”, each layer reads its own allowed context. These numerical attention results use the same starting embeddings and Q/K/V matrices as the first-layer example.','Add incoming x to the attention update. Our deliberately tiny FF branch returns 0.1u; adding it gives 1.1u. All three positions pass through both layers, although only “is” is displayed.','A vocabulary matrix has one column per candidate token. Multiply final h by a column and add the products: one score (logit). Select another candidate to inspect its column.','Softmax over vocabulary logits gives next-token probabilities. These are calculated from h, not attention shares over The/sky/is.','Greedy selection chooses the largest score. A sampled choice may differ; neither choice processes the chosen token.'][stage],note:'Separate complete toy model: 2 layers, 1 head, identity output projections, identical Q/K/V matrices in both toy layers, linear FF = 0.1u, no normalization/positions. Vocabulary [[0.2, −0.15, 0.1], [−0.1, 0.2, 0.05]]. All values calculated; not trained-model predictions.'};
 }
 function dependencies(s,type){
- const d=dependencyState(s.change);let graph='';
+ const fixed=type==='prefix',change=fixed?2:s.change,stage=fixed?2:s.stage;
+ const d=dependencyState(change);let graph=fixed?'<text class="visual-label" x="25" y="20">Request A · cached beginning</text><text class="visual-label" x="25" y="205">Request B · changed middle</text>':'';
  const columns=[25,245,465,685];
  for(let i=0;i<4;i++){
-  graph+=node(columns[i],20,185,`Cached: ${d.a[i]}`,['K/V across model layers']);
-  if(s.stage>=1){graph+=edge(columns[i]+90,86,columns[i]+90,200,true,d.reused[i]?'reuse':'invalidate');graph+=node(columns[i],200,185,`New: ${d.b[i]}`,[d.reused[i]?'Same K/V retained':'Recompute position state'],!d.reused[i]);}
-  if(s.stage>=2&&i===s.change)for(let j=i+1;j<4;j++){const from=columns[i]+90,to=columns[j]+90,bend=300+(j-i)*20;graph+=`<path class="route-edge is-active" d="M ${from} 266 C ${from} ${bend}, ${to} ${bend}, ${to} 266"/><path class="visual-arrow is-active" transform="translate(${to} 266) rotate(-90)" d="M -6 -4 L 0 0 L -6 4"/>`;}
+  graph+=node(columns[i],fixed?40:20,185,`Cached: ${d.a[i]}`,['K/V across model layers']);
+  if(stage>=1){graph+=edge(columns[i]+90,fixed?106:86,columns[i]+90,fixed?225:200,true,d.reused[i]?'reuse':'invalidate');graph+=node(columns[i],fixed?225:200,185,`New: ${d.b[i]}`,[d.reused[i]?'Same K/V retained':'Recompute position state'],!d.reused[i]);}
+  if(stage>=2&&i===change)for(let j=i+1;j<4;j++){const from=columns[i]+90,to=columns[j]+90,bend=300+(j-i)*20;graph+=`<path class="route-edge is-active" d="M ${from} ${fixed?291:266} C ${from} ${bend}, ${to} ${bend}, ${to} ${fixed?291:266}"/><path class="visual-arrow is-active" transform="translate(${to} ${fixed?291:266}) rotate(-90)" d="M -6 -4 L 0 0 L -6 4"/>`;}
  }
- if(s.change===-1&&s.stage>=1)graph+=node(685,315,185,'Appended: today',['New position → new K/V'],true);
+ if(change===-1&&stage>=1)graph+=node(685,315,185,'Appended: today',['New position → new K/V'],true);
  const options=[[-1,'Append “today”'],[0,'Change The → Our'],[1,'Change sky → sea'],[2,'Change is → looks'],[3,'Change blue → gray']];
- return {graph:svg(graph,420,'Changed-token causal dependencies and reusable prefix'),controls:select('change',type==='prefix'?'Compare requests':'Modify the sequence',options,s.change),max:2,caption:[`Original request: ${d.a.join(' ')}. ${type==='prefix'?'Compare a second compatible request.':'Inspect whether earlier cached state stays valid.'}`,`${d.match} identical beginning positions can reuse K/V. ${s.change===-1?'Appending does not change earlier causal inputs.':'The changed position and later positions need fresh whole-model state—even unchanged words can receive different context in deeper layers.'}`,s.change===-1?'The new position reads the retained prefix K/V. Only its own K/V is newly calculated.':`Following the arrows shows potential dependencies, not guaranteed numerical changes. “${d.b.at(-1)}” ${d.a.at(-1)===d.b.at(-1)?'has the same spelling, but a different earlier context.':'belongs to the changed suffix.'}`][s.stage],note:'Whole-position cache compatibility, across model layers. First-layer token-local K/V can stay numerically the same while deeper-layer states change. Reuse also requires matching model parameters, positions and relevant settings. Serving engines may reuse only complete blocks; fully cached prompts may still need boundary work for logits.'};
+ return {graph:svg(graph,420,'Changed-token causal dependencies and reusable prefix'),controls:fixed?'':select('change','Modify the sequence',options,change),max:fixed?0:2,caption:fixed?'Two compatible requests: 2 identical beginning positions reuse K/V. Request B changes “is” to “looks”; “blue” has the same spelling but a different earlier context, so both later positions need fresh whole-model state. Reuse requires matching effective model parameters, token IDs, positions and relevant settings. Arrows show potential dependencies, not guaranteed numerical changes.':[`Original request: ${d.a.join(' ')}. Inspect whether earlier cached state stays valid.`,`${d.match} identical beginning positions can reuse K/V. ${change===-1?'Appending does not change earlier causal inputs.':'The changed position and later positions need fresh whole-model state—even unchanged words can receive different context in deeper layers.'}`,change===-1?'The new position reads the retained prefix K/V. Only its own K/V is newly calculated.':`Following the arrows shows potential dependencies, not guaranteed numerical changes. “${d.b.at(-1)}” ${d.a.at(-1)===d.b.at(-1)?'has the same spelling, but a different earlier context.':'belongs to the changed suffix.'}`][stage],note:'Whole-position cache compatibility, across model layers. First-layer token-local K/V can stay numerically the same while deeper-layer states change. Reuse also requires matching model parameters, positions and relevant settings. Serving engines may reuse only complete blocks; fully cached prompts may still need boundary work for logits.'};
+}
+function recap(rows){
+ let graph='';
+ for(let pass=0;pass<3;pass++){
+  const frame=requestFrame(pass,5,rows),x=15+pass*300;
+  graph+=node(x,25,270,pass===0?'Prefill':`Decode ${pass}`,[`Input: ${frame.input.join(' · ')}`,`${frame.cache.length} stored K/V rows`,`Chosen: ${frame.chosen} · no K/V yet`]);
+  if(pass<2)graph+=edge(x+270,85,x+300,85,true);
+ }
+ return {graph:svg(graph,180,'Fixed request trace: processed inputs, cached rows and chosen tokens'),controls:'',max:0,title:'Fixed full-request recap',caption:'This continuation is scripted: blue → today → period. Each chosen token becomes the next pass’s input. The final chosen token has no K/V until another pass processes it; generation may stop without that pass.'};
 }
 export function visualView(type,s,rows=representations,options={}){
  if(['projections','scores','values'].includes(type))return arithmetic(type,s,rows);
  if(type==='request')return request(s,rows,options);
+ if(type==='recap')return recap(rows);
  if(type==='heads')return heads(s);
  if(type==='sharing')return sharing(s,rows);
  if(type==='prediction')return prediction(s,rows);
@@ -235,6 +249,7 @@ export function ownVisual(root,cleanup){owners.set(root,cleanup);}
 export function sharedRows(){try{const rows=JSON.parse(localStorage.getItem('inference-course-v4'))?.embeddings;if(rows?.length===3&&rows.every(r=>r?.length===2&&r.every(x=>Number.isFinite(x)&&Math.abs(x)<=4)))return rows;}catch{/* Optional storage. */}return representations;}
 export function mountLearningVisual(root,type,options={}){
  disposeVisual(root);
+ root.toggleAttribute('data-scoped-request',type==='request'&&!!options.requestScope);
  let position=2;try{position=JSON.parse(localStorage.getItem('inference-course-v4'))?.attention?.position??2;}catch{/* Optional. */}
  if(['projections','scores','values'].includes(type)){
   const cleanup=mountStudio(root,type,{...options,position, getRows:()=>options.rows||sharedRows(),onPosition:value=>{
@@ -243,8 +258,11 @@ export function mountLearningVisual(root,type,options={}){
   }});
   owners.set(root,cleanup);return cleanup;
  }
- const minimum=type==='heads'?options.minStage??0:0,scopedHeads=type==='heads'&&minimum>0;
- let s={stage:options.stage??minimum,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:options.pass??0,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,inspect:false,change:type==='validity'?-1:2};
+ const requestScope=type==='request'?options.requestScope:null,scopedRequest=!!requestScope;
+ const minimum=type==='heads'?options.minStage??0:requestScope==='cache'?1:0,scopedHeads=type==='heads'&&minimum>0;
+ const initialPass=requestScope==='prefill'?0:['cache','decode'].includes(requestScope)?1:options.pass??0;
+ const maxPass=()=>requestScope==='prefill'?0:requestScope==='cache'?1:(options.answer||['blue','today','.']).length-1;
+ let s={stage:options.stage??minimum,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:initialPass,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,inspect:false,change:type==='validity'?-1:2};
  let timer=null,disposed=false;
  const stop=()=>{if(timer)clearInterval(timer);timer=null;};
  owners.set(root,()=>{disposed=true;stop();window.removeEventListener('storage',storage);});
@@ -253,13 +271,15 @@ export function mountLearningVisual(root,type,options={}){
   const previous=flowSnapshot(root);
   const view=visualView(type,s,rows(),options);
   if(scopedHeads)view.max=Math.min(view.max,options.maxStage??view.max);
-  const scope=['projections','scores','values'].includes(type)?`Prefill · layer 1 · head 1 · ${promptTokens[s.position]}`:type==='sharing'?'Prefill · layer 1 · is':type==='prediction'?'Prefill · is · two-layer numeric toy':type==='heads'?'One position · two-head schematic':type==='request'?`${s.pass===0?'Prefill':`Decode ${s.pass}`} · layer 1 · head 1`:'Compatible requests · token-level reuse';
+  const scope=['projections','scores','values'].includes(type)?`Prefill · layer 1 · head 1 · ${promptTokens[s.position]}`:type==='sharing'?'Prefill · layer 1 · is':type==='prediction'?'Prefill · is · two-layer numeric toy':type==='heads'?'One position · two-head schematic':type==='request'?`${s.pass===0?'Prefill':`Decode ${s.pass}`} · layer 1 · head 1`:type==='recap'?'One scripted request':'Compatible requests · token-level reuse';
+  const nextPass=type==='request'&&s.pass<maxPass();
+  const review=requestScope?`<p><a href="${options.requestReview||'../inference/#decode'}">Review complete request lab</a>${requestScope==='decode'?' · <a href="#s2-4-5">Compare projection counts</a>':''}</p>`:type==='recap'?'<p><a href="#decode">Review complete request lab</a></p>':type==='prefix'?'<p><a href="#validity">Experiment with cache validity</a></p>':'';
   root.classList.add('teaching-visual');root.classList.toggle('is-playing',!!timer);
-  root.innerHTML=`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions">${scopedHeads?'':'<button type="button" data-command="reset" aria-label="Reset diagram">↺</button>'}<button type="button" data-command="back" ${s.stage===minimum?'disabled':''}>← Previous</button>${scopedHeads?'':`<button type="button" data-command="play">${timer?'Pause':'Play'}</button>`}<button type="button" data-command="next" ${s.stage===view.max&&!(type==='request'&&s.pass<(options.answer||['blue','today','.']).length-1)?'disabled':''}>${s.stage===view.max&&type==='request'?'Next pass →':'Next →'}</button></div>`:''}</div><div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage-minimum+1} / ${view.max-minimum+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${scopedHeads?'<p><a href="#s2-2-1">Review complete split/join trace</a></p>':''}${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
+  root.innerHTML=`${view.controls||view.max?`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions">${scopedHeads||scopedRequest?'':'<button type="button" data-command="reset" aria-label="Reset diagram">↺</button>'}<button type="button" data-command="back" ${s.stage===minimum?'disabled':''}>← Previous</button>${scopedHeads||scopedRequest?'':`<button type="button" data-command="play">${timer?'Pause':'Play'}</button>`}<button type="button" data-command="next" ${s.stage===view.max&&!nextPass?'disabled':''}>${s.stage===view.max&&nextPass?'Next pass →':'Next →'}</button>${scopedRequest?`<button type="button" data-command="all">${s.stage===view.max?'Step by step':'Show all'}</button>`:''}</div>`:''}</div>`:''}<div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage-minimum+1} / ${view.max-minimum+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${scopedHeads?'<p><a href="#s2-2-1">Review complete split/join trace</a></p>':''}${review}${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
   renderVisualMath(root, type);
   root.querySelectorAll('[data-field]').forEach(control=>control.onchange=()=>{
    stop();const field=control.dataset.field;s[field]=field==='role'?control.value:Number(control.value);
-   if(['pass','change'].includes(field))s.stage=0;
+   if(['pass','change'].includes(field))s.stage=minimum;
    if(field==='position')s.inspect=false;
    if(field==='position')options.onPosition?.(s.position);
    if(field==='position')try{const saved=JSON.parse(localStorage.getItem('inference-course-v4'))||{};saved.attention={position:s.position};localStorage.setItem('inference-course-v4',JSON.stringify(saved));}catch{/* Optional. */}
@@ -269,7 +289,7 @@ export function mountLearningVisual(root,type,options={}){
    const command=button.dataset.command;
    if(command==='play'){
     if(timer)stop();else{if(s.stage===view.max)s.stage=minimum;timer=setInterval(()=>{if(disposed||!root.isConnected||!root.getClientRects().length){stop();return;}if(s.stage>=visualView(type,s,rows(),options).max){stop();render();return;}s.stage++;render();},1600);}
-   }else{stop();if(command==='overview')s.inspect=false;if(command==='reset'){s.stage=minimum;s.inspect=false;}if(command==='back')s.stage=Math.max(minimum,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(type==='request'){s.pass++;s.stage=0;}}}
+   }else{stop();if(command==='overview')s.inspect=false;if(command==='reset'){s.stage=minimum;s.inspect=false;}if(command==='all')s.stage=s.stage===view.max?minimum:view.max;if(command==='back')s.stage=Math.max(minimum,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(nextPass){s.pass++;s.stage=minimum;}}}
    render(command==='overview'?`[data-pick="${type==='projections'?`projection:${s.role}:${s.component}`:type==='scores'?`key:${s.key}`:`component:${s.component}`}"]`:`[data-command="${command}"]`);
   });
   root.querySelectorAll('[data-pick]').forEach(target=>{
