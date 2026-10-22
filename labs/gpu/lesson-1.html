@@ -29,6 +29,12 @@
 <p>An <strong>SM (streaming multiprocessor)</strong> is a hardware unit on an NVIDIA GPU that executes threads from assigned blocks. A <strong>warp</strong> is a group of 32 threads within a block; a <strong>lane</strong> is a thread’s position within its warp, numbered 0–31. One SM can host multiple blocks. The explorer separates this hardware placement from the grid’s logical grouping.</p>
 <p>For the mapping below, <strong>ceil</strong> means round up: any leftover outputs need another block. A <strong>guard</strong> checks whether a thread’s output index is in range before it loads inputs or stores a result.</p></div>
 
+<div class="course-core"><h3>Follow one output through the hardware</h3>
+<p>Plain version: a <strong>thread</strong> is one worker that computes one output number. A <strong>warp</strong> is 32 workers that move through instructions together. A <strong>block</strong> is a team of threads that can share scratch memory. An <strong>SM</strong> is the chip unit that runs blocks. Only the SM is physical hardware; the other three are bookkeeping that groups work.</p></div>
+
+<div class="lab" data-gpu-lab="thread" role="group" aria-label="Follow one output number through threads, blocks, warps and SMs"><h3>Follow one output number</h3><p class="gpu-static">Example: output 999 of 1,000, with 128 threads per block. It is thread 103 of block 7, in warp 3, lane 7. Block 7 runs on one SM; the model does not pick which one.</p>
+</div>
+
 <div class="lab" data-gpu-lab="execution" role="group" aria-label="Map work onto a GPU"><h3>Map work onto a GPU</h3><p class="gpu-static">Example: 1,000 output elements with 128 threads/block need 8 blocks. The last warp has 8 valid output lanes and 24 guarded lanes. A block stays on one SM during ordinary execution; a warp contains 32 CUDA threads.</p>
 </div>
 

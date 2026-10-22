@@ -53,6 +53,27 @@ function steps(host, maximum, render, compact = false) {
   host.append(bar);paint();
   return () => { step = 0;paint(); };
 }
+function thread(root) {
+  const {controls,body,output} = setup(root), scene = element('div',undefined,'gpu-flow');
+  body.append(scene);
+  // Fixed example: 1,000 outputs, 128 threads per block. Changing the output index changes the chain.
+  const outputs = 1000, perBlock = 128;
+  const pick = control(controls,'Follow output number',[[0,'0 (first)'],[127,'127 (end of block 0)'],[500,'500 (middle)'],[999,'999 (last)']],999,()=>refresh());
+  let refresh = () => {};
+  refresh = steps(root,4,step => {
+    const index = +pick.value, block = Math.floor(index / perBlock), inBlock = index % perBlock;
+    const warp = Math.floor(inBlock / 32), lane = inBlock % 32;
+    const chain = [
+      ['1. Output number', `Output ${index} of ${outputs}. This one number needs one dot product. Other outputs are independent of it.`],
+      ['2. Thread', `One thread computes output ${index}. Its global number is ${index}. Thread index inside its block = ${index} mod ${perBlock} = ${inBlock}.`],
+      ['3. Block', `Block ${block} = floor(${index} / ${perBlock}) = ${block}. A block is a team of ${perBlock} threads that can share scratch memory.`],
+      ['4. Warp and lane', `Warp ${warp} of block ${block}, lane ${lane}. A warp is 32 threads that issue instructions together; lane ${lane} is this thread's slot.`],
+      ['5. SM (hardware)', `Block ${block} stays on one SM. Which SM and when are not set by this model. The SM is the chip unit that runs the block; it is not a thread or a block.`]
+    ];
+    flow(scene,chain,step);
+    output.textContent=`Step ${step+1} of 5. ${step===4?'Thread, block and warp describe work. The SM is the hardware that runs it.':'Press Next to follow the same output number through the next level.'}`;
+  },true);
+}
 function execution(root) {
   const {controls,body,output} = setup(root), scene = element('div',undefined,'gpu-flow'), lanes = element('div',undefined,'gpu-lanes');body.append(scene,lanes);
   let refresh = () => {};
@@ -191,7 +212,7 @@ function kv(root) {
     output.textContent=`${num(a.kvBytes)} raw KV bytes per step under perfect grouped-query reuse. Doubling context or sequences doubles read payload and work here; reducing KV heads reduces payload but leaves query-head work unchanged. Not full attention traffic, HBM measurement or token latency.`;
   }draw();
 }
-const mounts={execution,residency,coalescing,matmul,tiling,roofline:roof,phases,kv};
+const mounts={thread,execution,residency,coalescing,matmul,tiling,roofline:roof,phases,kv};
 for(const root of document.querySelectorAll('[data-gpu-lab]'))mounts[root.dataset.gpuLab]?.(root);
 for(const root of document.querySelectorAll('[data-check]'))for(const button of root.querySelectorAll('button'))button.addEventListener('click',()=>{
   for(const sibling of root.querySelectorAll('button'))sibling.setAttribute('aria-pressed',String(sibling===button));
