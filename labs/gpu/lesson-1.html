@@ -24,13 +24,24 @@
 <div class="course-core gpu-formula"><var>Y</var>[<var>i</var><sub>row</sub>, <var>j</var><sub>col</sub>] = Σ over <var>p</var><sub>sum</sub> from 0 to <var>k</var><sub>inner</sub> − 1 of <var>U</var>[<var>i</var><sub>row</sub>, <var>p</var><sub>sum</sub>] × <var>W</var>[<var>p</var><sub>sum</sub>, <var>j</var><sub>col</sub>]. Here <var>i</var><sub>row</sub> selects a row, <var>j</var><sub>col</sub> a column, and <var>p</var><sub>sum</sub> walks through the shared width.</div>
 
 <div class="course-core"><h3>Work groups and hardware</h3>
-<p>A <strong>kernel</strong> is a GPU function launched to do a task. A <strong>grid</strong> is the collection of blocks in that launch. A <strong>thread</strong> is one logical instance of the function; in this example, it computes one output element.</p>
-<p>A <strong>block</strong> is a group of threads that can share temporary storage (shared memory) and wait for one another at synchronization points. “128 threads per block” means grouping the output work into groups of 128. A block is a work group, not a physical processor.</p>
-<p>An <strong>SM (streaming multiprocessor)</strong> is a hardware unit on an NVIDIA GPU that executes threads from assigned blocks. A <strong>warp</strong> is a group of 32 threads within a block; a <strong>lane</strong> is a thread’s position within its warp, numbered 0–31. One SM can host multiple blocks. The explorer separates this hardware placement from the grid’s logical grouping.</p>
-<p>For the mapping below, <strong>ceil</strong> means round up: any leftover outputs need another block. A <strong>guard</strong> checks whether a thread’s output index is in range before it loads inputs or stores a result.</p></div>
-
-<div class="course-core"><h3>Follow one output through the hardware</h3>
-<p>Plain version: a <strong>thread</strong> is one worker that computes one output number. A <strong>warp</strong> is 32 workers that move through instructions together. A <strong>block</strong> is a team of threads that can share scratch memory. An <strong>SM</strong> is the chip unit that runs blocks. Only the SM is physical hardware; the other three are bookkeeping that groups work.</p></div>
+<p>Two different things are easy to mix up. <strong>Work groups</strong> are labels that organize the job; they are not machines. The <strong>SM</strong> (streaming multiprocessor) is the physical hardware that runs a group. Example: 1,000 outputs with 128 threads per block.</p>
+<figure class="gpu-nest" role="group" aria-labelledby="gpu-nest-cap">
+<div class="gpu-nest-side"><p class="gpu-nest-title">Work groups (labels, not hardware)</p>
+<div class="gpu-box gpu-logical"><span><strong>Grid</strong>: the whole launch, 1,000 outputs</span>
+<div class="gpu-box gpu-logical"><span><strong>Block</strong>: 128 threads; 8 blocks here</span>
+<div class="gpu-box gpu-logical"><span><strong>Warp</strong>: 32 threads; 4 per block</span>
+<div class="gpu-box gpu-logical"><span><strong>Thread</strong>: computes 1 output</span></div></div></div></div></div>
+<p class="gpu-nest-link" aria-hidden="true">each block runs on one</p>
+<div class="gpu-nest-side"><p class="gpu-nest-title">Hardware (physical chip)</p>
+<div class="gpu-box gpu-physical"><span><strong>SM</strong>: runs the threads of the blocks assigned to it</span><span>One SM can hold several blocks at once.</span></div></div>
+<figcaption id="gpu-nest-cap">Read inside out: threads form a warp, warps form a block, blocks form the grid. Dashed boxes are labels; the solid box is a chip component. The last block is partly empty because 1,000 is not a multiple of 128.</figcaption></figure>
+<dl class="gpu-terms">
+<dt>Kernel</dt><dd>The GPU function that is launched. Here, one dot product per output.</dd>
+<dt>Block</dt><dd>Threads that can share scratch memory (shared memory) and wait for each other.</dd>
+<dt>Lane</dt><dd>A thread&rsquo;s slot, numbered 0&ndash;31, inside its warp.</dd>
+<dt>ceil</dt><dd>Round up: leftover outputs still need a whole extra block.</dd>
+<dt>Guard</dt><dd>A check that skips a thread whose output number is out of range.</dd>
+</dl></div>
 
 <div class="lab" data-gpu-lab="thread" role="group" aria-label="Follow one output number through threads, blocks, warps and SMs"><h3>Follow one output number</h3><p class="gpu-static">Example: output 999 of 1,000, with 128 threads per block. It is thread 103 of block 7, in warp 3, lane 7. Block 7 runs on one SM; the model does not pick which one.</p>
 </div>

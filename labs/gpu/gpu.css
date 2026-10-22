@@ -64,3 +64,23 @@
   .gpu-course .gpu-memory-scopes { grid-template-columns: 1fr; }
   .gpu-course .gpu-resident-slots { grid-template-columns: repeat(4,minmax(0,1fr)); }
 }
+
+.gpu-course .gpu-nest { display: grid; grid-template-columns: minmax(0,3fr) auto minmax(0,2fr); gap: 12px; align-items: center; margin: 20px 0; }
+.gpu-nest .gpu-nest-title { margin: 0 0 8px; font-weight: 600; }
+.gpu-nest .gpu-nest-link { margin: 0; color: var(--accent); font-weight: 600; text-align: center; }
+.gpu-nest .gpu-nest-link::after { content: ' \2192'; }
+.gpu-nest .gpu-box { display: grid; gap: 8px; padding: 10px 12px; border-radius: 6px; background: var(--surface-alt); }
+.gpu-nest .gpu-box > span { display: block; }
+.gpu-nest .gpu-logical { border: 2px dashed var(--muted); }
+.gpu-nest .gpu-physical { border: 2px solid var(--accent); background: var(--accent-soft); }
+.gpu-nest figcaption { grid-column: 1 / -1; font-size: 0.9rem; color: var(--muted); max-width: 80ch; }
+.gpu-course .gpu-terms { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; max-width: 80ch; }
+.gpu-terms dt { font-weight: 600; }
+.gpu-terms dd { margin: 0; }
+@media (max-width: 700px) {
+  .gpu-course .gpu-nest { grid-template-columns: 1fr; }
+  .gpu-nest .gpu-nest-link { text-align: left; }
+  .gpu-nest .gpu-nest-link::before { content: '\2193\00a0'; }
+  .gpu-nest .gpu-nest-link::after { content: none; }
+  .gpu-course .gpu-terms { grid-template-columns: 1fr; }
+}
