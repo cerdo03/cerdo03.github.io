@@ -24,3 +24,13 @@
   .math-key > div { grid-template-columns: minmax(0, 1fr); gap: 0.2rem; }
   .math-example { padding: 0.75rem; }
 }
+
+/* Keep the optional progress controls readable through the topic hover rule. */
+[data-math-progress] button:hover:not(:disabled),
+[data-math-progress] button:focus-visible:not(:disabled),
+[data-math-reset]:hover:not(:disabled),
+[data-math-reset]:focus-visible:not(:disabled) {
+  color: var(--on-accent);
+  background: var(--accent-hover);
+  border-color: var(--accent);
+}
