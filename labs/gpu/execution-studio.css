@@ -53,7 +53,7 @@
 .execution-studio .execution-drawing .output-selected text { fill: var(--on-accent); font-size: 8px; font-weight: 700; }
 .execution-studio .execution-drawing .placed-block { fill: var(--success-soft); stroke: var(--success); stroke-width: .7; }
 .execution-studio .execution-drawing .placed-selected { fill: var(--accent); stroke: var(--ink); }
-.execution-studio .execution-drawing .placed-label { fill: var(--ink); font-size: 6px; }
+.execution-studio .execution-drawing .placed-label { fill: var(--ink); font-size: 8px; }
 .execution-studio .execution-drawing .placed-selected-label { fill: var(--on-accent); }
 .execution-studio .execution-drawing .zoom-bracket { fill: none; stroke: var(--accent); stroke-width: 1.5; }
 .execution-studio .execution-drawing .arrival { animation: execution-arrive var(--execution-duration) ease-out both; }
@@ -170,3 +170,18 @@
 .execution-studio .execution-drawing .lens-number { font-size: 9px; fill: var(--ink); }
 .execution-studio .execution-drawing .lens-selected-number { fill: var(--on-accent); font-weight: 700; }
 .execution-studio .execution-drawing .lens-anchor { fill: var(--accent); stroke: var(--paper); stroke-width: 1.5; }
+/* A lifted work sheet makes each grouping change visible over the same GPU. */
+.execution-studio .execution-drawing .work-surface { fill: var(--card); stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 3; }
+.execution-studio .execution-drawing .work-guide { fill: none; stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 3 3; }
+.execution-studio .execution-drawing .work-thread { fill: var(--success-soft); stroke: var(--success); stroke-width: .8; }
+.execution-studio .execution-drawing .work-selected { fill: var(--accent); stroke: var(--ink); stroke-width: 1.8; }
+.execution-studio .execution-drawing .work-guarded { fill: var(--paper); stroke: var(--muted); stroke-dasharray: 2 1; }
+.execution-studio .execution-drawing .work-title { font-size: 10px; font-weight: 700; fill: var(--ink); }
+.execution-studio .execution-drawing .work-caption { font-size: 8px; fill: var(--ink); }
+.execution-studio .execution-drawing .work-lane-label { font-size: 8px; fill: var(--ink); }
+.execution-studio .execution-drawing .work-on-selected { font-size: 10px; fill: var(--on-accent); }
+.execution-studio .execution-drawing .work-value { font-size: 18px; font-weight: 700; }
+.execution-studio .execution-drawing .gpu-work-layer { animation: gpu-work-reveal var(--execution-duration) ease-out both; }
+.execution-studio .execution-drawing .placed-block { animation: gpu-placement-reveal var(--execution-duration) ease-out both; }
+@keyframes gpu-work-reveal { from { transform: translateY(24px); } to { transform: translateY(0); } }
+@keyframes gpu-placement-reveal { from { stroke-width: 4; } to { stroke-width: .7; } }

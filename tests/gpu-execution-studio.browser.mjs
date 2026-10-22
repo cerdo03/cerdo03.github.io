@@ -49,3 +49,42 @@ test('scene supports keyboard component inspection and narrow reduced-motion lay
   }
  }finally{await page.close();}
 });
+test('primary walkthrough reveals GPU work and computes before placing the selected block',async()=>{
+ const page=await browser.newPage({viewport:{width:1600,height:1100},reducedMotion:'reduce'});
+ try{
+  await page.goto(base+'/labs/gpu/execution-studio.html');await page.locator('[data-execution-ready]').waitFor();
+  await page.locator('[data-next-step]').click();
+  assert.equal(await page.locator('[data-gpu-work-layer] [data-work-thread]').count(),1,'Thread step must put visible work on the GPU drawing');
+  for(let i=0;i<3;i++)await page.locator('[data-next-step]').click();
+  assert.match(await page.locator('[data-gpu-work-layer]').textContent(),/116/);
+  await page.locator('[data-next-step]').click();
+  assert.equal(await page.locator('[data-gpu-work-layer] [data-work-thread]').count(),32,'Warp must reveal all 32 logical lanes on the chip illustration');
+  await page.locator('[data-next-step]').click();
+  assert.equal(await page.locator('[data-gpu-work-layer] [data-work-thread]').count(),64,'Block must reveal its two warps');
+  await page.locator('[data-next-step]').click();
+  assert.equal(await page.locator('.sm-selected .placed-selected').count(),1,'Place it on an SM must visibly place the selected block');
+  assert.match(await page.locator('[data-address]').textContent(),/SM 2/);
+ }finally{await page.close();}
+});
+test('SM view exposes placement on its primary control without scrolling to detail controls',async()=>{
+ const page=await browser.newPage({viewport:{width:390,height:844},reducedMotion:'reduce'});
+ try{
+  await page.goto(base+'/labs/gpu/execution-studio.html');await page.locator('[data-execution-ready]').waitFor();
+  await page.getByRole('button',{name:'5. SM',exact:true}).click();
+  assert.match(await page.locator('[data-next-step]').textContent(),/Place next block/);
+  await page.locator('[data-next-step]').click();assert.equal(await page.locator('.placed-block').count(),1);
+  await page.getByLabel('Threads per block').selectOption('128');assert.equal(await page.locator('.placed-block').count(),0);
+  assert.match(await page.locator('[data-next-step]').textContent(),/Place next block/);
+ }finally{await page.close();}
+});
+test('work layer has a visible reveal with a static reduced-motion equivalent',async()=>{
+ const page=await browser.newPage({viewport:{width:1440,height:1000},reducedMotion:'no-preference'});
+ try{
+  await page.goto(base+'/labs/gpu/execution-studio.html');await page.locator('[data-execution-ready]').waitFor();await page.locator('[data-next-step]').click();
+  assert.equal(await page.locator('[data-gpu-work-layer]').evaluate(e=>getComputedStyle(e).animationName),'gpu-work-reveal');
+  assert.notEqual(await page.locator('[data-gpu-work-layer]').evaluate(e=>getComputedStyle(e).animationDuration),'0s');
+  await page.emulateMedia({reducedMotion:'reduce'});
+  assert.equal(await page.locator('[data-gpu-work-layer]').evaluate(e=>getComputedStyle(e).animationName),'none');
+  assert.equal(await page.locator('[data-gpu-work-layer] [data-work-thread]').count(),1);
+ }finally{await page.close();}
+});
