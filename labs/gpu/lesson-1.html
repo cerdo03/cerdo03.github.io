@@ -21,6 +21,7 @@
 </header>
 <section id="execution" aria-labelledby="execution-title"><h2 id="execution-title">Follow one output onto the GPU</h2>
 <p>Imagine a job that must calculate 1,000 output numbers. We will follow just one, then see how the GPU organizes that work. By the end, distinguish a work item, its group, and the hardware that runs it.</p>
+<p class="course-core"><a href="execution-studio.html">Open the visual GPU walkthrough (prototype)</a> — follow an output through an illustrated GPU, then return to this lesson. Its example and settings are separate from the walkthrough below.</p>
 <div class="lab" data-gpu-lab="thread" role="group" aria-label="Follow one output number through threads, blocks, warps and SMs"><h3>Follow one output number</h3>
 <p>Outputs are numbered 0–999. For each output, read an input row and a weight column, multiply matching entries, add the products, and store the result. This is a teaching mapping; optimized matrix implementations can divide the work differently.</p>
 <div class="gpu-thread-fallback">
