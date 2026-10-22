@@ -43,11 +43,12 @@ try {
     }
     if([320,1280].includes(width))await page.screenshot({path:resolve(out,`${theme}-${width}.png`),fullPage:true});
   }
+  const revealSizing=async()=>{if(!await page.locator('#advanced-model').evaluate(e=>e.open))await page.locator('#advanced-model > summary').click();};
   // Dense head grids must retain readable, non-overlapping labels on phones.
   for(const count of ['8','32']) {
     await page.setViewportSize({width:320,height:1000});await page.goto(base+route);
     await page.waitForFunction(()=>document.querySelector('#renderer-status').textContent.startsWith('3D ready'));
-    await page.selectOption('#query-heads',count);await page.locator('.view-shortcuts [data-view="heads"]').click();await page.waitForTimeout(120);
+    await revealSizing();await page.selectOption('#query-heads',count);await page.locator('.view-shortcuts [data-view="heads"]').click();await page.waitForTimeout(120);
     const overlaps=await page.locator('.scene-label').evaluateAll(nodes=>{const boxes=nodes.filter(n=>!n.hidden).map(n=>n.getBoundingClientRect());let overlaps=0;boxes.forEach((a,i)=>boxes.slice(i+1).forEach(b=>{if(a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top)overlaps++;}));return overlaps;});
     assert.equal(overlaps,0,`${count}-head phone label overlap`);
     await page.locator('#scene-wrap').screenshot({path:resolve(out,`phone-heads-${count}.png`)});
@@ -76,6 +77,7 @@ try {
   await page.locator('[data-node="block-0"]').click();await page.locator('[data-node="add1"]').click();
   assert.match(await page.locator('#inspector-title').textContent(),/attention update/);
   assert.equal(await page.locator('#explorer-dialog #inspector').isVisible(),true);
+  await revealSizing();
   const modalSymbol=page.locator('#head-dim').locator('..').locator('var');await modalSymbol.focus();
   assert.equal(await page.locator('#explorer-dialog .symbol-tip').isVisible(),true);
   assert.equal(await page.locator('.symbol-tip [data-symbol]').count(),0,'symbol help does not annotate its own label');
@@ -93,7 +95,7 @@ try {
   await page.locator('[data-node="attention"]').click();await page.locator('[data-node="qkv"]').click();
   await page.locator('[data-node="q"]').click();assert.match(await page.locator('#inspector-title').textContent(),/Queries/);
   await page.locator('#back').click();await page.locator('[data-node="heads"]').click();
-  await page.selectOption('#query-heads','32');await page.selectOption('#layout','GQA');await page.selectOption('#kv-heads','8');
+  await revealSizing();await page.selectOption('#query-heads','32');await page.selectOption('#layout','GQA');await page.selectOption('#kv-heads','8');
   await page.selectOption('#head-dim','128');await page.selectOption('#token-count','2048');
   assert.equal(await page.locator('[data-node^="head-"]').count(),32);
   assert.equal(await page.locator('[data-node^="kv-"]').count(),8);
@@ -102,7 +104,7 @@ try {
   await page.locator('#position').fill('0');await page.locator('#position').press('Tab');assert.match(await page.locator('#explanation').textContent(),/0 through 0/);
   await page.selectOption('#layout','MQA');assert.equal(await page.locator('[data-node^="kv-"]').count(),1);
   await page.selectOption('#layout','MHA');assert.equal(await page.locator('[data-node^="kv-"]').count(),32);
-  await page.selectOption('#query-heads','4');await page.selectOption('#layout','GQA');assert.equal(await page.locator('#kv-heads').inputValue(),'2');
+  await revealSizing();await page.selectOption('#query-heads','4');await page.selectOption('#layout','GQA');assert.equal(await page.locator('#kv-heads').inputValue(),'2');
   await page.selectOption('#token-count','3');assert.equal(await page.locator('#position').getAttribute('max'),'2');
   await page.locator('#position').fill('8');await page.locator('#position').press('Tab');assert.equal(await page.locator('#position').inputValue(),'0');
   await page.locator('.view-shortcuts [data-view="overview"]').click();

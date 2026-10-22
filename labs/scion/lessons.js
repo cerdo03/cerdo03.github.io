@@ -8,7 +8,7 @@ const git = 'https://git-scm.com/book/en/v2/Git-Internals-Git-Objects';
 
 export const lessons = [
   {
-    id: 'repo', name: 'Start with one job', title: 'A test needs code to run.',
+    id: 'repo', presentation: 'comparison', name: 'Start with one job', title: 'A test needs code to run.',
     intro: 'Imagine a small online shop. Its repository is the folder of code plus its saved history. A test job is a temporary program that checks whether the code works.',
     frames: [
       frame('Meet our shop repository', flow(card('Repository', 'shop/', files('checkout/pay.go', 'catalog/items.go', 'docs/help.md'), 'active'), card('Test job', 'Check payment code', p('Needs checkout/pay.go.<br>Does not need the help page.'))), 'Follow checkout/pay.go throughout this guide. Our imaginary payment test needs just that file; real tests often need dependencies too.'),
@@ -21,7 +21,7 @@ export const lessons = [
     note: 'Foundation: Git’s object model.', url: git
   },
   {
-    id: 'workload', name: 'Find the wasted work', title: 'Repeat that preparation.',
+    id: 'workload', presentation: 'comparison', name: 'Find the wasted work', title: 'Repeat that preparation.',
     intro: 'A setup that feels cheap once can become expensive when many short-lived jobs repeat it. Start by asking what each job actually needs.',
     frames: [
       frame('One job, one payment test', flow(card('Input', 'One saved version', p('The payment file is needed.')), card('Job 1', 'Prepare → test', p('Preparation happens before useful work.'), 'active')), 'Our example has a single job. There is little repeated work to share yet.'),
@@ -60,7 +60,7 @@ export const lessons = [
     note: 'Scion changesets record changed files relative to their first parent, in a write-ahead log.', url: source
   },
   {
-    id: 'indexes', name: 'Build answers from records', title: 'One record. Several useful views.',
+    id: 'indexes', presentation: 'comparison', name: 'Build answers from records', title: 'One record. Several useful views.',
     intro: 'Suppose you ask: “Which changes touched the payment file?” We could inspect every change record—or prepare a lookup table for that question.',
     frames: [
       frame('The saved facts', flow(card('A', 'Initial files', p('Includes pay.go.')), card('B', 'Change payment fee', p('Touches pay.go.'), 'active'), card('C', 'Edit help text', p('Touches help.md.'))), 'The history is A → B → C. Only A and B contain changes affecting the payment file.'),
@@ -108,7 +108,7 @@ export const lessons = [
     note: 'Scion separates changeset creation from ref updates; refs use compare-and-swap on a Spanner row.', url: source
   },
   {
-    id: 'failure', name: 'Keep an outage contained', title: 'A shortcut can spread a failure.',
+    id: 'failure', scope: 'Illustrative no-bypass policy, not a documented Scion error response. Specific timeouts, retries and regional recovery are not specified here.', name: 'Keep an outage contained', title: 'A shortcut can spread a failure.',
     intro: 'Here, all nearby caches start empty again. A cache miss means a reachable cache lacks an object. A cache outage means the cache cannot answer. Those are different situations.',
     frames: [
       frame('Normal request path', flow(card('Node cache', 'Ask for P7', p('No local copy.')), card('Regional cache', 'Forward a miss', p('Healthy, but missing P7.')), card('Source', 'Serve P7', p('Request reaches source.'), 'active')), 'A healthy cache can forward a miss through the intended path.'),
@@ -121,7 +121,7 @@ export const lessons = [
     note: 'Scion enforces cache tiering to prevent regional failures from overwhelming upstream servers.', url: source
   },
   {
-    id: 'recap', name: 'Put the pieces together', title: 'Trace one change into one test.',
+    id: 'recap', presentation: 'comparison', name: 'Put the pieces together', title: 'Trace one change into one test.',
     intro: 'You now have the pieces. Follow the payment edit from a new object to a file on a test job’s disk.',
     frames: [
       frame('1. Store the change', flow(card('New contents', 'P7: fee = 7', p('P5 stays unchanged.')), card('Change B', 'Parent A; pay.go → P7', p('Unchanged files remain available.'), 'active')), 'The edit adds new content and a change record. This alone does not move main.'),

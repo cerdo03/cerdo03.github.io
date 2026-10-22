@@ -49,7 +49,7 @@ function navigate(next,focusId=null,moveFocus=false){
 }
 function context(){
   const token=position<3?` · “${['The','sky','is'][position]}”`:' · schematic position (no token text assigned)';
-  $('token-context').textContent=`Inspecting position ${position}${token}. May attend positions 0–${position}; ${config.tokens-position-1} later positions masked. Full-sequence view, not a decode simulation.`;
+  $('token-context').textContent=`Inspecting position ${position}${token}. May attend positions 0–${position}; ${config.tokens-position-1} later positions masked. For each head: query row ${shapeText([1,config.headDim])}; allowed K and V, each ${shapeText([position+1,config.headDim])}; score row ${shapeText([1,position+1])}. These are allowed-row shapes, not a changing 3D mask or numerical attention weights. Full-sequence view, not a decode simulation.`;
 }
 function renderMemory(){
   $('memory-bars').replaceChildren();

@@ -23,20 +23,30 @@
       <p class="eyebrow">Module 2 · Interactive companion</p>
       <h1>Inside a Transformer</h1>
       <p class="lede">One vector per token. Two decoder blocks. Follow how attention updates each position.</p>
+      <p>Component buttons provide every explanation and shape. The 3D scene is an optional spatial companion to the same components.</p>
       <p>Start from <a href="../lesson-3.html">2.3 · MHA / GQA / MQA</a>; review <a href="../lesson-1.html">2.1 · Self-attention</a> or <a href="../lesson-2.html">2.2 · Multiple heads</a>. Residual paths, normalization, FFN and memory details are optional previews.</p>
     </header>
     <noscript><p>JavaScript enables the interactive views. Read the architecture summary and linked lessons below; all course links remain available.</p></noscript>
     <div id="explorer" class="explorer">
     <div class="explorer-modebar"><strong>Interactive model</strong><button id="expand-explorer" type="button" aria-haspopup="dialog" aria-expanded="false" hidden>Expand explorer</button></div>
-    <details id="model-settings" class="model-settings" open><summary>Model controls</summary>
+    <details id="model-settings" class="model-settings" open><summary>Layout and selected query</summary>
     <div class="explorer-controls" role="group" aria-label="Shared model configuration">
       <label>Layout<select id="layout"><option value="MHA">MHA · separate K/V</option><option value="GQA">GQA · grouped K/V</option><option value="MQA">MQA · one shared K/V</option></select></label>
-      <label>Query heads <var>H</var><sub>q</sub><select id="query-heads"><option>4</option><option selected>8</option><option>16</option><option>32</option></select></label>
+
       <label>KV heads <var>H</var><sub>KV</sub><select id="kv-heads" disabled><option selected>8</option></select></label>
-      <label>Head width <var>D</var><select id="head-dim"><option>16</option><option>32</option><option selected>64</option><option>128</option></select></label>
-      <label>Token count <var>T</var><select id="token-count"><option selected>3</option><option>8</option><option>128</option><option>2048</option><option>8192</option></select></label>
+
+
       <label>Inspect position<input id="position" type="number" min="0" max="2" value="2" step="1"></label>
     </div>
+    <div class="token-context" id="token-context" role="status">Position 2 · “is” · allowed context: positions 0–2.</div>
+    <details id="advanced-model"><summary>Advanced: model size</summary>
+      <p>Changing query count or head width changes model width: this is a different model architecture. Start with 8 queries, width 64 and 3 tokens. To compare scale alone, hold heads fixed and compare 3 with 8,192 tokens; raw KV storage grows linearly with sequence length.</p>
+      <div class="explorer-controls">
+        <label>Query heads <var>H</var><sub>q</sub><select id="query-heads"><option>4</option><option selected>8</option><option>16</option><option>32</option></select></label>
+        <label>Head width <var>D</var><select id="head-dim"><option>16</option><option>32</option><option selected>64</option><option>128</option></select></label>
+        <label>Token count <var>T</var><select id="token-count"><option selected>3</option><option>8</option><option>128</option><option>2048</option><option>8192</option></select></label>
+      </div>
+    </details>
     </details>
     <p id="config-summary" class="config-summary" role="status" tabindex="0">Schematic model: 2 layers · 8 query heads · 8 KV heads · head width 64 · model width 512.</p>
     <div class="workspace">
@@ -50,7 +60,7 @@
         </div>
         <p id="renderer-status" class="small">Loading local 3D renderer… Component buttons below work independently of 3D.</p>
         <p class="small">Drag to orbit · wheel / pinch to zoom · use component buttons with keyboard or touch. Arrows on focused 3D view rotate; + / − zoom; Home resets.</p>
-        <div class="token-context" id="token-context" role="status">Position 2 · “is” · allowed context: positions 0–2.</div>
+
         <details id="component-tools" class="component-tools" open><summary>Components and views</summary>
         <nav id="components" class="component-list" aria-label="Components in current view"></nav>
         <div class="view-shortcuts" role="group" aria-label="Explore architecture">

@@ -78,3 +78,13 @@ footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line)
   .scene-controls, .lesson-controls { flex-wrap: wrap; }
   .scene-controls button, .lesson-controls button { flex: 1; }
 }
+
+.scene-controls[hidden] { display: none; }
+.fixed-comparison { display: grid; gap: 22px; }
+.comparison-item { min-width: 0; }
+.comparison-item h3 { font-size: 16px; margin: 0 0 14px; }
+.fixed-comparison .caption { min-height: 0; margin: 14px 0 0; }
+@media (min-width: 1101px) {
+  .fixed-comparison { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fixed-comparison > section > .flow { grid-template-columns: 1fr; }
+}

@@ -116,3 +116,9 @@ test('uses producer identity and sequence numbers to suppress a lost-ack retry',
   assert.deepEqual(producerRetryOutcome({ idempotent: false }), { recordsInLog: 2, result: 'duplicate' });
   assert.deepEqual(producerRetryOutcome({ idempotent: true }), { recordsInLog: 1, result: 'duplicate-suppressed' });
 });
+
+test('capacity rejects nonpositive, missing or nonfinite inputs and arithmetic overflow',()=>{
+ const good={messagesPerSecond:1,messageBytes:1,fanout:1,retentionDays:1,replicationFactor:1};
+ for(const field of Object.keys(good))for(const value of [0,-1,NaN,Infinity,undefined])assert.throws(()=>estimateCapacity({...good,[field]:value}),/positive|finite|valid/i);
+ assert.throws(()=>estimateCapacity({...good,messagesPerSecond:1e308,messageBytes:1e308}),/finite|range/i);
+});

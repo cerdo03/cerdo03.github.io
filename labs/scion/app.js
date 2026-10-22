@@ -1,5 +1,5 @@
 import { lessons, cacheFrames } from './lessons.js';
-import { fetchObject, moveMain, safePosition } from './model.js';
+import { fetchObject, safePosition } from './model.js';
 
 const $ = id => document.getElementById(id);
 const storage = 'scion-visual-guide-v1';
@@ -16,14 +16,15 @@ path.innerHTML = lessons.map((lesson, i) => `<a href="#${lesson.id}"><span>${Str
 $('contents').open = window.matchMedia('(min-width: 641px)').matches;
 
 function renderFrame() {
-  const frame = currentFrames[step];
-  $('scene-title').textContent = frame.title;
-  $('diagram').innerHTML = frame.diagram;
-  $('caption').textContent = frame.caption;
-  $('frame-count').textContent = `Step ${step + 1} of ${currentFrames.length}`;
-  $('back-frame').disabled = step === 0;
-  $('next-frame').disabled = step === currentFrames.length - 1;
-  $('next-frame').textContent = step === currentFrames.length - 1 ? 'Walkthrough complete' : 'See what happens →';
+  const lesson=lessons[lessonIndex], comparison=lesson.presentation==='comparison', frame=currentFrames[step];
+  document.querySelector('.scene-controls').hidden=comparison;
+  $('frame-count').textContent=comparison?'Worked comparison':`Step ${step+1} of ${currentFrames.length}`;
+  $('scene-title').textContent=comparison?'Compare the complete worked example':frame.title;
+  $('diagram').innerHTML=comparison?`<div class="fixed-comparison">${currentFrames.map(f=>`<section class="comparison-item"><h3>${f.title}</h3>${f.diagram}<p class="caption">${f.caption}</p></section>`).join('')}</div>`:frame.diagram;
+  $('caption').textContent=comparison?'':frame.caption;$('caption').hidden=comparison;
+  $('back-frame').disabled=step===0;
+  $('next-frame').disabled=step===currentFrames.length-1;
+  $('next-frame').textContent=step===currentFrames.length-1?'Walkthrough complete':'See what happens →';
   const repeat = $('repeat');
   if (repeat) repeat.disabled = step !== currentFrames.length - 1;
 }
@@ -50,16 +51,7 @@ function renderExperiment() {
     $('repeat').addEventListener('click', () => setCache('repeat', fetchObject(copies, regionalDown).after));
     host.querySelectorAll('[data-scenario]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.scenario === scenario)));
   }
-  if (lessons[lessonIndex].id === 'main') {
-    host.innerHTML = '<section class="experiment"><h3>What if writer 2 reaches main first?</h3><p id="race" aria-live="polite">Choose a winner. Both writers still expect main to be A.</p><div class="choices"><button type="button" data-winner="B">Writer 1 first</button><button type="button" data-winner="D">Writer 2 first</button></div></section>';
-    host.querySelectorAll('[data-winner]').forEach(button => button.addEventListener('click', () => {
-      const winner = button.dataset.winner;
-      const first = moveMain('A', 'A', winner);
-      const second = moveMain(first.main, 'A', winner === 'B' ? 'D' : 'B');
-      $('race').textContent = `First update accepted: main → ${first.main}. Second update rejected: it expected A, but found ${second.main}. Main stays at ${second.main}.`;
-      host.querySelectorAll('[data-winner]').forEach(choice => choice.setAttribute('aria-pressed', String(choice === button)));
-    }));
-  }
+  if (lessons[lessonIndex].id === 'main') host.innerHTML='<p>Either writer can win. This trace fixes writer 1 first so the diagram and explanation use one consistent race. Writer 2’s saved change D is retained; it needs reconciliation with the new main before a fresh update.</p>';
   if (lessons[lessonIndex].id === 'recap') {
     host.innerHTML = '<section class="experiment"><h3>Check your mental model</h3><p>Your node has P5. A test asks for P7. What should happen?</p><div class="choices"><button type="button" data-answer="wrong">Use P5; the path is the same</button><button type="button" data-answer="right">Look for P7 in the next tier</button></div><p id="feedback" role="status">Optional check. You can always revisit any idea.</p></section>';
     host.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => {
@@ -76,6 +68,7 @@ function render(focus = false) {
   $('chapter').textContent = `Idea ${String(lessonIndex + 1).padStart(2, '0')} / ${lessons.length} · ${lessonIndex < 2 ? 'The problem' : lessonIndex < 6 ? 'The data' : lessonIndex < 9 ? 'The system' : 'Your mental model'}`;
   $('title').textContent = lesson.title;
   $('intro').textContent = lesson.intro;
+  $('model-scope').textContent=lesson.scope||'';$('model-scope').hidden=!lesson.scope;
   $('takeaway').textContent = lesson.takeaway;
   $('depth-title').textContent = lesson.depthTitle;
   $('depth-body').innerHTML = lesson.depth;
