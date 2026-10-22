@@ -54,25 +54,88 @@ function steps(host, maximum, render, compact = false) {
   return () => { step = 0;paint(); };
 }
 function thread(root) {
-  const {controls,body,output} = setup(root), scene = element('div',undefined,'gpu-flow');
-  body.append(scene);
-  // Fixed example: 1,000 outputs, 128 threads per block. Changing the output index changes the chain.
-  const outputs = 1000, perBlock = 128;
-  const pick = control(controls,'Follow output number',[[0,'0 (first)'],[127,'127 (end of block 0)'],[500,'500 (middle)'],[999,'999 (last)']],999,()=>refresh());
-  let refresh = () => {};
-  refresh = steps(root,4,step => {
-    const index = +pick.value, block = Math.floor(index / perBlock), inBlock = index % perBlock;
-    const warp = Math.floor(inBlock / 32), lane = inBlock % 32;
-    const chain = [
-      ['1. Output number', `Output ${index} of ${outputs}. This one number needs one dot product. Other outputs are independent of it.`],
-      ['2. Thread', `One thread computes output ${index}. Its global number is ${index}. Thread index inside its block = ${index} mod ${perBlock} = ${inBlock}.`],
-      ['3. Block', `Block ${block} = floor(${index} / ${perBlock}) = ${block}. A block is a team of ${perBlock} threads that can share scratch memory.`],
-      ['4. Warp and lane', `Warp ${warp} of block ${block}, lane ${lane}. A warp is 32 threads that issue instructions together; lane ${lane} is this thread's slot.`],
-      ['5. SM (hardware)', `Block ${block} stays on one SM. Which SM and when are not set by this model. The SM is the chip unit that runs the block; it is not a thread or a block.`]
+  root.querySelector('.gpu-thread-fallback')?.remove();
+  const {controls,body,output} = setup(root), outputs = 1000;
+  const job = element('p',undefined,'gpu-thread-job'), explain = element('p');body.append(job,explain);
+  const figure = element('figure',undefined,'gpu-nest gpu-thread-diagram');
+  figure.setAttribute('role','group');figure.setAttribute('aria-label','Follow the selected output through work groups and hardware');
+  function level(name, cls, tag) {
+    const box=element('div',undefined,`gpu-box gpu-logical gpu-thread-level ${cls}`),title=element(tag,name),definition=element('p');
+    box.append(title,definition);return {box,title,definition};
+  }
+  const grid=level('Grid: all blocks in this launch','gpu-thread-grid','h4');
+  const block=level('Block: threads that belong together','gpu-thread-block','h5');
+  const warp=level('Warp: 32 threads within the block','gpu-thread-warp','h6');
+  const blocks=element('div',undefined,'gpu-thread-groups'),warps=element('div',undefined,'gpu-thread-groups');
+  const lanes=element('div',undefined,'gpu-thread-lanes');lanes.setAttribute('aria-hidden','true');
+  const picked=element('p',undefined,'gpu-thread-picked');
+  grid.box.append(blocks,block.box);block.box.append(warps,warp.box);warp.box.append(lanes,picked);
+  const link=element('p','Whole block →','gpu-nest-link');link.setAttribute('aria-hidden','true');
+  const physical=element('div',undefined,'gpu-box gpu-physical gpu-thread-physical');
+  physical.append(element('h4','SM: physical hardware'),element('p'));
+  const caption=element('figcaption');figure.append(grid.box,link,physical,caption);body.append(figure);
+  const regroup=element('div'),regroupControls=element('div',undefined,'gpu-controls');
+  regroup.append(element('p','Try regrouping the same work. Keep the output fixed; change how many threads belong to a block.'),regroupControls);
+  const change=element('p',undefined,'gpu-thread-change');body.append(regroup,change);
+  let currentStep=0,previous=null;
+  const pick=control(controls,'Follow output number',[[0,'0 (first)'],[127,'127'],[500,'500 (middle)'],[999,'999 (last)']],999,()=>draw(currentStep));
+  const size=control(regroupControls,'Threads per block in this trace',[64,128,256],128,()=>draw(currentStep));
+  const check=root.parentElement.querySelector('[data-thread-check]');
+  function chips(host,count,selected,label) {
+    host.replaceChildren();
+    for(let i=0;i<count;i++){
+      const chip=element('span',`${label} ${i}${i===selected?' · selected':''}`);
+      chip.dataset.selected=String(i===selected);host.append(chip);
+    }
+  }
+  function reveal(level,at,step) {
+    const shown=step>=at;level.box.classList.toggle('is-unrevealed',!shown);
+    level.title.hidden=!shown;level.definition.hidden=!shown;
+  }
+  function draw(step) {
+    currentStep=step;
+    const index=+pick.value,perBlock=+size.value,blockIndex=Math.floor(index/perBlock),local=index%perBlock,warpIndex=Math.floor(local/32),lane=local%32;
+    const count=Math.ceil(outputs/perBlock),warpStart=blockIndex*perBlock+warpIndex*32;
+    job.textContent=`Keep this job in view: compute output ${index}. There are ${num(outputs)} outputs, numbered 0–999.`;
+    const descriptions=[
+      'One output needs one dot product: multiply an input row by a weight column and add the products. Start by following just this job.',
+      'A thread is one logical run of a GPU function, called a kernel. In this example, it owns one output. It is a work item, not a dedicated physical core.',
+      'A block groups threads that can share temporary storage (shared memory) and wait for one another. The grid is the collection of all blocks in one launch.',
+      'Inside a block, consecutive threads form warps of 32. A lane is a thread’s position 0–31 in its warp. They execute the same kernel code on their own data; branch paths can mask lanes.',
+      'An SM (streaming multiprocessor) is a physical part of the GPU that executes threads from assigned blocks. One SM can host several blocks; a block stays on one SM during ordinary execution.'
     ];
-    flow(scene,chain,step);
-    output.textContent=`Step ${step+1} of 5. ${step===4?'Thread, block and warp describe work. The SM is the hardware that runs it.':'Press Next to follow the same output number through the next level.'}`;
-  },true);
+    explain.textContent=descriptions[step];figure.hidden=step===0;figure.classList.toggle('has-hardware',step===4);
+    reveal(grid,2,step);reveal(block,2,step);reveal(warp,3,step);
+    grid.title.textContent=`Grid: ${count} blocks for this launch`;
+    grid.definition.textContent=`${num(outputs)} useful output jobs, grouped into blocks of ${perBlock} threads. Grid and block numbers organize work; they are not hardware counts.`;
+    block.box.dataset.block=String(blockIndex);block.title.textContent=`Zoom into selected block ${blockIndex}`;
+    block.definition.textContent=`${perBlock} threads in this block. Selected output ${index} belongs to thread ${local} within the block. Threads here can share temporary storage and synchronize.`;
+    warp.box.dataset.warp=String(warpIndex);warp.title.textContent=`Zoom into selected warp ${warpIndex}`;
+    warp.definition.textContent=`32 consecutive threads of block ${blockIndex}, grouped for instruction execution on their own data. Thread ${local} occupies lane ${lane}. A guard skips out-of-range output jobs before reading inputs or storing a result.`;
+    chips(blocks,count,blockIndex,'Block');chips(warps,perBlock/32,warpIndex,'Warp');
+    blocks.hidden=step<2;warps.hidden=step<3;lanes.hidden=step<3;
+    lanes.replaceChildren();
+    for(let n=0;n<32;n++){
+      const outputIndex=warpStart+n,valid=outputIndex<outputs,selected=n===lane;
+      const cell=element('span',`${n}${selected?' ★':''}`,valid?'':'masked');
+      cell.dataset.selected=String(selected);cell.dataset.output=String(outputIndex);
+      cell.setAttribute('aria-label',`Lane ${n}: ${valid?`output ${outputIndex}`:'guarded; no output'}${selected?'; selected thread':''}`);lanes.append(cell);
+    }
+    picked.textContent=`Thread: one logical run of the GPU function (kernel), not a dedicated core. ★ Selected output ${index}${step>=2?` · thread ${local} in block ${blockIndex}`:''}${step>=3?` · warp ${warpIndex}, lane ${lane}`:''}.`;
+    physical.hidden=step<4;link.hidden=step<4;
+    physical.querySelector('p').textContent=`The whole of block ${blockIndex} executes on one SM; which SM and when are unspecified. This box names the hardware type, not an assigned SM number. An SM may host multiple blocks. No schedule or timing is simulated.`;
+    caption.textContent=step<2?'The marked thread owns the same output job shown above.':step<3?'The outline follows the selected thread inside its block and grid. All indices start at 0.':`Lane labels are positions 0–31, not core numbers. ★ marks the selected thread; crossed-out lanes fail the output guard. This selected warp has ${Math.max(0,Math.min(32,outputs-warpStart))} useful output jobs.`;
+    regroup.hidden=step<2;check.hidden=step<4;
+    if(previous&&previous.size!==perBlock&&previous.index===index){
+      change.textContent=`Same output ${index}, same ${num(outputs)} useful jobs. Regrouped ${previous.size} → ${perBlock} threads/block: block ${previous.block} → block ${blockIndex}; thread ${previous.local} → ${local} within its block; warp ${previous.warp} → ${warpIndex}; lane ${lane}. The work is unchanged; this does not change the number of SMs.`;
+    }else if(previous&&previous.index!==index){
+      change.textContent=`Now following output ${index}. The same selection is marked in every revealed work group.`;
+    }
+    change.hidden=step<2||!change.textContent;
+    previous={index,size:perBlock,block:blockIndex,local,warp:warpIndex};
+    output.textContent=`Step ${step+1} of 5. ${['One output job.','One thread owns that job.','Locate that thread in its block.','Locate it within a 32-thread warp.','Work groups and hardware are different. Try regrouping, or check the distinction below.'][step]}`;
+  }
+  steps(root,4,draw,true);
 }
 function execution(root) {
   const {controls,body,output} = setup(root), scene = element('div',undefined,'gpu-flow'), lanes = element('div',undefined,'gpu-lanes');body.append(scene,lanes);

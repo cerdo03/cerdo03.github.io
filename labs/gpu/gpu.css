@@ -84,3 +84,28 @@
   .gpu-nest .gpu-nest-link::after { content: none; }
   .gpu-course .gpu-terms { grid-template-columns: 1fr; }
 }
+
+/* One selected work item stays identifiable through each revealed group. */
+.gpu-course [data-gpu-lab="thread"] [hidden], .gpu-course [data-thread-check][hidden] { display: none; }
+.gpu-course .gpu-thread-job { padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--accent-soft); font-weight: 600; }
+.gpu-thread-diagram:not(.has-hardware) { grid-template-columns: minmax(0,1fr); }
+.gpu-thread-diagram .gpu-thread-level { min-width: 0; }
+.gpu-thread-level.is-unrevealed { border: 0; padding: 0; background: none; }
+.gpu-thread-diagram h4, .gpu-thread-diagram h5, .gpu-thread-diagram h6 { margin: 0; font-size: 1rem; }
+.gpu-thread-diagram p { margin: 0; }
+.gpu-thread-groups { display: flex; flex-wrap: wrap; gap: 6px; }
+.gpu-thread-groups span { padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; font-size: 0.85rem; }
+.gpu-thread-groups [data-selected="true"] { border: 2px solid var(--accent); background: var(--accent-soft); font-weight: 600; }
+.gpu-thread-lanes { display: grid; grid-template-columns: repeat(8,minmax(0,1fr)); gap: 4px; }
+.gpu-thread-lanes span { padding: 6px 2px; border: 1px solid var(--line); text-align: center; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.gpu-thread-lanes .masked { text-decoration: line-through; color: var(--muted); }
+.gpu-thread-lanes [data-selected="true"] { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); font-weight: 700; }
+.gpu-thread-diagram .gpu-thread-picked { border-left: 3px solid var(--accent); padding: 10px; background: var(--accent-soft); font-weight: 600; }
+.gpu-course .gpu-thread-change { border-left: 3px solid var(--accent); padding: 12px; background: var(--surface-alt); }
+.gpu-thread-diagram .gpu-nest-link::after { content: none; }
+@media (max-width: 700px) {
+  .gpu-thread-diagram .gpu-thread-level { padding: 8px; }
+  .gpu-thread-diagram .gpu-thread-level.is-unrevealed { padding: 0; }
+  .gpu-thread-lanes { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .gpu-thread-diagram .gpu-nest-link::before { content: none; }
+}

@@ -19,12 +19,11 @@
 <header class="lesson-header"><p class="eyebrow">Module 3 · Lesson 1 of 5</p>
 <h1>GPU execution</h1><p>Trace a projection from mathematical work to logical threads and physical resources.</p>
 </header>
-<section id="execution" aria-labelledby="execution-title"><h2 id="execution-title">One equation, many independent outputs</h2><p>For a projection, <var>U</var> [<var>r</var><sub>rows</sub> × <var>k</var><sub>inner</sub>] multiplies weights <var>W</var> [<var>k</var><sub>inner</sub> × <var>c</var><sub>cols</sub>] to produce <var>Y</var> [<var>r</var><sub>rows</sub> × <var>c</var><sub>cols</sub>]. Each output is a dot product. Different outputs can be computed independently once the inputs exist.</p>
-
-<div class="course-core gpu-formula"><var>Y</var>[<var>i</var><sub>row</sub>, <var>j</var><sub>col</sub>] = Σ over <var>p</var><sub>sum</sub> from 0 to <var>k</var><sub>inner</sub> − 1 of <var>U</var>[<var>i</var><sub>row</sub>, <var>p</var><sub>sum</sub>] × <var>W</var>[<var>p</var><sub>sum</sub>, <var>j</var><sub>col</sub>]. Here <var>i</var><sub>row</sub> selects a row, <var>j</var><sub>col</sub> a column, and <var>p</var><sub>sum</sub> walks through the shared width.</div>
-
-<div class="course-core"><h3>Work groups and hardware</h3>
-<p>Two different things are easy to mix up. <strong>Work groups</strong> are labels that organize the job; they are not machines. The <strong>SM</strong> (streaming multiprocessor) is the physical hardware that runs a group. Example: 1,000 outputs with 128 threads per block.</p>
+<section id="execution" aria-labelledby="execution-title"><h2 id="execution-title">Follow one output onto the GPU</h2>
+<p>Imagine a job that must calculate 1,000 output numbers. We will follow just one, then see how the GPU organizes that work. By the end, distinguish a work item, its group, and the hardware that runs it.</p>
+<div class="lab" data-gpu-lab="thread" role="group" aria-label="Follow one output number through threads, blocks, warps and SMs"><h3>Follow one output number</h3>
+<p>Outputs are numbered 0–999. For each output, read an input row and a weight column, multiply matching entries, add the products, and store the result. This is a teaching mapping; optimized matrix implementations can divide the work differently.</p>
+<div class="gpu-thread-fallback">
 <figure class="gpu-nest" role="group" aria-labelledby="gpu-nest-cap">
 <div class="gpu-nest-side"><p class="gpu-nest-title">Work groups (labels, not hardware)</p>
 <div class="gpu-box gpu-logical"><span><strong>Grid</strong>: the whole launch, 1,000 outputs</span>
@@ -35,18 +34,25 @@
 <div class="gpu-nest-side"><p class="gpu-nest-title">Hardware (physical chip)</p>
 <div class="gpu-box gpu-physical"><span><strong>SM</strong>: runs the threads of the blocks assigned to it</span><span>One SM can hold several blocks at once.</span></div></div>
 <figcaption id="gpu-nest-cap">Read inside out: threads form a warp, warps form a block, blocks form the grid. Dashed boxes are labels; the solid box is a chip component. The last block is partly empty because 1,000 is not a multiple of 128.</figcaption></figure>
-<dl class="gpu-terms">
-<dt>Kernel</dt><dd>The GPU function that is launched. Here, one dot product per output.</dd>
-<dt>Block</dt><dd>Threads that can share scratch memory (shared memory) and wait for each other.</dd>
-<dt>Lane</dt><dd>A thread&rsquo;s slot, numbered 0&ndash;31, inside its warp.</dd>
-<dt>ceil</dt><dd>Round up: leftover outputs still need a whole extra block.</dd>
-<dt>Guard</dt><dd>A check that skips a thread whose output number is out of range.</dd>
-</dl></div>
+<p>Follow output 999: its global thread number is 999. With 128 threads per block it belongs to block 7, thread 103 within that block, warp 3, lane 7. A lane is a thread’s position 0–31 within its warp. The block runs on one SM; which SM is unspecified. A thread is a logical run of the GPU function, not a dedicated physical core.</p>
+<p>Regrouping into 64 threads per block preserves output 999, but changes its address to block 15, thread 39, warp 1, lane 7. The same 1,000 outputs still need computing; grouping does not create more SMs.</p>
+</div></div>
+<div class="course-core gpu-check" data-check data-thread-check><p><strong>Check the distinction:</strong> A block contains 128 threads. Does that mean it needs 128 SMs?</p>
+<button type="button" data-answer="correct">No; 128 work items in one group</button> <button type="button" data-answer="wrong">Yes; one SM for every thread</button><p class="gpu-feedback" hidden data-feedback data-explanation="128 threads per block describes 128 logical work items in one group. The block runs on one SM, and an SM can host multiple blocks. Thread count does not set the number of SMs."></p>
+<noscript><p>128 threads are logical work items in one group. Their block runs on one SM; an SM can host multiple blocks. Thread count does not set the SM count.</p></noscript></div>
+<p class="course-core">Keep this picture for the next lessons: neighboring lanes can request neighboring data; threads in a block can reuse shared memory; an SM has limited room for those blocks and their working storage.</p>
+<div class="course-core"><h3>Connect the picture to matrix multiplication</h3>
+<p>For a projection, <var>U</var> [<var>r</var><sub>rows</sub> × <var>k</var><sub>inner</sub>] multiplies weights <var>W</var> [<var>k</var><sub>inner</sub> × <var>c</var><sub>cols</sub>] to produce <var>Y</var> [<var>r</var><sub>rows</sub> × <var>c</var><sub>cols</sub>]. Each output is a dot product. Different outputs can be computed independently once the inputs exist.</p>
 
-<div class="lab" data-gpu-lab="thread" role="group" aria-label="Follow one output number through threads, blocks, warps and SMs"><h3>Follow one output number</h3><p class="gpu-static">Example: output 999 of 1,000, with 128 threads per block. It is thread 103 of block 7, in warp 3, lane 7. Block 7 runs on one SM; the model does not pick which one.</p>
+<div class="course-core gpu-formula"><var>Y</var>[<var>i</var><sub>row</sub>, <var>j</var><sub>col</sub>] = Σ over <var>p</var><sub>sum</sub> from 0 to <var>k</var><sub>inner</sub> − 1 of <var>U</var>[<var>i</var><sub>row</sub>, <var>p</var><sub>sum</sub>] × <var>W</var>[<var>p</var><sub>sum</sub>, <var>j</var><sub>col</sub>]. Here <var>i</var><sub>row</sub> selects a row, <var>j</var><sub>col</sub> a column, and <var>p</var><sub>sum</sub> walks through the shared width.</div>
 </div>
-
-<div class="lab" data-gpu-lab="execution" role="group" aria-label="Map work onto a GPU"><h3>Map work onto a GPU</h3><p class="gpu-static">Example: 1,000 output elements with 128 threads/block need 8 blocks. The last warp has 8 valid output lanes and 24 guarded lanes. A block stays on one SM during ordinary execution; a warp contains 32 CUDA threads.</p>
+<div class="course-core"><h3>Before trying a larger launch</h3>
+<dl class="gpu-terms"><dt>Kernel</dt><dd>The GPU function being launched. Every thread runs its code with its own thread index.</dd>
+<dt>Grid</dt><dd>All the blocks in that launch.</dd>
+<dt>ceil</dt><dd>Round up: leftover outputs still need another whole block.</dd>
+<dt>Guard</dt><dd>A check that skips an out-of-range thread before it reads inputs or stores an output.</dd></dl>
+</div>
+<div class="lab" data-gpu-lab="execution" role="group" aria-label="Map work onto a GPU"><h3>Try a separate launch</h3><p>This experiment changes the total output count and inspects the final warp. Its settings are separate from the selected-output walkthrough above.</p><p class="gpu-static">Example: 1,000 output elements with 128 threads/block need 8 blocks. The last warp has 8 valid output lanes and 24 guarded lanes. A block stays on one SM during ordinary execution; a warp contains 32 CUDA threads.</p>
 </div>
 
 <details class="course-detail"><summary>Indexing pseudocode and scheduling details</summary><div><p>A thread is not a dedicated physical core. Ready warps can issue instructions while others wait on dependencies. Blocks need not start together or execute in numerical order. This ordinary mapping keeps a block on one SM; it does not specify which SM or when it runs.</p>
