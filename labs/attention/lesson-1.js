@@ -246,8 +246,10 @@ function mountContext(root) {
       ? `"${SENTENCE[position]}" is the first position, so in a causal decoder it can only attend to itself.`
       : `"${SENTENCE[position]}" can read from ${visible} earlier position${visible === 1 ? '' : 's'} plus itself, each in a single attention step. The farthest visible token is ${farthest} position${farthest === 1 ? '' : 's'} back; a recurrent network would need ${farthest} sequential state update${farthest === 1 ? '' : 's'} to carry information that far.`));
   }
-  controls.replaceChildren(radioGroup(doc, { legend: 'Query position', name: 'l1-context', labels: SENTENCE.map((t, i) => `${i + 1} ${t}`), checked: SENTENCE_DEFAULT, onChange: render }));
-  render(SENTENCE_DEFAULT);
+  controls.before(para(doc, 'This comparison shows availability, not measured attention weights. One-hop access does not guarantee that a trained model uses the earlier token; a recurrent network may lose information along its state updates.'));
+  const boundaries = [0, SENTENCE.length - 1];
+  controls.replaceChildren(radioGroup(doc, { legend: 'Separate long sentence: compare causal boundaries', name: 'l1-context', labels: ['First: The (position 1)', `Last: . (position ${SENTENCE.length})`], checked: 1, onChange: index => render(boundaries[index]) }));
+  render(boundaries[1]);
 }
 
 function mountProjections(root) {

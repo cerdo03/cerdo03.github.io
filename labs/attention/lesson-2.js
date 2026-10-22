@@ -208,6 +208,10 @@ function mountShapeExplorer(doc) {
 
   function update() {
     const input = read();
+    const independent = modeInputs.find(i => i.checked)?.value === 'independent';
+    out('mha-invariant').textContent = independent
+      ? 'Independent width active: projected width is head count × head width and may differ from model width 512. All results below use this advanced configuration.'
+      : 'Equal partition active: projected width stays 512; changing the head count repartitions those columns. Projection parameters and total score multiply-adds stay fixed at a fixed sequence length.';
     if (input.error) {
       error.textContent = input.error;
       error.hidden = false;
@@ -218,6 +222,7 @@ function mountShapeExplorer(doc) {
     root.classList.remove('is-invalid');
     const stats = headStats({ T: input.T, heads: input.heads, headDim: input.headDim });
     const { shapes } = stats;
+    if (independent) out('mha-invariant').textContent += ` Current projected width: ${shapes.heads} × ${shapes.headDim} = ${ui.fmtInt(shapes.inner)}; the output projection returns it to 512.`;
     for (const stage of shapeStages(shapes)) {
       const row = rows.get(stage.id);
       row.op.textContent = stage.op;

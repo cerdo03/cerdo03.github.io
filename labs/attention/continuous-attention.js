@@ -8,20 +8,21 @@ const symbol = text => text.replace(/\b(WQ|WK|WV|WO|Q|K|V|M|x)\b/g, name => name
 const node = (title, body) => `<div class="mechanism-node"><strong>${symbol(title)}</strong><div>${symbol(body)}</div></div>`;
 const arrow = text => `<div class="connector">↓ ${text}</div>`;
 const key = 'inference-course-v4';
-let state = { rows: representations.map(row => [...row]), position: 2 };
-try {
-  const saved = JSON.parse(localStorage.getItem(key));
-  if (saved && saved.embeddings?.length === 3 && saved.embeddings.every(row => row.length === 2 && row.every(x => Number.isFinite(x) && Math.abs(x) <= 4))) state = { rows: saved.embeddings, position: [0, 1, 2].includes(saved.attention?.position) ? saved.attention.position : 2 };
-} catch { /* The lesson works without storage. */ }
+let state = { rows: representations.map(row => [...row]), position: 1 };
+function restoreSharedState(saved) {
+  if ([0, 1, 2].includes(saved?.attention?.position)) state.position = saved.attention.position;
+  if (saved?.embeddings?.length === 3 && saved.embeddings.every(row => Array.isArray(row) && row.length === 2 && row.every(x => Number.isFinite(x) && Math.abs(x) <= 4))) state.rows = saved.embeddings;
+}
+try { restoreSharedState(JSON.parse(localStorage.getItem(key))); } catch { /* The lesson works without storage. */ }
 const roots = [];
-function renderAll() {
+function renderAll(except = null) {
   const a = attentionState(state.position, undefined, state.rows), i = state.position;
   const q = a.q;
   const raw = a.keys.map(k => q[0] * k[0] + q[1] * k[1]);
   for (const { root, stage } of roots) {
+    if (root === except) continue;
     disposeVisual(root);root.querySelectorAll('.teaching-visual').forEach(disposeVisual);
-    const numericOpen = root.querySelector('.course-detail')?.open;
-    let body = `<p class="location">Prefill · first layer · one head · position ${i + 1}: ${promptTokens[i]}</p><label>Inspect token position<select data-position>${promptTokens.map((token, j) => `<option value="${j}" ${i === j ? 'selected' : ''}>${j + 1}: ${token}</option>`).join('')}</select></label>`;
+    let body = `<p class="location">Prefill · first layer · one head · position ${i + 1}: ${promptTokens[i]}</p>${stage===8?'<p>Current query carried from the preceding attention example. <a href="#s2-1-7">Change query in weighted values</a>.</p>':`<label>Inspect token position<select data-position>${promptTokens.map((token, j) => `<option value="${j}" ${i === j ? 'selected' : ''}>${j + 1}: ${token}</option>`).join('')}</select></label>`}`;
     if (stage === 1) {
       body += `<div class="node-grid">${promptTokens.map((token, j) => node(`${j + 1}: ${token}`, `<small>${j === i ? 'Current position: may read itself' : j < i ? 'Earlier position: may supply information' : 'Later position: blocked by the causal mask'}</small>`)).join('')}</div><p>All three prompt tokens were supplied together. The causal mask still prevents a position from reading tokens to its right. We are updating the vector for “${promptTokens[i]}”, not choosing an answer token. Availability is different from contribution strength: the following concepts show how the strengths are calculated.</p>`;
     } else {
@@ -61,30 +62,23 @@ function renderAll() {
 
     }
     }
-    if (stage === 2) body += `<details class="course-detail"><summary>Experiment: shared starting embeddings</summary><p>Edit the starting vectors here. The inference module and every main diagram in this lesson use these same values. This is a tiny invented head; it does not simulate a trained model or predict answers.</p><div class="embedding-controls">${state.rows.map((row, j) => `<fieldset><legend>${promptTokens[j]}</legend>${row.map((x, d) => `<label>Component ${d + 1}<input type="number" min="-4" max="4" step="any" required data-row="${j}" data-dim="${d}" value="${x}"></label>`).join('')}</fieldset>`).join('')}</div><button type="button" data-apply>Apply shared embeddings</button><button type="button" data-reset>Use default embeddings</button></details>`;
+    if (stage === 2) body += '<p class="shared-input-reference">Shared starting vectors come from Module 1: <a href="../inference/#tokens">Edit shared starting embeddings</a>. Edits update main numeric attention and KV traces in both modules. Alternate reference toys use their own inputs.</p>';
     if (stage >= 2) body += '<p class="small">Invented toy values; displayed numbers are rounded, calculations use full precision.</p>';
     root.innerHTML = body;
-    root.querySelector('[data-position]').onchange = event => { state.position = Number(event.target.value);save();renderAll();root.querySelector('[data-position]').focus({preventScroll:true}); };
-    root.querySelector('[data-apply]')?.addEventListener('click', () => {
-      const inputs = [...root.querySelectorAll('input')];
-      const invalid = inputs.find(input => !input.checkValidity() || !Number.isFinite(input.valueAsNumber));
-      if (invalid) { invalid.reportValidity();return; }
-      inputs.forEach(input => { state.rows[Number(input.dataset.row)][Number(input.dataset.dim)] = input.valueAsNumber; });save();renderAll();root.querySelector('[data-apply]').closest('details').open = true;root.querySelector('[data-apply]').focus({preventScroll:true});
-    });
-    root.querySelector('[data-reset]')?.addEventListener('click', () => { state.rows = representations.map(row => [...row]);save();renderAll(); });
+    const picker = root.querySelector('[data-position]');
+    if (picker) picker.onchange = event => { state.position = Number(event.target.value);save();renderAll();root.querySelector('[data-position]').focus({preventScroll:true}); };
     if (stage === 2) {
-      const experiment=root.querySelector('.course-detail');
-      if(experiment)experiment.open=!!numericOpen;
+      const reference=root.querySelector('.shared-input-reference');
       const diagram=document.createElement('div');root.replaceChildren(diagram);
-      if(experiment)root.append(experiment);
-      mountVectorRoutes(diagram, i);
+      if(reference)root.prepend(reference);
+      mountVectorRoutes(diagram, i, {onPosition: position => {state.position=position;save();renderAll(root);}});
     } else if(stage>=3&&stage<=7){
-      mountLearningVisual(root,stage===7?'values':'scores',{scoreScope:({3:'dot',4:'scale',5:'softmax',6:'mask'})[stage],rows:state.rows,onPosition:position=>{state.position=position;save();}});
+      mountLearningVisual(root,stage===7?'values':'scores',{scoreScope:({3:'dot',4:'scale',5:'softmax',6:'mask'})[stage],rows:state.rows,position:state.position,onPosition:position=>{state.position=position;save();renderAll(root);}});
     }
   }
 }
 function save() { try { const saved = JSON.parse(localStorage.getItem(key)) || {};saved.scenes ||= {};saved.checks ||= {};saved.concept ||= 'tokens';saved.embeddings = state.rows;saved.attention = {position: state.position};localStorage.setItem(key, JSON.stringify(saved)); } catch { /* Optional. */ } }
-window.addEventListener('storage', event => { if (event.key !== key) return;try { const saved = JSON.parse(event.newValue);if (saved?.embeddings?.length === 3) { state.rows = saved.embeddings;renderAll(); } } catch { /* Optional. */ } });
+window.addEventListener('storage', event => { if (event.key !== key) return;try { restoreSharedState(JSON.parse(event.newValue));renderAll(); } catch { /* Optional. */ } });
 for (let stage = 1; stage <= 8; stage++) {
   const section = document.getElementById(`s2-1-${stage}`);
   if (!section) continue;

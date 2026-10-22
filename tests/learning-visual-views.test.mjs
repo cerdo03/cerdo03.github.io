@@ -79,3 +79,12 @@ test('step-through diagrams do not expose future computed nodes on their input f
  assert.doesNotMatch(text('prediction',base),/Residual u|Feed-forward \+ residual|Layer 2 input/);
  assert.match(text('prediction',{...base,stage:1}),/Residual u/);
 });
+
+test('prediction identifies its linear FF limitation before any calculated step',()=>{
+ for(let stage=0;stage<=4;stage++){
+  const view=visualView('prediction',{...base,stage});
+  assert.match(view.scopeNote,/linear FF = 0\.1u/);
+  assert.match(view.scopeNote,/Real feed-forward networks normally use nonlinear/);
+  assert.match(view.note,/no normalization\/positions/);
+ }
+});

@@ -8,7 +8,7 @@ export function studioVisibility(type,phase='input'){
  return order.slice(0,index+1);
 }
 const scoreScopes={dot:['input','term:0','term:1','sum'],scale:['sum','scale'],softmax:['scale','normalize','weights'],mask:['scale','mask','normalize','weights']};
-const scopeNotes={dot:'Compute one raw dot product per key. Scaling and normalization follow in later concepts.',scale:'Known dot products are carried forward. Divide each by √2; normalization comes next.',softmax:'No causal mask in this isolated softmax example: all three scaled scores participate. The next concept excludes future positions before normalization.',mask:'Apply the causal mask before softmax: future scores become −∞, their shares become exactly zero, and allowed shares renormalize.'};
+const scopeNotes={dot:'Compute one raw dot product per key. Scaling and normalization follow in later concepts.',scale:'Known dot products are carried forward. Divide each by √2; normalization comes next.',softmax:'No causal mask in this isolated softmax example: all three scaled scores participate. The next concept excludes future positions before normalization.',mask:'Apply the causal mask before softmax: future scores become −∞, their shares become exactly zero, and allowed shares renormalize. Compare sky, which excludes the later is, with final is, which has no future position to exclude. Each query may still attend to itself.'};
 const matrices={Q:[[1,0],[0,1]],K:[[0,1],[1,0]],V:[[2,0],[0,1]]};
 const n=value=>Number.isFinite(value)?String(Number(value.toFixed(3))):'−∞';
 const share=value=>value>0&&value<.001?'<0.001':n(value);

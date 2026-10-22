@@ -144,14 +144,21 @@ for i in range(H_q):
           <div class="lab-controls">
             <label class="field"><span>Query heads <var>H</var><sub>q</sub></span><select id="gqa-q"></select></label>
             <label class="field"><span>KV heads <var>H</var><sub>KV</sub> (divisors only)</span><select id="gqa-kv"></select></label>
-            <label class="field"><span>Head dim <var>D</var></span><select id="gqa-d"></select></label>
-            <label class="field"><span>Sequence length <var>T</var></span><input id="gqa-t" type="number" min="1" max="1048576" step="1" inputmode="numeric"></label>
             <div class="gqa-presets" role="group" aria-label="Presets">
               <button type="button" class="button-secondary" data-preset="mha">MHA 16 / 16</button>
               <button type="button" class="button-secondary" data-preset="gqa">GQA 16 / 4</button>
               <button type="button" class="button-secondary" data-preset="mqa">MQA 16 / 1</button>
             </div>
           </div>
+          <p id="gqa-reference">Shared dimensions: head width 128, sequence length 4,096 positions, 32 layers and 2 bytes per element in every comparison row.</p>
+          <details id="gqa-advanced">
+            <summary>Advanced: change shared dimensions</summary>
+            <p>First compare the head layouts at the reference dimensions above. Changing head width or sequence length scales every row's raw storage equally; grouping and percentage savings stay the same at fixed head counts. All rows always use the same dimensions. For other model and precision assumptions, use the <a href="lesson-5.html#s2-5-2">KV memory calculator</a>.</p>
+            <div class="lab-controls">
+            <label class="field"><span>Head dim <var>D</var></span><select id="gqa-d"></select></label>
+            <label class="field"><span>Sequence length <var>T</var></span><input id="gqa-t" type="number" min="1" max="1048576" step="1" inputmode="numeric"></label>
+            </div>
+          </details>
           <p class="lab-error" id="gqa-error" role="alert" hidden></p>
           <div class="lab-body">
             <h4 id="gqa-diagram-title">Grouping (heads numbered from 0)</h4>
@@ -174,7 +181,7 @@ for i in range(H_q):
                 <tbody id="gqa-table-body"></tbody>
               </table>
             </div>
-            <p class="eq" id="gqa-formula"></p>
+            <p class="eq" id="gqa-formula" tabindex="0"></p>
           </div>
           <p class="lab-assumptions">Assumptions: fixed <var>L</var> = 32 layers and BF16 (<var>B</var> = 2 bytes); one sequence, no batch; every row uses the same <var>H</var><sub>q</sub> and <var>D</var> (real models may also change <var>d</var><sub>model</sub> or <var>D</var>); contiguous cache with no padding, block or allocator overhead. <var>M</var><sub>KV</sub> is raw KV storage, not total GPU memory: weights, activations, temporary buffers and fragmentation are excluded. MiB = 2<sup>20</sup> bytes, GiB = 2<sup>30</sup> bytes.</p>
         </div>

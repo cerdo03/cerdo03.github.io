@@ -188,7 +188,7 @@ function prediction(s,rows){
    graph+=node(465,y,170,'Residual u',[vector(a.residual[2])],stage===1);
    graph+=edge(635,y+35,695,y+35,stage>=1);
    graph+=node(695,y,190,'Feed-forward + residual',[vector(a.outgoing[2]),'u + 0.1u'],stage===1);
-   if(l===0)graph+=edge(885,y+35,15,y+210,true,'next layer');}
+   if(l===0)graph+=`<path class="route-edge is-active" d="M 885 ${y+35} H 895 V ${y+140} H 100 V ${y+175}"/><path class="visual-arrow is-active" transform="translate(100 ${y+175}) rotate(90)" d="M -6 -4 L 0 0 L -6 4"/><text class="route-edge-label" x="360" y="${y+132}">next layer</text>`;}
   }
  }else{
   const calc=projectionTrace(p.final,p.vocabulary,j);
@@ -210,7 +210,7 @@ function prediction(s,rows){
   if(stage===4){graph+=node(305,255,255,'Greedy: compare all scores',[`largest logit ≈ ${number(Math.max(...p.logits))}`],true);graph+=edge(560,290,645,290,true);graph+=node(645,255,235,'Chosen output token',[p.greedy,'Not processed or cached yet'],true);}
 
  }
- return {graph:svg(graph,470,'Toy block output calculated through vocabulary projection, probabilities and token selection'),controls:select('candidate','Inspect vocabulary column',p.tokens.map((t,i)=>[i,t]),j,stage<2),max:4,caption:['At “is”, each layer reads its own allowed context. These numerical attention results use the same starting embeddings and Q/K/V matrices as the first-layer example.','Add incoming x to the attention update. Our deliberately tiny FF branch returns 0.1u; adding it gives 1.1u. All three positions pass through both layers, although only “is” is displayed.','A vocabulary matrix has one column per candidate token. Multiply final h by a column and add the products: one score (logit). Select another candidate to inspect its column.','Softmax over vocabulary logits gives next-token probabilities. These are calculated from h, not attention shares over The/sky/is.','Greedy selection chooses the largest score. A sampled choice may differ; neither choice processes the chosen token.'][stage],note:'Separate complete toy model: 2 layers, 1 head, identity output projections, identical Q/K/V matrices in both toy layers, linear FF = 0.1u, no normalization/positions. Vocabulary [[0.2, −0.15, 0.1], [−0.1, 0.2, 0.05]]. All values calculated; not trained-model predictions.'};
+ return {graph:svg(graph,470,'Toy block output calculated through vocabulary projection, probabilities and token selection'),controls:select('candidate','Inspect vocabulary column',p.tokens.map((t,i)=>[i,t]),j,stage<2),max:4,scopeNote:'Arithmetic-only toy: linear FF = 0.1u, with no normalization or position encoding. Real feed-forward networks normally use nonlinear transformations.',caption:['At “is”, each layer reads its own allowed context. These numerical attention results use the same starting embeddings and Q/K/V matrices as the first-layer example.','Add incoming x to the attention update. Our deliberately tiny FF branch returns 0.1u; adding it gives 1.1u. All three positions pass through both layers, although only “is” is displayed.','A vocabulary matrix has one column per candidate token. Multiply final h by a column and add the products: one score (logit). Select another candidate to inspect its column.','Softmax over vocabulary logits gives next-token probabilities. These are calculated from h, not attention shares over The/sky/is.','Greedy selection chooses the largest score. A sampled choice may differ; neither choice processes the chosen token.'][stage],note:'Separate complete toy model: 2 layers, 1 head, identity output projections, identical Q/K/V matrices in both toy layers, linear FF = 0.1u, no normalization/positions. Vocabulary [[0.2, −0.15, 0.1], [−0.1, 0.2, 0.05]]. All values calculated; not trained-model predictions.'};
 }
 function dependencies(s,type){
  const fixed=type==='prefix',change=fixed?2:s.change,stage=fixed?2:s.stage;
@@ -250,7 +250,7 @@ export function sharedRows(){try{const rows=JSON.parse(localStorage.getItem('inf
 export function mountLearningVisual(root,type,options={}){
  disposeVisual(root);
  root.toggleAttribute('data-scoped-request',type==='request'&&!!options.requestScope);
- let position=2;try{position=JSON.parse(localStorage.getItem('inference-course-v4'))?.attention?.position??2;}catch{/* Optional. */}
+ let position=options.position??2;try{if(options.position===undefined)position=JSON.parse(localStorage.getItem('inference-course-v4'))?.attention?.position??2;}catch{/* Optional. */}
  if(['projections','scores','values'].includes(type)){
   const cleanup=mountStudio(root,type,{...options,position, getRows:()=>options.rows||sharedRows(),onPosition:value=>{
    options.onPosition?.(value);
@@ -263,9 +263,7 @@ export function mountLearningVisual(root,type,options={}){
  const initialPass=requestScope==='prefill'?0:['cache','decode'].includes(requestScope)?1:options.pass??0;
  const maxPass=()=>requestScope==='prefill'?0:requestScope==='cache'?1:(options.answer||['blue','today','.']).length-1;
  let s={stage:options.stage??minimum,position:[0,1,2].includes(position)?position:2,component:0,role:'Q',key:2,pass:initialPass,query:(options.prompt||promptTokens).length-1,kvHeads:2,head:0,candidate:0,inspect:false,change:type==='validity'?-1:2};
- let timer=null,disposed=false;
- const stop=()=>{if(timer)clearInterval(timer);timer=null;};
- owners.set(root,()=>{disposed=true;stop();window.removeEventListener('storage',storage);});
+ owners.set(root,()=>window.removeEventListener('storage',storage));
  function rows(){return options.rows||sharedRows();}
  function render(focus){
   const previous=flowSnapshot(root);
@@ -274,11 +272,11 @@ export function mountLearningVisual(root,type,options={}){
   const scope=['projections','scores','values'].includes(type)?`Prefill · layer 1 · head 1 · ${promptTokens[s.position]}`:type==='sharing'?'Prefill · layer 1 · is':type==='prediction'?'Prefill · is · two-layer numeric toy':type==='heads'?'One position · two-head schematic':type==='request'?`${s.pass===0?'Prefill':`Decode ${s.pass}`} · layer 1 · head 1`:type==='recap'?'One scripted request':'Compatible requests · token-level reuse';
   const nextPass=type==='request'&&s.pass<maxPass();
   const review=requestScope?`<p><a href="${options.requestReview||'../inference/#decode'}">Review complete request lab</a>${requestScope==='decode'?' · <a href="#s2-4-5">Compare projection counts</a>':''}</p>`:type==='recap'?'<p><a href="#decode">Review complete request lab</a></p>':type==='prefix'?'<p><a href="#validity">Experiment with cache validity</a></p>':'';
-  root.classList.add('teaching-visual');root.classList.toggle('is-playing',!!timer);
-  root.innerHTML=`${view.controls||view.max?`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions">${scopedHeads||scopedRequest?'':'<button type="button" data-command="reset" aria-label="Reset diagram">↺</button>'}<button type="button" data-command="back" ${s.stage===minimum?'disabled':''}>← Previous</button>${scopedHeads||scopedRequest?'':`<button type="button" data-command="play">${timer?'Pause':'Play'}</button>`}<button type="button" data-command="next" ${s.stage===view.max&&!nextPass?'disabled':''}>${s.stage===view.max&&nextPass?'Next pass →':'Next →'}</button>${scopedRequest?`<button type="button" data-command="all">${s.stage===view.max?'Step by step':'Show all'}</button>`:''}</div>`:''}</div>`:''}<div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage-minimum+1} / ${view.max-minimum+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${scopedHeads?'<p><a href="#s2-2-1">Review complete split/join trace</a></p>':''}${review}${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
+  root.classList.add('teaching-visual');root.classList.remove('is-playing');
+  root.innerHTML=`${view.controls||view.max?`<div class="route-toolbar">${view.controls}${view.max?`<div class="visual-actions">${scopedHeads||scopedRequest?'':'<button type="button" data-command="reset" aria-label="Reset diagram">↺</button>'}<button type="button" data-command="back" ${s.stage===minimum?'disabled':''}>← Previous</button><button type="button" data-command="next" ${s.stage===view.max&&!nextPass?'disabled':''}>${s.stage===view.max&&nextPass?'Next pass →':'Next →'}</button>${!scopedHeads?`<button type="button" data-command="all">${s.stage===view.max?'Step by step':scopedRequest?'Show all':'Last step'}</button>`:''}</div>`:''}</div>`:''}<div class="route-stage"><span>${scope} — ${view.title||({projections:'Complete Q/K/V projections',scores:'Query → scores → weights',values:'Whole value vectors',heads:'Split and join head results',sharing:'Shared K/V, separate queries',prediction:'Vector → vocabulary',validity:'Cache validity',prefix:'Prefix reuse'}[type])}</span>${view.max?`<span>${s.stage-minimum+1} / ${view.max-minimum+1}</span>`:''}</div>${view.equation?`<p class="route-formula">${symbols(view.equation).replaceAll('tspan','span')}</p>`:''}${view.scopeNote?`<p class="visual-scope">${escape(view.scopeNote)}</p>`:''}${view.graph}${s.inspect&&['projections','scores','values'].includes(type)?'<button type="button" data-command="overview">Close detail</button>':''}<p class="visual-caption" role="status">${escape(view.caption)}</p>${scopedHeads?'<p><a href="#s2-2-1">Review complete split/join trace</a></p>':''}${review}${view.note?`<details class="visual-assumptions"><summary>Toy assumptions</summary><p>${escape(view.note)}</p></details>`:''}`;
   renderVisualMath(root, type);
   root.querySelectorAll('[data-field]').forEach(control=>control.onchange=()=>{
-   stop();const field=control.dataset.field;s[field]=field==='role'?control.value:Number(control.value);
+   const field=control.dataset.field;s[field]=field==='role'?control.value:Number(control.value);
    if(['pass','change'].includes(field))s.stage=minimum;
    if(field==='position')s.inspect=false;
    if(field==='position')options.onPosition?.(s.position);
@@ -287,20 +285,18 @@ export function mountLearningVisual(root,type,options={}){
   });
   root.querySelectorAll('[data-command]').forEach(button=>button.onclick=()=>{
    const command=button.dataset.command;
-   if(command==='play'){
-    if(timer)stop();else{if(s.stage===view.max)s.stage=minimum;timer=setInterval(()=>{if(disposed||!root.isConnected||!root.getClientRects().length){stop();return;}if(s.stage>=visualView(type,s,rows(),options).max){stop();render();return;}s.stage++;render();},1600);}
-   }else{stop();if(command==='overview')s.inspect=false;if(command==='reset'){s.stage=minimum;s.inspect=false;}if(command==='all')s.stage=s.stage===view.max?minimum:view.max;if(command==='back')s.stage=Math.max(minimum,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(nextPass){s.pass++;s.stage=minimum;}}}
+   if(command==='overview')s.inspect=false;if(command==='reset'){s.stage=minimum;s.inspect=false;}if(command==='all')s.stage=s.stage===view.max?minimum:view.max;if(command==='back')s.stage=Math.max(minimum,s.stage-1);if(command==='next'){if(s.stage<view.max)s.stage++;else if(nextPass){s.pass++;s.stage=minimum;}}
    render(command==='overview'?`[data-pick="${type==='projections'?`projection:${s.role}:${s.component}`:type==='scores'?`key:${s.key}`:`component:${s.component}`}"]`:`[data-command="${command}"]`);
   });
   root.querySelectorAll('[data-pick]').forEach(target=>{
-   const choose=()=>{stop();const [field,value,column]=target.dataset.pick.split(':');if(field==='projection'){s.role=value;s.component=Number(column);s.inspect=true;}else{s[field]=Number(value);if(field==='component'||field==='key')s.inspect=true;}render(`[data-pick="${target.dataset.pick}"]`);};
+   const choose=()=>{const [field,value,column]=target.dataset.pick.split(':');if(field==='projection'){s.role=value;s.component=Number(column);s.inspect=true;}else{s[field]=Number(value);if(field==='component'||field==='key')s.inspect=true;}render(`[data-pick="${target.dataset.pick}"]`);};
    target.onclick=choose;target.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();choose();}};
   });
   animateFlow(root,previous);
   options.onFrame?.({pass:s.pass,stage:s.stage});
   if(focus){const target=root.querySelector(focus);(target&&!target.disabled?target:root.querySelector('[data-command=back]:not(:disabled),[data-command=reset]'))?.focus({preventScroll:true});}
  }
- function storage(event){if(event.key==='inference-course-v4'&&root.isConnected){stop();render();}}
+ function storage(event){if(event.key==='inference-course-v4'&&root.isConnected){render();}}
  window.addEventListener('storage',storage);render();
  return ()=>disposeVisual(root);
 }

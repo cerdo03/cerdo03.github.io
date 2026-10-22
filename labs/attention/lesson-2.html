@@ -195,14 +195,14 @@
 
       <section id="s2-2-5" aria-labelledby="s2-2-5-title">
         <h2 id="s2-2-5-title">2.2.5 Tensor shapes end to end</h2>
-        <p>The explorer below lists every stage of one multi-head attention layer with its symbolic and concrete shape. It starts at the Transformer base configuration: d<sub>model</sub> = 512, <var>H</var> = 8, d<sub>head</sub> = 64. The list is the diagram; each row reads as text. <span data-control-guide><strong>Use the explorer:</strong> change Heads while keeping Head dimension at d<sub>model</sub> / <var>H</var>, then compare head width, score elements and multiply-adds. Change Sequence length separately. Independent unlocks a head width you choose, so the total projected width can differ from 512.</span></p>
+        <p>The explorer below lists every stage of one multi-head attention layer with its symbolic and concrete shape. It starts at the Transformer base configuration: d<sub>model</sub> = 512, <var>H</var> = 8, d<sub>head</sub> = 64. The list is the diagram; each row reads as text. <span data-control-guide><strong>Use the explorer:</strong> change Heads first: equal partition sets each head width to 512 / <var>H</var> automatically. Compare head width, score elements and multiply-adds. Change Sequence length separately. The optional advanced experiment lets the total projected width differ from 512.</span></p>
 
         <div class="lab" id="mha-explorer" role="group" aria-labelledby="mha-explorer-title">
           <div class="lab-header">
             <h3 id="mha-explorer-title">Head-count shape explorer</h3>
             <dl class="lab-guide">
               <div><dt>What this shows</dt><dd>How each tensor's shape, the head width, the score-tensor size, the score compute and the projection parameter count follow from d<sub>model</sub>, <var>H</var>, <var>T</var> and d<sub>head</sub>.</dd></div>
-              <div><dt>Try</dt><dd>Move <var>H</var> from 1 to 64 with d<sub>model</sub> fixed at 512. Then double <var>T</var>. Then switch to an independent d<sub>head</sub> and pick one where <var>H</var>·d<sub>head</sub> ≠ 512.</dd></div>
+              <div><dt>Try</dt><dd>Move <var>H</var> from 1 to 64 with d<sub>model</sub> fixed at 512. Then double <var>T</var>. Keep equal partition for this first comparison.</dd></div>
               <div><dt>What to notice</dt><dd>More heads means narrower heads and more <var>T</var>×<var>T</var> score matrices, while the projection parameters and QK<sup>T</sup> multiply-adds stay fixed. Doubling <var>T</var> quadruples the score tensor.</dd></div>
             </dl>
           </div>
@@ -220,6 +220,13 @@
             <label class="field"><span>Sequence length <var>T</var></span>
               <input id="mha-t" type="number" min="1" max="8192" step="1" value="1024">
             </label>
+
+          </div>
+          <p id="mha-invariant" aria-live="polite">Equal partition: the projected width stays 512 while each head gets narrower as the head count rises.</p>
+          <details id="mha-advanced">
+            <summary>Advanced: choose an independent head width</summary>
+            <p>Changed invariant: projected width <var>H</var> · d<sub>head</sub> may differ from d<sub>model</sub> = 512. Input and output width stay 512; the output projection maps the chosen internal width back to 512. This changes parameter count and projection work. Equal partition restores the first experiment.</p>
+            <div class="lab-controls">
             <fieldset class="segmented">
               <legend>Head dimension</legend>
               <label><input type="radio" name="mha-dhead-mode" value="equal" checked>d<sub>model</sub> / <var>H</var></label>
@@ -228,7 +235,8 @@
             <label class="field"><span>d<sub>head</sub> (independent)</span>
               <input id="mha-dhead" type="number" min="1" max="1024" step="1" value="128" disabled>
             </label>
-          </div>
+            </div>
+          </details>
           <div class="lab-body">
             <p id="mha-error" class="lab-error" role="alert" hidden></p>
             <h4 id="mha-stages-title">Stages of one layer (d<sub>model</sub> = 512)</h4>

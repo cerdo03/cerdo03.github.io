@@ -12,3 +12,10 @@ test('shared embeddings drive projections and value mixtures without changing fi
  assert.ok(input.includes('[3, 4]'));assert.ok(projected.includes('Q = [3, 4]'));assert.ok(projected.includes('V = [6, 4]'));
  assert.ok(!projected.includes('type="number"'));
 });
+
+test('introductory memory fixes architecture even when older saved controls remain',()=>{
+ const html=diagramHTML('memory',{length:1024,batch:4,heads:1,bytes:1});
+ assert.match(html,/536,870,912 bytes/);
+ assert.match(html,/32 layers, 8 KV heads per layer, head dimension 128, 2 bytes/);
+ assert.doesNotMatch(html,/id="(?:heads|bytes)"/);
+});

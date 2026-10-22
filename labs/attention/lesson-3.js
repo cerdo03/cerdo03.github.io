@@ -288,6 +288,7 @@ function mountTool(doc) {
   }
 
   function renderNumbers() {
+    $('gqa-reference').textContent = `Shared dimensions: head width ${config.headDim}, sequence length ${ui.fmtInt(config.seqLen)} positions, ${FIXED.layers} layers and ${FIXED.bytesPerElem} bytes per element in every comparison row. Grouping and percentage savings depend on head counts, not these shared dimensions.`;
     const rows = compareLayouts(config);
     const cur = rows[1];
     tableBody.replaceChildren(...rows.map((r) => {
