@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Follow one output from a matrix cell to a thread, warp, block, and streaming multiprocessor in an illustrated GPU teaching model.">
+<title>Inside a GPU · Execution studio prototype</title>
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="execution-studio.css">
+<link rel="stylesheet" href="../llm-systems/course.css">
+<script type="module" src="../../assets/theme.js"></script>
+<script type="module" src="execution-studio.js"></script>
+<script type="module" src="../llm-systems/course-shell.js"></script>
+</head>
+<body class="execution-prototype">
+<header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a><nav aria-label="Page appearance"></nav></header>
+<aside aria-label="Course navigation"></aside>
+<main id="main">
+<div class="execution-studio" data-execution-studio>
+<header class="execution-intro">
+<p class="execution-eyebrow">GPU architecture / Interactive study 01 <span>Design prototype</span></p>
+<h1>Inside the GPU.<br>Follow one output.</h1>
+<p>Give one output a home. Follow its work through a thread, a warp, a block, and finally the hardware that runs it.</p>
+<a class="execution-return" href="lesson-1.html#execution">← Return to GPU execution lesson</a>
+</header>
+<nav class="execution-steps" aria-label="Follow one output">
+<button type="button" data-step="0" aria-label="1. Output" aria-current="step" disabled><span>01</span> <strong>Output</strong><small>A number to compute</small></button>
+<button type="button" data-step="1" aria-label="2. Thread" disabled><span>02</span> <strong>Thread</strong><small>One run of the code</small></button>
+<button type="button" data-step="2" aria-label="3. Warp" disabled><span>03</span> <strong>Warp</strong><small>32 neighbouring threads</small></button>
+<button type="button" data-step="3" aria-label="4. Block" disabled><span>04</span> <strong>Block</strong><small>A cooperating group</small></button>
+<button type="button" data-step="4" aria-label="5. SM" disabled><span>05</span> <strong>SM</strong><small>The physical hardware</small></button>
+</nav>
+<div class="execution-workspace">
+<figure class="execution-scene" aria-labelledby="scene-caption">
+<div class="scene-bar"><span><i aria-hidden="true"></i> GPU cutaway</span><span>Schematic · 4 SMs illustrated</span></div>
+<div class="execution-drawing" data-drawing></div>
+
+<div class="execution-scene-key"><span><i class="key-selected" aria-hidden="true"></i>Selected work</span><span><i class="key-logical" aria-hidden="true"></i>Work grouping</span><span><i class="key-hardware" aria-hidden="true"></i>Physical hardware</span></div>
+<figcaption id="scene-caption"><strong>One output. One continuous trail.</strong> Select a cell to follow it; select a chip component to inspect it. SM means streaming multiprocessor: a hardware unit that runs assigned blocks.</figcaption>
+</figure>
+<section class="execution-inspector" aria-labelledby="story-title">
+<p class="execution-eyebrow" data-step-count>01 / 05</p>
+<h2 id="story-title">Start with one output</h2>
+<p data-story>A matrix multiplication produces many numbers. Choose one output; keep following that same number as the view changes.</p>
+<div class="execution-selection"><label for="output-number">Output number</label><div class="execution-number"><button type="button" data-output-prev aria-label="Previous output" disabled>−</button><input id="output-number" type="number" min="0" max="149" value="137" inputmode="numeric" disabled><button type="button" data-output-next aria-label="Next output" disabled>+</button></div><small data-output-range>Numbering starts at 0; 150 outputs means 0–149.</small></div>
+<p class="execution-address" data-address>Output 137 → row 13, column 7</p>
+<div class="execution-inspection" data-inspection><strong>Follow the highlighted cell.</strong> Its identity stays the same when you regroup threads.</div>
+<div class="execution-step-actions"><button class="execution-primary" type="button" data-next-step disabled>Follow its thread →</button><button class="execution-text" type="button" data-back-step disabled>← Back</button></div>
+</section>
+</div>
+<section class="execution-detail" aria-labelledby="detail-title">
+<div class="execution-detail-heading"><p class="execution-eyebrow">Under the magnifying glass</p><h2 id="detail-title">The selected output</h2><p data-detail-intro>Every cell has an address. The same cell stays selected as we reveal how its work is organized.</p></div>
+<div class="execution-detail-content" data-detail></div>
+</section>
+<section class="execution-experiment" aria-labelledby="experiment-title">
+<div><p class="execution-eyebrow">Change the work, watch the grouping</p><h2 id="experiment-title">Same chip. Different launch.</h2><p>A kernel is the GPU function launched for this job. The grid is all its blocks. These settings change the grid, not the four illustrated SMs.</p></div>
+<div class="execution-settings"><label>Output count<select id="output-count" disabled><option value="96">96 outputs</option><option value="150" selected>150 outputs</option><option value="384">384 outputs</option></select></label><label>Threads per block<select id="block-size" disabled><option value="32">32 threads</option><option value="64" selected>64 threads</option><option value="128">128 threads</option></select></label></div>
+<p class="execution-consequence" data-consequence>150 outputs → 3 blocks of 64 threads. 42 extra threads are guarded: they skip the calculation and store.</p>
+</section>
+<p class="execution-status" role="status" aria-live="polite" data-status></p>
+<details class="execution-method"><summary>What this model shows—and what it leaves out</summary><p>This is a one-thread-per-output indexing example. Optimized matrix kernels can distribute work differently and use tensor cores. The four-SM cutaway is an illustration, not a specific GPU. Tiles drawn on its die are SMs, not individual CUDA cores.</p><p>Each block is assigned wholly to one SM. One SM can host several blocks when resources permit. The placement steps show one possible assignment; they do not predict order, duration, concurrency, occupancy, or throughput. Earlier placements remain drawn for tracking, without a claim that they are simultaneous.</p><p>A warp groups 32 threads within one block; a lane is a thread’s position 0–31 in that warp. Thread and warp labels describe work. A thread is not a dedicated physical core. A guard checks that an output exists before a thread reads inputs or writes a result.</p><p>Reference: <a href="https://docs.nvidia.com/cuda/cuda-programming-guide/">NVIDIA CUDA Programming Guide</a>. Numerical row/column inputs here are invented teaching values. No GPU executes this page.</p></details>
+<noscript><section><h2>Follow output 137</h2><p>With 150 outputs and 64 threads per block, output 137 belongs to block 2, thread 9 inside that block, warp 0, lane 9. Its input row [1, 14, 2] and weight column [2, 8, 1] produce 2 + 112 + 2 = 116. With 128 threads per block, the same output belongs to block 1, thread 9, warp 0, lane 9. Both blocks stay intact when assigned to an SM. Enable JavaScript for the illustrated scene.</p></section></noscript>
+</div>
+</main>
+<footer><span>Interactive teaching model · no measured GPU performance</span> <a href="../../">Back to the journal</a></footer>
+</body>
+</html>
