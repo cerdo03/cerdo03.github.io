@@ -18,7 +18,7 @@ export function placementDiagram(tokens,key,replicas){
  return svg;
 }
 export function treeDiagram(result){
- const root=document.createElement('div');root.className='diagram-viewport';
+ const root=document.createElement('div');root.className='diagram-viewport';root.tabIndex=0;root.setAttribute('role','region');root.setAttribute('aria-label','Merkle subranges; scroll to inspect');
  const svg=shape('svg',{viewBox:'0 0 850 400',role:'img','aria-label':'Compared Merkle subranges: differing branches expand; equal branches stop.'});
  const positions=new Map();
  for(const node of result.nodes){

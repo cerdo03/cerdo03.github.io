@@ -3,16 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore the 2007 Dynamo paper through twelve guided lessons, causal histories, replica placement, failure and recovery experiments.">
   <title>Dynamo — paper companion</title>
   <link rel="stylesheet" href="../../assets/theme.css">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="../../assets/theme.js"></script>
 </head>
 <body>
-  <header class="site-header"><a href="../../">Technical journal</a><p>2007 Dynamo paper companion · construction preview</p><nav aria-label="Appearance"></nav></header>
-  <main>
-    <nav aria-label="Guided lessons" id="lessons-nav"></nav>
-    <article id="lesson"></article>
+  <a class="skip" href="#lesson">Skip to lesson</a>
+  <header class="topbar"><a href="../../">surya / journal</a><nav aria-label="Appearance"></nav></header>
+  <div class="layout">
+    <aside aria-label="Dynamo learning path">
+      <a class="course-name" href="./">Dynamo</a>
+      <p class="small">A visual companion to the 2007 paper</p>
+      <details id="contents" open>
+        <summary>Learning path <span id="position"></span></summary>
+        <nav aria-label="Guided lessons" id="lessons-nav"></nav>
+      </details>
+      <p class="side-note">One shopping cart.<br>Failure, history and recovery.</p>
+      <a class="source-link" href="#reading-tools">Paper &amp; reading tools ↓</a>
+    </aside>
+    <main>
+    <p class="eyebrow" id="chapter">Dynamo · paper companion</p>
+    <article id="lesson" tabindex="-1" aria-label="Current lesson"></article>
     <section id="clock-lab" aria-labelledby="clock-title">
       <h2 id="clock-title">A clock records causal history</h2>
       <p>Figure 3 clocks and branches match the paper. Cart contents attached to those clocks are invented teaching examples, not an Amazon production trace.</p>
@@ -20,7 +33,7 @@
       <p>If each clock has a counter larger than the other's, neither contains all the other's history. Keep both versions: these are concurrent siblings. The application decides how to reconcile their meaning.</p>
       <div class="controls"><button id="previous" type="button">Previous event</button><button id="next" type="button">Next event</button><button id="reset" type="button">Restart</button></div>
       <p id="event" role="status"></p>
-      <div id="version-graph"></div>
+      <section id="version-graph" tabindex="0" aria-label="Causal version graph; scroll to inspect"></section>
       <ol id="history"></ol>
       <h3>Inspect two known versions</h3>
       <label>First version <select id="left"></select></label>
@@ -28,7 +41,7 @@
       <p id="comparison"></p>
       <table><caption>Component-by-component comparison</caption><thead><tr><th scope="col">Coordinating node</th><th scope="col">First clock</th><th scope="col">Second clock</th></tr></thead><tbody id="components"></tbody></table>
     </section>
-    <section aria-labelledby="reading-tools">
+    <section class="reading-tools" aria-labelledby="reading-tools">
       <h2 id="reading-tools">Reading tools</h2>
       <p>Attach your local copy of the paper to open source pages alongside lessons. The file stays in this browser; it is not uploaded.</p>
       <label>Original paper PDF <input id="paper-file" type="file" accept="application/pdf"></label>
@@ -44,7 +57,9 @@
       </details>
     </section>
     <footer><p>Source: DeCandia et al., <cite>Dynamo: Amazon’s Highly Available Key-value Store</cite>, SOSP 2007, §§1–7, Figures 1–8 and Tables 1–2. This describes the historical Dynamo system. Synthetic cart contents are not an Amazon production trace.</p></footer>
-  </main>
+    </main>
+  </div>
+  <noscript><p>This companion needs JavaScript for its guided lessons and experiments. Source: DeCandia et al., <cite>Dynamo: Amazon’s Highly Available Key-value Store</cite>, SOSP 2007.</p></noscript>
   <script type="module" src="app.js?v=dynamo20261023-final"></script>
 </body>
 </html>

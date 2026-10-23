@@ -17,10 +17,14 @@ try{
  for(const width of [360,390,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}});page.on('pageerror',error=>errors.push(error.message));
   await page.goto(`${base}/labs/dynamo/`);
+  async function selectLesson(index) {
+   if (!await page.locator('#contents').evaluate(element => element.open)) await page.locator('#contents summary').click();
+   await page.locator('#lessons-nav button').nth(index).click();
+  }
   for(const theme of ['paper','midnight','contrast']){
    await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
    for(let index=0;index<12;index++){
-    await page.locator('#lessons-nav button').nth(index).click();
+    await selectLesson(index);
     assert.match(await page.locator('#lesson h1').textContent(),new RegExp(`^${index+1}\\.`));
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,`${width}/${theme}/${index}`);
     const buttons=page.locator('#lesson button');
@@ -29,13 +33,13 @@ try{
     states++;
    }
   }
-  await page.locator('#lessons-nav button').nth(3).click();
+  await selectLesson(3);
   await page.getByLabel('Unreachable trailing hosts').selectOption('3');await page.getByRole('button',{name:'Show full request trace'}).click();assert.match(await page.locator('[data-request-events]').textContent(),/Deadline reached/);
   await page.getByLabel('Operation').selectOption('read');await page.getByRole('button',{name:'Show full request trace'}).click();assert.match(await page.locator('[data-request-events]').textContent(),/Read times out/);
-  await page.locator('#lessons-nav button').nth(1).click();await page.getByRole('button',{name:'Write edited cart with carried context'}).click();assert.match(await page.locator('#lesson pre').textContent(),/Visible versions: 2/);
-  await page.locator('#lessons-nav button').nth(5).click();await page.getByRole('button',{name:'Lose fallback before delivery'}).click();await page.getByRole('button',{name:'Recover A and confirm transfer'}).click();assert.match(await page.locator('#lesson pre').textContent(),/No surviving hint/);
-  await page.locator('#lessons-nav button').nth(11).click();for(let i=0;i<8;i++)await page.getByRole('button',{name:'Next event',exact:true}).click();assert.match(await page.locator('.replica-grid').textContent(),/Inspect host X/);assert.match(await page.locator('.replica-grid').textContent(),/book, pen/);
-  await page.locator('#lessons-nav button').nth(3).click();const symbol=page.locator('[data-dynamo-symbol]').first();await symbol.focus();assert.equal(await page.locator('.symbol-help').isVisible(),true);await page.keyboard.press('Escape');assert.equal(await page.locator('.symbol-help').isVisible(),false);
+  await selectLesson(1);await page.getByRole('button',{name:'Write edited cart with carried context'}).click();assert.match(await page.locator('#lesson pre').textContent(),/Visible versions: 2/);
+  await selectLesson(5);await page.getByRole('button',{name:'Lose fallback before delivery'}).click();await page.getByRole('button',{name:'Recover A and confirm transfer'}).click();assert.match(await page.locator('#lesson pre').textContent(),/No surviving hint/);
+  await selectLesson(11);for(let i=0;i<8;i++)await page.getByRole('button',{name:'Next event',exact:true}).click();assert.match(await page.locator('.replica-grid').textContent(),/Inspect host X/);assert.match(await page.locator('.replica-grid').textContent(),/book, pen/);
+  await selectLesson(3);const symbol=page.locator('[data-dynamo-symbol]').first();await symbol.focus();assert.equal(await page.locator('.symbol-help').isVisible(),true);await page.keyboard.press('Escape');assert.equal(await page.locator('.symbol-help').isVisible(),false);
   await page.screenshot({path:resolve(out,`request-${width}.png`),fullPage:true});
   await page.close();
  }

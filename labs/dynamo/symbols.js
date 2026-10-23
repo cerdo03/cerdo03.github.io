@@ -9,7 +9,14 @@ document.addEventListener('pointerout',event=>{if(event.target.closest('[data-dy
 document.addEventListener('focusin',event=>{const node=event.target.closest('[data-dynamo-symbol]');if(node)show(node);else hide();});
 document.addEventListener('click',event=>{const node=event.target.closest('[data-dynamo-symbol]');if(node)show(node);else hide();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')hide();});
-window.addEventListener('scroll',hide,true);
+window.addEventListener('scroll',()=>{
+ const node=document.activeElement;
+ if(node?.matches('[data-dynamo-symbol]')){
+  const box=node.getBoundingClientRect();
+  if(box.bottom>=0&&box.top<=innerHeight){show(node);return;}
+ }
+ hide();
+},true);
 export function annotateSymbols(root){
  hide();const seen=new Set();
  for(const paragraph of root.querySelectorAll('p')){

@@ -72,18 +72,22 @@ const deepReading = await fetch(contentURL('./deep-reading.json',import.meta.url
 const paperReference = await fetch(contentURL('./paper-reference.json',import.meta.url)).then(response => response.json());
 const { sloppyPartition } = await import('./events.js?v=dynamo20261023-final');
 const navigation = element('lessons-nav');
+element('contents').open = !matchMedia('(max-width: 640px)').matches;
 let lessonIndex = 0;
 let sourceURL;
-function showLesson(index) {
+function showLesson(index, moveFocus = false) {
   lessonIndex = index;
   try { localStorage.setItem('dynamo-last-lesson', String(index)); } catch { /* Reading works without storage. */ }
   clockLab.hidden = index !== 4;
   const lesson = lessons[index];
+  element('position').textContent = `${index + 1} / ${lessons.length}`;
+  element('chapter').textContent = `Dynamo · Lesson ${index + 1} of ${lessons.length}`;
   const article = element('lesson');
   article.replaceChildren();
   const title = document.createElement('h1');
   title.textContent = `${index + 1}. ${lesson.title}`;
   const source = document.createElement('p');
+  source.className = 'source-note';
   source.textContent = `Paper reference · ${lesson.source}`;
   article.append(title, source);
   if (sourceURL) {
@@ -95,10 +99,12 @@ function showLesson(index) {
   for (const text of lesson.paragraphs) {
     const paragraph = document.createElement('p');
     paragraph.textContent = text;
+    if (!readingParagraphs.length) paragraph.className = 'intro';
     readingParagraphs.push(paragraph);
     article.append(paragraph);
   }
   const demonstrations = document.createElement('div');
+  demonstrations.className = 'demonstrations';
   article.insertBefore(demonstrations, readingParagraphs[index === 0 ? 3 : 2] || null);
   if (lesson.experiment === 'write') demonstrations.append(requestLab());
   if (lesson.experiment === 'sloppy') {
@@ -166,9 +172,14 @@ function showLesson(index) {
       article.append(heading,p);
     }
   }
+  if (!demonstrations.children.length) demonstrations.hidden = true;
   annotateSymbols(article);
   courseControls.children[0].disabled = index === 0;
   courseControls.children[1].disabled = index === lessons.length - 1;
+  if (moveFocus) {
+    if (matchMedia('(max-width: 640px)').matches) element('contents').open = false;
+    article.focus();
+  }
   for (const button of navigation.children) {
     if (Number(button.dataset.index) === index) button.setAttribute('aria-current', 'step');
     else button.removeAttribute('aria-current');
@@ -179,16 +190,18 @@ lessons.forEach((lesson, index) => {
   button.type = 'button';
   button.textContent = `${index + 1}. ${lesson.title}`;
   button.dataset.index = index;
-  button.addEventListener('click', () => showLesson(index));
+  button.addEventListener('click', () => showLesson(index, true));
   navigation.append(button);
 });
-const courseControls = document.createElement('div');
-courseControls.className = 'controls';
+const courseControls = document.createElement('nav');
+courseControls.className = 'lesson-controls';
+courseControls.setAttribute('aria-label', 'Lesson navigation');
 for (const [label, delta] of [['Previous lesson', -1], ['Next lesson', 1]]) {
   const button = document.createElement('button');
   button.type = 'button';
   button.textContent = label;
-  button.addEventListener('click', () => showLesson(Math.max(0, Math.min(lessons.length - 1, lessonIndex + delta))));
+  if (delta === 1) button.className = 'primary';
+  button.addEventListener('click', () => showLesson(Math.max(0, Math.min(lessons.length - 1, lessonIndex + delta)), true));
   courseControls.append(button);
 }
 element('lesson').after(courseControls);
@@ -257,7 +270,7 @@ for (const item of paperReference.coverage) {
   if (!item.lesson) continue;
   const link = document.createElement('button');link.type = 'button';
   link.textContent = `${item.section} · PDF ${item.pdfPages} → lesson ${item.lesson}`;
-  link.addEventListener('click',()=>showLesson(item.lesson-1));paperMap.append(link);
+  link.addEventListener('click',()=>showLesson(item.lesson-1, true));paperMap.append(link);
 }
 element('reading-tools').parentElement.append(paperMap);
 const searchLabel = document.createElement('label');searchLabel.textContent = 'Find a concept ';
@@ -268,7 +281,7 @@ search.addEventListener('input',()=>{
   lessons.forEach((lesson,index)=>{
     if (!JSON.stringify([lesson,deepReading.lessons[index]]).toLowerCase().includes(query)) return;
     const link = document.createElement('button');link.type = 'button';link.textContent = `${index+1}. ${lesson.title}`;
-    link.addEventListener('click',()=>showLesson(index));results.append(link);
+    link.addEventListener('click',()=>showLesson(index, true));results.append(link);
   });
   if (!results.children.length) results.textContent = 'No matching lesson.';
 });
