@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A self-paced visual walkthrough of Dynamo: replica replies, partial failures, concurrent histories and application reconciliation.">
+  <title>A cart, through failure — Dynamo step by step</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="motion.css">
+  <script type="module" src="../../assets/theme.js"></script>
+  <script type="module" src="motion.js"></script>
+</head>
+<body>
+  <a class="skip" href="#player">Skip to animation</a>
+  <header class="topbar"><a href="../../">surya / journal</a><nav aria-label="Appearance"><a href="./">Dynamo companion ↗</a></nav></header>
+  <main>
+    <header class="intro-header">
+      <div><p class="eyebrow">Dynamo / step by step</p><h1>A cart, through failure.</h1><p class="intro">Follow one object through copies, disagreement and recovery.<br> See what keeps working—and what the application must decide.</p></div>
+      <p class="edition">SOSP 2007<br>Illustrated teaching model</p>
+    </header>
+    <div class="workspace">
+      <aside class="chapters" aria-label="Story chapters"><p class="eyebrow">Eight moments / one object</p><nav id="chapters" aria-label="Chapters"></nav><a href="./" class="back-link">← Full paper companion</a></aside>
+      <div class="story">
+        <div class="modebar"><div role="tablist" aria-label="Learning mode"><button id="watch-tab" type="button" role="tab" aria-selected="true" aria-controls="watch-panel">Slides</button><button id="explore-tab" type="button" role="tab" aria-selected="false" aria-controls="explore-panel" tabindex="-1">Explore</button><button id="read-tab" type="button" role="tab" aria-selected="false" aria-controls="read-panel" tabindex="-1">Read</button></div><label class="detail-control">Detail level <select id="detail"><option value="1">1 · Big picture</option><option value="2">2 · Mechanisms</option><option value="3">3 · Numbers</option><option value="4">4 · Fine print</option></select></label></div>
+        <section id="watch-panel" role="tabpanel" aria-labelledby="watch-tab">
+          <section id="player" class="player" aria-label="Dynamo slides" tabindex="-1">
+            <div class="stage-header"><p id="part" class="eyebrow">01 / Make copies</p><div class="scene-actions"><p id="scene-counter" class="small">Chapter 1 / 8</p><button id="scene-back" type="button" aria-label="Previous visual step">←</button><button id="scene-next" type="button" aria-label="Next visual step">→</button></div></div>
+            <div class="scene-heading"><h2 id="beat-title">Start with one cart</h2><p id="scene-meaning">One object · distinct copies · explicit histories</p></div>
+            <div id="scene" class="scene" role="img" aria-label="One customer cart and three replica hosts"></div>
+            <div class="scene-footer"><span id="scene-note">Simplified diagram · not physical network topology</span><span class="legend"><i class="legend-current"></i> Current work <i class="legend-known"></i> Stored state</span></div>
+            <div class="caption-band"><span id="beat-number" class="eyebrow">Step 1 / 32</span><p id="caption">A customer has a shopping cart. Its contents are stored together as one object.</p></div>
+            <div class="auto-controls"><label class="check-label"><input id="auto-advance" type="checkbox" role="switch" aria-describedby="auto-help"> Auto advance</label><p id="auto-help" class="small">Off by default · holds each step for 5 seconds after its transition.</p></div>
+            <nav class="slide-controls" aria-label="Slide navigation">
+              <button id="previous-beat" type="button" aria-label="Previous step">← Back</button>
+              <div class="slide-position"><p id="step-status" aria-live="polite">Step 1 of 32</p><button id="restart" type="button">Restart chapter</button></div>
+              <button id="next-beat" class="next-step" type="button" aria-label="Next step">Next →</button>
+            </nav>
+          </section>
+          <div class="under-player"><p id="source" class="small">Paper reference · §§1, 4.1, 4.4</p><p class="small">←/→: step · Home: restart chapter · advance when ready</p></div>
+          <details class="transcript"><summary>All explanations in this chapter</summary><ol id="transcript"></ol></details>
+        </section>
+        <section id="explore-panel" role="tabpanel" aria-labelledby="explore-tab" hidden>
+          <div class="experiment-heading"><p class="eyebrow">Change the assumption</p><h2>When can a write finish?</h2><p>Three home replicas: A, B and C. Acknowledgements follow durable storage immediately in this toy schedule. Times are invented, in milliseconds (ms).</p></div>
+          <div class="experiment-controls"><label>Unreachable host <select id="failed-host"><option value="none">None</option><option>A</option><option>B</option><option>C</option></select></label><label>Acknowledgements required <select id="required"><option>1</option><option selected>2</option><option>3</option></select></label><label class="check-label"><input id="fallback" type="checkbox"> Use a hinted fallback</label></div>
+          <div id="request-hosts" class="request-hosts"></div><p id="request-result" class="result" role="status"></p><p class="small">Fixed deadline: 6 ms. A: 1 ms, B: 3 ms, C: 8 ms; fallback D: 4 ms. An unreachable home gets no new copy in this scenario. Fallback replaces that home only. No fallback is selected merely because C is slow.</p>
+          <details class="trace"><summary>See persistence, replies and deadline</summary><ol id="request-trace"></ol></details>
+          <div class="experiment-heading policy-heading"><p class="eyebrow">Same histories / different meaning</p><h2>What should be in the cart?</h2><p>Common base: book. One known edit adds pen; another removes book. Two snapshots alone may not reveal these intentions. We supply them explicitly for the second policy.</p></div>
+          <div class="policy-inputs"><div><span class="eyebrow">Branch D3 · add pen</span><p>book + pen</p></div><div><span class="eyebrow">Branch D4 · remove book</span><p>empty cart</p></div></div>
+          <label>Reconciliation policy <select id="policy"><option value="union">Union both snapshots</option><option value="edits">Apply both known edits</option></select></label><p id="policy-result" class="result" role="status"></p><p class="small">Both options record the combined history. Vector clocks cannot choose between these application policies. The edit-aware option assumes the application knows the common base and both intentions.</p>
+        </section>
+        <section id="read-panel" role="tabpanel" aria-labelledby="read-tab" hidden>
+          <p class="eyebrow">Keep the distinctions</p><h2>A small guide to the moving parts</h2>
+          <dl class="glossary"><dt>Replica</dt><dd>A stored copy on a distinct physical host. Copies and versions are different things.</dd><dt>Coordinator</dt><dd>The node organizing this request and collecting replies. Not a permanent elected leader.</dd><dt>Context</dt><dd>Metadata passed back with a write so its earlier histories are included.</dd><dt>Concurrent siblings</dt><dd>Versions where neither history contains the other. Storage preserves both for application reconciliation.</dd><dt>Vector clock</dt><dd>Coordinating-node counters describing causal history. Counters are not seconds.</dd><dt><button type="button" class="symbol-label" data-help="N" aria-label="Explain N">N</button>, <button type="button" class="symbol-label" data-help="R" aria-label="Explain R">R</button> and <button type="button" class="symbol-label" data-help="W" aria-label="Explain W">W</button></dt><dd>N: desired distinct replicas. R: read participation threshold. W: write participation threshold.</dd><dt>Hinted handoff</dt><dd>A temporary fallback returns a copy to its intended home after recovery.</dd><dt>Read repair</dt><dd>A read discovers stale ancestors and can update their replicas.</dd><dt>Anti-entropy</dt><dd>Background synchronization of shared ranges, using Merkle trees to locate differences.</dd></dl>
+          <h3>Figure 3: the original clocks</h3><section class="table-scroll" tabindex="0" aria-label="Version clock table"><table><caption>Missing components count as zero. Cart contents are our teaching example.</caption><thead><tr><th scope="col">Version</th><th scope="col"><button class="symbol-label" data-help="Sx" type="button" aria-label="Explain Sx">Sx</button></th><th scope="col"><button class="symbol-label" data-help="Sy" type="button" aria-label="Explain Sy">Sy</button></th><th scope="col"><button class="symbol-label" data-help="Sz" type="button" aria-label="Explain Sz">Sz</button></th><th scope="col">History</th></tr></thead><tbody><tr><th scope="row">D1</th><td>1</td><td>0</td><td>0</td><td>Initial write</td></tr><tr><th scope="row">D2</th><td>2</td><td>0</td><td>0</td><td>Follows D1</td></tr><tr><th scope="row">D3</th><td>2</td><td>1</td><td>0</td><td>Follows D2 via Sy</td></tr><tr><th scope="row">D4</th><td>2</td><td>0</td><td>1</td><td>Follows D2 via Sz</td></tr><tr><th scope="row">D5</th><td>3</td><td>1</td><td>1</td><td>Includes D3 and D4, new write via Sx</td></tr></tbody></table></section>
+          <h3>What this model leaves out</h3><p>The diagrams isolate teaching moments; their geometry is not network wiring. Synthetic timings are not performance measurements. Fixed participant overlap does not establish linearizability; sloppy placement can change those participants. No production availability estimate, unlimited-failure guarantee or current DynamoDB behavior is implied.</p>
+          <p>Source: DeCandia et al., <a href="https://www.allthingsdistributed.com/files/amazon-dynamo-sosp2007.pdf"><cite>Dynamo: Amazon’s Highly Available Key-value Store</cite></a>, SOSP 2007, §§4.1–4.7, §5 and Figure 3. Narration and diagrams are original educational explanations.</p>
+        </section>
+      </div>
+    </div>
+    <footer><p>Dynamo, step by step · One guided slice of the paper. <a href="./">Continue with all twelve lessons →</a></p><p>Slide navigation does not measure understanding. No reading notes or progress are recorded.</p></footer>
+  </main>
+  <noscript><p>This visual walkthrough requires JavaScript. Read DeCandia et al., <cite>Dynamo: Amazon’s Highly Available Key-value Store</cite>, SOSP 2007, §§4.3–4.7 for replication, versioning and recovery.</p></noscript>
+</body>
+</html>

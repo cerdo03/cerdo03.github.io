@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
+const browser=await chromium.launch({headless:true,channel:process.env.QA_CHANNEL||'chrome'});
+try{
+ const page=await browser.newPage({viewport:{width:360,height:900},reducedMotion:'no-preference'});
+ const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.goto(process.env.QA_URL||'http://127.0.0.1:4213/labs/dynamo/motion.html');
+ const scene=page.locator('#scene'),toggle=page.getByRole('switch',{name:'Auto advance',exact:true});
+ const settled=()=>page.waitForFunction(()=>document.querySelector('#scene').dataset.settled==='true');
+ assert.equal(await toggle.count(),1,'Auto advance switch is available');
+ await page.getByRole('button',{name:'Next step',exact:true}).click();
+ await page.waitForTimeout(800);
+ assert.equal(await scene.getAttribute('data-settled'),'false','Transition should still be moving after 800 ms');
+ await settled();assert.equal(await toggle.isChecked(),false,'Auto advance defaults off');
+ const frame=await scene.getAttribute('data-frame');await page.waitForTimeout(1000);
+ assert.equal(await scene.getAttribute('data-frame'),frame,'Manual slides hold');
+ await toggle.check();await page.waitForTimeout(4000);
+ assert.equal(await scene.getAttribute('data-frame'),frame,'Five seconds to read before advancing');
+ await page.waitForFunction(frame=>document.querySelector('#scene').dataset.frame!==frame,frame);await settled();
+ await toggle.uncheck();const paused=await scene.getAttribute('data-frame');await page.waitForTimeout(5500);
+ assert.equal(await scene.getAttribute('data-frame'),paused,'Off cancels future advance');
+ await toggle.check();await page.getByRole('button',{name:'Next step',exact:true}).click();await settled();
+ const manual=await scene.getAttribute('data-frame');await page.waitForTimeout(4000);
+ assert.equal(await scene.getAttribute('data-frame'),manual,'Manual Next resets reading time');
+ await page.getByRole('tab',{name:'Explore',exact:true}).click();
+ assert.equal(await page.locator('#auto-advance').isChecked(),false,'Leaving Slides turns auto advance off');
+ await page.getByRole('tab',{name:'Slides',exact:true}).click();await page.waitForTimeout(5500);
+ assert.equal(await scene.getAttribute('data-frame'),manual,'Returning does not restart auto advance');
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.locator('[data-chapter]').last().click();await toggle.check();
+ while(!await page.getByRole('button',{name:'Next step',exact:true}).isDisabled())await page.getByRole('button',{name:'Next step',exact:true}).click();
+ assert.equal(await toggle.isChecked(),false,'End stops auto advance');
+ await page.getByRole('button',{name:'Previous step',exact:true}).click();assert.equal(await toggle.isEnabled(),true);
+ assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false,'Phone controls fit');
+ assert.deepEqual(errors,[]);console.log('PASS: slower transition, auto hold/advance/off, manual reset, tabs, end, reduced motion, phone layout');
+}finally{await browser.close();}
