@@ -46,6 +46,7 @@
 <div class="course-core"><p><strong>Stride</strong> is the distance between neighboring lanes’ addresses, measured here in 4-byte elements: stride 1 steps 4 bytes, stride 8 steps 32 bytes. A <strong>sector</strong> is a 32-byte address region in this teaching model: bytes 0–31, then 32–63, and so on.</p>
 <p><strong>Alignment</strong> describes where the first address falls relative to a sector boundary. Starting byte offset 0 begins on a boundary; offset 4 begins four bytes later. <strong>Coalescing</strong> means combining a warp’s nearby memory requests into fewer transactions. Here we count touched sectors, not measured DRAM traffic.</p></div>
 
+<p class="course-core"><a href="motion.html#coalescing">Walk through lane addresses → memory sectors</a> — reveal which requests share a sector before counting bytes.</p>
 <div class="lab" data-gpu-lab="coalescing" role="group" aria-label="Inspect a warp’s memory requests"><h3>Inspect a warp’s memory requests</h3><p class="gpu-static">Toy transaction model: 32 lanes each load one distinct 4-byte number; 32-byte aligned sectors, no cache reuse. Stride 1 from byte 0 touches 4 sectors (128 bytes); stride 8 touches 32 sectors (1,024 bytes) for the same 128 useful bytes.</p>
 </div>
 

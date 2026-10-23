@@ -38,6 +38,7 @@
 
 <p class="course-core">A <strong>tile</strong> is a small rectangular portion of a matrix. The control chooses a square tile’s side length in elements. A <strong>reduction chunk</strong> covers part of the shared inner dimension: load two operand tiles, add their products to the output accumulators, then continue with the next chunk. The accumulators retain earlier partial sums until every chunk is complete.</p>
 
+<p class="course-core"><a href="motion.html#tiling">Walk through load → barrier → reuse</a> — follow exact partial sums and see when shared tiles are safe to overwrite.</p>
 <div class="lab" data-gpu-lab="tiling" role="group" aria-label="Count work versus movement"><h3>Count work versus movement</h3><p class="gpu-static">For 4×4 matrices with 4-byte elements: tile side 1 issues 128 operand element loads plus 16 output stores = 576 bytes. Tile side 2 issues 64 loads plus 16 stores = 320 bytes. Tile side 4 issues 32 loads plus 16 stores = 192 bytes. These are logical global-memory demands under the teaching algorithm, not measured HBM traffic.</p>
 </div>
 

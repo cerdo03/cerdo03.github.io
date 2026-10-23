@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Self-paced GPU walkthroughs: group lane requests into memory sectors, then load, synchronize and reuse matrix tiles.">
+<title>Memory requests and tile reuse · GPU step by step</title>
+<link rel="stylesheet" href="../../assets/theme.css">
+<link rel="stylesheet" href="gpu.css">
+<link rel="stylesheet" href="motion.css">
+<link rel="stylesheet" href="../llm-systems/course.css">
+<script type="module" src="../../assets/theme.js"></script>
+<script type="module" src="motion.js"></script>
+<script type="module" src="../llm-systems/course-shell.js"></script>
+</head>
+<body class="gpu-course gpu-motion">
+<header class="site-header"><a href="../llm-systems/">Learning LLM Systems</a><nav aria-label="Page appearance"></nav></header>
+<aside aria-label="Course navigation"></aside>
+<main id="main">
+<header class="lesson-header"><p class="eyebrow">Module 3 · Optional visual companion</p><h1>Memory requests and tile reuse</h1><p>Watch addresses become sector requests, then see how shared tiles feed several outputs. One operation per Next press; pause as long as you need.</p><p><a id="return-lesson" href="lesson-2.html#coalescing">Return to memory lesson →</a></p></header>
+<div class="motion-workspace">
+<div class="gpu-controls"><label>Walkthrough<select id="chapter"><option value="0">1 · Group memory requests</option><option value="1">2 · Reuse a matrix tile</option></select></label><nav class="motion-modes" aria-label="Learning modes"><button type="button" data-mode="slides" aria-pressed="true">Slides</button><button type="button" data-mode="explore" aria-pressed="false">Explore</button><button type="button" data-mode="read" aria-pressed="false">Read</button></nav></div>
+<section id="slides-panel" aria-label="Guided visual steps">
+<div class="motion-nav" id="transport"><button type="button" id="back" disabled>← Back</button><span id="position" role="status">Step 1 of 8</span><button type="button" id="next">Next →</button></div>
+<section id="scene-card" class="motion-card" aria-labelledby="step-title"><p class="eyebrow" id="chapter-title">Group memory requests</p><h2 id="step-title">One instruction, 32 lane requests</h2><p id="caption"></p><figure><div id="scene"></div><figcaption id="scene-note">Schematic teaching model · no GPU execution</figcaption></figure></section>
+<div class="motion-options"><button type="button" id="restart">Restart chapter</button><label><input type="checkbox" role="switch" id="auto" aria-describedby="auto-help"> Auto advance</label><p id="auto-help">Off by default. Each settled step holds for 5 seconds before advancing.</p></div><p class="gpu-note">← / →: one step · Home: restart chapter · 1.5-second visual transitions represent reading pace, not GPU time.</p>
+</section>
+<section id="explore-panel" aria-label="Change one assumption" hidden><h2>Keep the work; change the movement</h2><p>32 lanes each request one distinct 4-byte value. Stride is the gap between lane addresses, in elements. Offset is the first byte address. A sector spans 32 aligned bytes. These controls count request footprints, without caches.</p><div class="gpu-controls"><label>Stride in elements<select id="stride"><option>1</option><option>2</option><option>4</option><option>8</option></select></label><label>Starting byte offset<select id="offset"><option>0</option><option>4</option><option>16</option><option>28</option></select></label></div><p id="sector-result" role="status"></p><div id="sector-experiment"></div><h3>Tile size and logical traffic</h3><p>Multiply two 4×4 matrices. One output tile loads its input rows and weight columns across all four inner positions, then stores completed outputs. Elements occupy 4 bytes; caches and edge tiles are outside this example.</p><label>Output tile side <select id="tile-size"><option>1</option><option selected>2</option><option>4</option></select></label><p id="tile-result" role="status"></p><p>Larger tiles may reduce logical loads but need more shared storage and registers; lower residency or synchronization can offset reuse. Test performance on real hardware.</p></section>
+<section id="read-panel" aria-label="Definitions and limits" hidden><h2>Read the boundaries correctly</h2><dl><dt>Lane / warp</dt><dd>A lane identifies one thread within a 32-thread NVIDIA warp. Requests are grouped for teaching, not separate chronological load instructions.</dd><dt>Sector footprint</dt><dd>Distinct aligned 32-byte address regions touched by one instruction in this model. Useful bytes count only requested values. Neither quantity alone measures DRAM traffic or runtime.</dd><dt>Tile / shared memory</dt><dd>A tile is a small matrix patch. Threads in one block explicitly stage operands in shared memory to reuse them.</dd><dt>Barrier / register sum</dt><dd>A block barrier makes staged operands safe to consume, or protects them from overwrite after use. Each output’s running sum stays in its thread’s registers. Barriers must be reached consistently by participating threads, including threads with guarded edge loads.</dd></dl><h3>What the drawings leave out</h3><p>Invented integer matrices match lesson 3.3. The illustrated 2×2 patch is not a whole warp or a realistic optimized tensor-core kernel. Loading and product phases are logical dependencies, not a GPU scheduler trace. The shared-memory tile is an explicit algorithm choice, not a mandatory HBM → cache → shared-memory route.</p><p>Tile counts describe logical global-memory element demands, including output stores. Hardware cache reuse, bank conflicts, address instructions, resource limits and actual DRAM transfers require separate analysis. Even equal mathematical results can differ in floating-point rounding with a different accumulation order.</p><p>Primary source: <a href="https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#coalesced-access-to-global-memory">NVIDIA CUDA Best Practices: coalescing</a> and <a href="https://docs.nvidia.com/cuda/cuda-c-best-practices-guide/index.html#shared-memory-in-matrix-multiplication-c-ab">shared-memory matrix multiplication</a>. <a href="lesson-2.html#coalescing">Memory lesson</a> · <a href="lesson-3.html#tiling">Tiling lesson</a>.</p></section>
+<noscript><p>Enable JavaScript for guided transitions. Contiguous aligned requests touch four sectors; stride 8 touches 32; a 4-byte offset with stride 1 touches five. A tiled multiply loads both operand tiles, synchronizes, accumulates, then synchronizes before overwrite. Full written lessons remain available through the links above.</p></noscript>
+</div>
+</main>
+<footer><span>Analytical teaching models · no measured GPU performance</span> <a href="../../">Back to journal</a></footer>
+</body>
+</html>

@@ -1,0 +1,49 @@
+.gpu-motion .motion-workspace { max-width: 1080px; }
+.gpu-motion .motion-modes, .gpu-motion .motion-options { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.gpu-motion .motion-options { padding: 16px 0; }
+.gpu-motion .motion-options label { display: flex; align-items: center; gap: 8px; }
+.gpu-motion #auto-help { flex-basis: 100%; margin: 0; font-size: .9rem; color: var(--muted); }
+.gpu-motion .motion-nav { position: sticky; top: 8px; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); }
+.gpu-motion #next { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.gpu-motion .motion-card { margin-top: 16px; padding: clamp(12px,3vw,28px); background: var(--card); border: 1px solid var(--line); border-radius: 8px; scroll-margin-top: 84px; }
+.gpu-motion .motion-card h2 { margin-top: 0; }
+.gpu-motion figure { margin: 24px 0 0; }
+.gpu-motion figcaption { color: var(--muted); font-size: .85rem; margin-top: 16px; }
+.gpu-motion #scene { min-height: 320px; }
+.gpu-motion .sector-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 10px; }
+.gpu-motion .sector-box { background: var(--surface-alt); border: 1px solid var(--line); border-radius: 6px; padding: 10px; min-width: 0; }
+.gpu-motion .sector-box strong, .gpu-motion .sector-box small { display: block; }
+.gpu-motion .lane-values { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; margin: 10px 0; }
+.gpu-motion .lane-values span { background: var(--accent-soft); text-align: center; padding: 5px 1px; border: 1px solid var(--line); font-variant-numeric: tabular-nums; font-size: .85rem; }
+.gpu-motion .lane-values small { color: var(--muted); font-size: .7rem; }
+.gpu-motion .request-link { display: block; height: 3px; background: var(--accent); transform-origin: left; }
+.gpu-motion .motion-metric { background: var(--accent-soft); padding: 12px; border-left: 3px solid var(--accent); margin-top: 12px; }
+.gpu-motion .tile-layout { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.gpu-motion .tile-panel { background: var(--surface-alt); border: 1px solid var(--line); padding: 12px; min-width: 0; border-radius: 6px; }
+.gpu-motion .tile-panel h3 { margin: 0 0 12px; font-size: 1rem; }
+.gpu-motion .matrix { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 4px; font-variant-numeric: tabular-nums; }
+.gpu-motion .matrix.output { grid-template-columns: repeat(2,minmax(0,1fr)); }
+.gpu-motion .matrix span { border: 1px solid var(--line); padding: 8px 2px; text-align: center; background: var(--card); }
+.gpu-motion .matrix .selected { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.gpu-motion .tile-stage { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 10px; }
+.gpu-motion .tile-stage p { margin: 8px 0; font-size: .85rem; }
+.gpu-motion .products { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 16px; }
+.gpu-motion .products p { padding: 10px; margin: 0; border: 1px solid var(--line); background: var(--card); font-variant-numeric: tabular-nums; }
+.gpu-motion .spent { color: var(--muted); }
+.gpu-motion #read-panel dt { font-weight: 700; margin-top: 16px; }
+.gpu-motion #read-panel dd { margin: 8px 0; }
+.gpu-motion [hidden] { display: none !important; }
+@media (max-width: 650px) {
+ .gpu-motion .tile-layout { grid-template-columns: 1fr 1fr; }
+ .gpu-motion .tile-panel:last-child { grid-column: 1 / -1; }
+ .gpu-motion .matrix.output { max-width: 260px; }
+ .gpu-motion .products { grid-template-columns: 1fr; }
+ .gpu-motion #scene { min-height: 260px; }
+ .gpu-motion .motion-nav { top: 4px; }
+}
+.gpu-motion .sector-grid.sparse { grid-template-columns: repeat(8,minmax(0,1fr)); gap: 6px; }
+.gpu-motion .sparse .sector-box { padding: 6px; font-size: .75rem; }
+.gpu-motion .sparse .request-link { margin: 5px 0; }
+@media (max-width: 900px) {
+ .gpu-motion .sector-grid.sparse { grid-template-columns: repeat(4,minmax(0,1fr)); }
+}
