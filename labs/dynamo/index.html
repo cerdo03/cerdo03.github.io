@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dynamo — paper companion</title>
+  <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="../../assets/theme.js"></script>
+</head>
+<body>
+  <header class="site-header"><a href="../../">Technical journal</a><p>2007 Dynamo paper companion · construction preview</p><nav aria-label="Appearance"></nav></header>
+  <main>
+    <nav aria-label="Guided lessons" id="lessons-nav"></nav>
+    <article id="lesson"></article>
+    <section id="clock-lab" aria-labelledby="clock-title">
+      <h2 id="clock-title">A clock records causal history</h2>
+      <p>Figure 3 clocks and branches match the paper. Cart contents attached to those clocks are invented teaching examples, not an Amazon production trace.</p>
+      <p>Each version carries a map from coordinating node to counter. A counter records updates coordinated there, not elapsed time. To compare clocks, treat missing nodes as zero. One clock descends from another if every counter is at least as large and at least one is larger.</p>
+      <p>If each clock has a counter larger than the other's, neither contains all the other's history. Keep both versions: these are concurrent siblings. The application decides how to reconcile their meaning.</p>
+      <div class="controls"><button id="previous" type="button">Previous event</button><button id="next" type="button">Next event</button><button id="reset" type="button">Restart</button></div>
+      <p id="event" role="status"></p>
+      <div id="version-graph"></div>
+      <ol id="history"></ol>
+      <h3>Inspect two known versions</h3>
+      <label>First version <select id="left"></select></label>
+      <label>Second version <select id="right"></select></label>
+      <p id="comparison"></p>
+      <table><caption>Component-by-component comparison</caption><thead><tr><th scope="col">Coordinating node</th><th scope="col">First clock</th><th scope="col">Second clock</th></tr></thead><tbody id="components"></tbody></table>
+    </section>
+    <section aria-labelledby="reading-tools">
+      <h2 id="reading-tools">Reading tools</h2>
+      <p>Attach your local copy of the paper to open source pages alongside lessons. The file stays in this browser; it is not uploaded.</p>
+      <label>Original paper PDF <input id="paper-file" type="file" accept="application/pdf"></label>
+      <a id="paper-link" href="#reading-tools" hidden target="_blank" rel="noreferrer">Open selected paper</a>
+      <p id="paper-status" role="status"></p>
+      <details><summary>Personal reading note and export</summary>
+        <label for="reading-note">What can you explain independently? What remains unclear?</label>
+        <textarea id="reading-note" rows="5"></textarea>
+        <button id="save-note" type="button">Save note locally</button>
+        <button id="export-note" type="button">Export reading record</button>
+        <p id="note-status" role="status"></p>
+        <p>Visiting a lesson records navigation only. It does not establish understanding.</p>
+      </details>
+    </section>
+    <footer><p>Source: DeCandia et al., <cite>Dynamo: Amazon’s Highly Available Key-value Store</cite>, SOSP 2007, §§1–7, Figures 1–8 and Tables 1–2. This describes the historical Dynamo system. Synthetic cart contents are not an Amazon production trace.</p></footer>
+  </main>
+  <script type="module" src="app.js?v=dynamo20261023-final"></script>
+</body>
+</html>

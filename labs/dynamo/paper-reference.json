@@ -1,0 +1,891 @@
+{
+  "schemaVersion": 1,
+  "title": "Dynamo 2007 paper research reference",
+  "sourceContract": "Supplied 16-page PDF is authority. Paper descriptions, reconstructions and teaching assumptions must be distinguished. This is research content, not certification of implementation completeness.",
+  "coverage": [
+    {
+      "section": "Abstract",
+      "pdfPages": "1",
+      "lesson": 1,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-1",
+      "claimIds": [
+        "section-1"
+      ]
+    },
+    {
+      "section": "1",
+      "pdfPages": "1–2",
+      "lesson": 1,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-1",
+      "claimIds": [
+        "section-2"
+      ]
+    },
+    {
+      "section": "2 introduction",
+      "pdfPages": "2",
+      "lesson": 1,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-1",
+      "claimIds": [
+        "section-3"
+      ]
+    },
+    {
+      "section": "2.1",
+      "pdfPages": "2–3",
+      "lesson": 1,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-1",
+      "claimIds": [
+        "section-4"
+      ]
+    },
+    {
+      "section": "2.2",
+      "pdfPages": "3",
+      "lesson": 1,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-1",
+      "claimIds": [
+        "section-5"
+      ]
+    },
+    {
+      "section": "2.3",
+      "pdfPages": "3–4",
+      "lesson": 1,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-1",
+      "claimIds": [
+        "section-6"
+      ]
+    },
+    {
+      "section": "3.1",
+      "pdfPages": "4",
+      "lesson": 12,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-12",
+      "claimIds": [
+        "section-7"
+      ]
+    },
+    {
+      "section": "3.2",
+      "pdfPages": "4–5",
+      "lesson": 12,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-12",
+      "claimIds": [
+        "section-8"
+      ]
+    },
+    {
+      "section": "3.3",
+      "pdfPages": "5",
+      "lesson": 12,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-12",
+      "claimIds": [
+        "section-9"
+      ]
+    },
+    {
+      "section": "4 introduction",
+      "pdfPages": "5",
+      "lesson": 3,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-3",
+      "claimIds": [
+        "section-10"
+      ]
+    },
+    {
+      "section": "4.1",
+      "pdfPages": "5",
+      "lesson": 2,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-2",
+      "claimIds": [
+        "section-11"
+      ]
+    },
+    {
+      "section": "4.2",
+      "pdfPages": "5–6",
+      "lesson": 3,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-3",
+      "claimIds": [
+        "section-12"
+      ]
+    },
+    {
+      "section": "4.3",
+      "pdfPages": "6",
+      "lesson": 3,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-3",
+      "claimIds": [
+        "section-13"
+      ]
+    },
+    {
+      "section": "4.4",
+      "pdfPages": "6–7",
+      "lesson": 5,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-5",
+      "claimIds": [
+        "section-14"
+      ]
+    },
+    {
+      "section": "4.5",
+      "pdfPages": "7–8",
+      "lesson": 4,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-4",
+      "claimIds": [
+        "section-15"
+      ]
+    },
+    {
+      "section": "4.6",
+      "pdfPages": "8",
+      "lesson": 6,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-6",
+      "claimIds": [
+        "section-16"
+      ]
+    },
+    {
+      "section": "4.7",
+      "pdfPages": "8",
+      "lesson": 7,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-7",
+      "claimIds": [
+        "section-17"
+      ]
+    },
+    {
+      "section": "4.8.1",
+      "pdfPages": "8–9",
+      "lesson": 8,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-8",
+      "claimIds": [
+        "section-18"
+      ]
+    },
+    {
+      "section": "4.8.2",
+      "pdfPages": "9",
+      "lesson": 8,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-8",
+      "claimIds": [
+        "section-19"
+      ]
+    },
+    {
+      "section": "4.8.3",
+      "pdfPages": "9",
+      "lesson": 8,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-8",
+      "claimIds": [
+        "section-20"
+      ]
+    },
+    {
+      "section": "4.9",
+      "pdfPages": "9",
+      "lesson": 9,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-9",
+      "claimIds": [
+        "section-21"
+      ]
+    },
+    {
+      "section": "5",
+      "pdfPages": "9–10",
+      "lesson": 10,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-10",
+      "claimIds": [
+        "section-22"
+      ]
+    },
+    {
+      "section": "6 introduction / three usage patterns",
+      "pdfPages": "10–11",
+      "lesson": 11,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-11",
+      "claimIds": [
+        "section-23"
+      ]
+    },
+    {
+      "section": "6.1",
+      "pdfPages": "11",
+      "lesson": 11,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-11",
+      "claimIds": [
+        "section-24"
+      ]
+    },
+    {
+      "section": "6.2",
+      "pdfPages": "11–13",
+      "lesson": 9,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-9",
+      "claimIds": [
+        "section-25"
+      ]
+    },
+    {
+      "section": "6.3",
+      "pdfPages": "13",
+      "lesson": 5,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-5",
+      "claimIds": [
+        "section-26"
+      ]
+    },
+    {
+      "section": "6.4",
+      "pdfPages": "13–14",
+      "lesson": 10,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-10",
+      "claimIds": [
+        "section-27"
+      ]
+    },
+    {
+      "section": "6.5",
+      "pdfPages": "14",
+      "lesson": 10,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-10",
+      "claimIds": [
+        "section-28"
+      ]
+    },
+    {
+      "section": "6.6",
+      "pdfPages": "14",
+      "lesson": 12,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-12",
+      "claimIds": [
+        "section-29"
+      ]
+    },
+    {
+      "section": "7",
+      "pdfPages": "14–15",
+      "lesson": 12,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-12",
+      "claimIds": [
+        "section-30"
+      ]
+    },
+    {
+      "section": "Acknowledgements",
+      "pdfPages": "15",
+      "lesson": 12,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-12",
+      "claimIds": [
+        "section-31"
+      ]
+    },
+    {
+      "section": "Bibliography",
+      "pdfPages": "15–16",
+      "lesson": 12,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-12",
+      "claimIds": [
+        "section-32"
+      ]
+    },
+    {
+      "section": "Figure 1",
+      "pdfPages": "3",
+      "lesson": 1,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-1",
+      "claimIds": [
+        "section-33"
+      ]
+    },
+    {
+      "section": "Figure 2",
+      "pdfPages": "5",
+      "lesson": 3,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-3",
+      "claimIds": [
+        "section-34"
+      ]
+    },
+    {
+      "section": "Figure 3",
+      "pdfPages": "7",
+      "lesson": 5,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-5",
+      "claimIds": [
+        "section-35"
+      ]
+    },
+    {
+      "section": "Figure 4",
+      "pdfPages": "10",
+      "lesson": 11,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-11",
+      "claimIds": [
+        "section-36"
+      ]
+    },
+    {
+      "section": "Figure 5",
+      "pdfPages": "10",
+      "lesson": 11,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-11",
+      "claimIds": [
+        "section-37"
+      ]
+    },
+    {
+      "section": "Figure 6",
+      "pdfPages": "11",
+      "lesson": 11,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-11",
+      "claimIds": [
+        "section-38"
+      ]
+    },
+    {
+      "section": "Figure 7",
+      "pdfPages": "12",
+      "lesson": 9,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-9",
+      "claimIds": [
+        "section-39"
+      ]
+    },
+    {
+      "section": "Figure 8",
+      "pdfPages": "13",
+      "lesson": 9,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-9",
+      "claimIds": [
+        "section-40"
+      ]
+    },
+    {
+      "section": "Table 1",
+      "pdfPages": "5",
+      "lesson": 3,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-3",
+      "claimIds": [
+        "section-41"
+      ]
+    },
+    {
+      "section": "Table 2",
+      "pdfPages": "14",
+      "lesson": 11,
+      "status": "Implemented source-linked explanatory content; educational model abstractions are labeled where applicable",
+      "verification": "Manual paper/content review; route and interaction browser checks; pure model tests where applicable. Not learner mastery or production reproduction.",
+      "contentId": "lesson-11",
+      "claimIds": [
+        "section-42"
+      ]
+    }
+  ],
+  "table1": [
+    {
+      "problem": "Partitioning",
+      "technique": "Consistent hashing",
+      "paperAdvantage": "Incremental scalability",
+      "caveat": "Virtual tokens balance hash-space ranges, not arbitrary hot-key traffic.",
+      "source": "Table 1 · PDF p.5",
+      "pdfPage": 5
+    },
+    {
+      "problem": "High availability for writes",
+      "technique": "Vector clocks with reconciliation during reads",
+      "paperAdvantage": "Version size decoupled from update rates",
+      "caveat": "Clock entries grow with coordinating identities; pruning loses ancestry precision. Semantic reconciliation remains application work.",
+      "source": "Table 1 · PDF p.5",
+      "pdfPage": 5
+    },
+    {
+      "problem": "Handling temporary failures",
+      "technique": "Sloppy quorum and hinted handoff",
+      "paperAdvantage": "Availability and durability when some replicas unavailable",
+      "caveat": "Thresholds may fail; disjoint participant sets break fixed-set overlap. Losing sole surviving acknowledged copy is irreversible.",
+      "source": "Table 1 · PDF p.5",
+      "pdfPage": 5
+    },
+    {
+      "problem": "Recovering from permanent failures",
+      "technique": "Anti-entropy using Merkle trees",
+      "paperAdvantage": "Synchronizes divergent replicas in background",
+      "caveat": "Hashes locate differences; synchronization requires surviving values, eventual communication and reconciliation.",
+      "source": "Table 1 · PDF p.5",
+      "pdfPage": 5
+    },
+    {
+      "problem": "Membership and failure detection",
+      "technique": "Gossip-based membership protocol and failure detection",
+      "paperAdvantage": "Symmetry; no centralized membership/liveness registry",
+      "caveat": "Administrative joins/leaves differ from local reachability suspicion. Seeds aid discovery, not leadership.",
+      "source": "Table 1 · PDF p.5",
+      "pdfPage": 5
+    }
+  ],
+  "evidence": [
+    {
+      "source": "Abstract/§1, pp.1–2",
+      "preserve": "Highly available production synthesis; shopping carts/session workloads",
+      "limits": "Historical scope; not a formal all-failure guarantee",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 1,
+      "claimId": "evidence-1",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 1, p.3",
+      "preserve": "Service fan-out, stores inside service boundaries",
+      "limits": "Architecture illustration, not timing dataset",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 3,
+      "claimId": "evidence-2",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Table 1, p.5",
+      "preserve": "Each problem → technique → claimed advantage",
+      "limits": "Pruning bounded version metadata loses ancestry precision; reconciliation can still require application semantics.",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 5,
+      "claimId": "evidence-3",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 2, p.5",
+      "preserve": "Clockwise placement and three distinct owners",
+      "limits": "The simplified ring omits virtual-token duplication and datacenter-diversity policy.",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 5,
+      "claimId": "evidence-4",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 3, p.7",
+      "preserve": "D1–D5 clocks/branching/merge",
+      "limits": "Exact worked history, not wall-clock ordering",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 7,
+      "claimId": "evidence-5",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 4, p.10; §6.1 p.11",
+      "preserve": "December 2006, ~30 days, average vs p99.9 read/write, 12-hour ticks; diurnal variation",
+      "limits": "The plot summarizes latency distributions rather than providing raw request samples. The text reports tails around 200 ms, approximately an order of magnitude above averages; these observations are workload-specific.",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 10,
+      "claimId": "evidence-6",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 5, p.10; §6.1 p.11",
+      "preserve": "Buffered/unbuffered write p99.9 over 24h, hourly ticks; reported 5× peak improvement",
+      "limits": "Durability trade-off, workload-specific; small buffer example 1,000 objects",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 10,
+      "claimId": "evidence-7",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 6, p.11; §6.2",
+      "preserve": "24h/30-minute windows, >15% deviation threshold, roughly 20% imbalance low load vs 10% high",
+      "limits": "Request skew and popular-key breadth matter; not proof load always balances",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 11,
+      "claimId": "evidence-8",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 7, p.12",
+      "preserve": "Three distinct partition/placement strategies",
+      "limits": "Partition boundaries and replica ownership are different: fixed boundaries can remain unchanged while ownership changes.",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 12,
+      "claimId": "evidence-9",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Figure 8, p.13",
+      "preserve": "S=30,N=3; efficiency vs equal per-node metadata budget, abstract units; strategy 3 best, 2 worst",
+      "limits": "Paper reports strategy 3 reduces metadata ~three orders of magnitude vs 1; no byte-exact universal claim",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 13,
+      "claimId": "evidence-10",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "§6.3 p.13",
+      "preserve": "24h cart requests: 99.94% one version, 0.00057% two, 0.00047% three, 0.00009% four",
+      "limits": "Reported percentages total 99.94113%, leaving an unexplained remainder. The paper attributes observed increases mainly to concurrent writers and automated clients; failures can still produce divergence.",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 13,
+      "claimId": "evidence-11",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "Table 2, p.14",
+      "preserve": "Server: p99.9 read 68.9 ms, write 68.5; avg read 3.9, write 4.02. Client: 30.4,30.4,1.55,1.9",
+      "limits": "The comparison spans 24 hours. Derived read/write p99.9 improvements are 38.5/38.1 ms; average improvements are 2.35/2.12 ms. The prose instead states average improvements of 3–4 ms. The paper does not explain this discrepancy.",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 14,
+      "claimId": "evidence-12",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "§6.5 p.14",
+      "preserve": "Feedback-based background resource control",
+      "limits": "Exact algorithm not given; 60s/50ms is explanatory example",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 14,
+      "claimId": "evidence-13",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    },
+    {
+      "source": "§6.6 p.14",
+      "preserve": "Successful responses for 99.9995% of requests; no loss observed to date",
+      "limits": "Historical observation; denominator/window not fully specified, no perpetual availability/durability SLA",
+      "classification": "Paper evidence plus explicit plan interpretation",
+      "pdfPage": 14,
+      "claimId": "evidence-14",
+      "confidence": "High confidence in faithful reporting of supplied PDF; limited generalization beyond reported workload",
+      "conditions": "Historical paper conditions and omissions described in the observation and limits fields"
+    }
+  ],
+  "bibliography": [
+    {
+      "number": 1,
+      "title": "Farsite: federated, available, and reliable storage for an incompletely trusted environment",
+      "authors": "Adya et al.",
+      "year": 2002,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 2,
+      "title": "An algorithm for concurrency control and recovery in replicated distributed databases",
+      "authors": "Bernstein and Goodman",
+      "year": 1984,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 3,
+      "title": "Bigtable: a distributed storage system for structured data",
+      "authors": "Chang et al.",
+      "year": 2006,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 4,
+      "title": "Process-based regulation of low-importance processes",
+      "authors": "Douceur and Bolosky",
+      "year": 2000,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 5,
+      "title": "Cluster-based scalable network services",
+      "authors": "Fox et al.",
+      "year": 1997,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 6,
+      "title": "The Google file system",
+      "authors": "Ghemawat, Gobioff and Leung",
+      "year": 2003,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 7,
+      "title": "The dangers of replication and a solution",
+      "authors": "Gray et al.",
+      "year": 1996,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 8,
+      "title": "On scalable and efficient distributed failure detectors",
+      "authors": "Gupta, Chandra and Goldszmidt",
+      "year": 2001,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 9,
+      "title": "OceanStore: an architecture for global-scale persistent storage",
+      "authors": "Kubiatowicz et al.",
+      "year": 2000,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 10,
+      "title": "Consistent hashing and random trees: distributed caching protocols for relieving hot spots on the World Wide Web",
+      "authors": "Karger et al.",
+      "year": 1997,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 11,
+      "title": "Notes on Distributed Databases",
+      "authors": "Lindsay et al.",
+      "year": 1979,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 12,
+      "title": "Time, clocks, and the ordering of events in a distributed system",
+      "authors": "Lamport",
+      "year": 1978,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 13,
+      "title": "A digital signature based on a conventional encryption function",
+      "authors": "Merkle",
+      "year": 1988,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 14,
+      "title": "Beehive: O(1)lookup performance for power-law query distributions in peer-to-peer overlays",
+      "authors": "Ramasubramanian and Sirer",
+      "year": 2004,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 15,
+      "title": "Resolving file conflicts in the Ficus file system",
+      "authors": "Reiher et al.",
+      "year": 1994,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 16,
+      "title": "Pastry: Scalable, decentralized object location and routing for large-scale peer-to-peer systems",
+      "authors": "Rowstron and Druschel",
+      "year": 2001,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 17,
+      "title": "Storage management and caching in PAST, a large-scale, persistent peer-to-peer storage utility",
+      "authors": "Rowstron and Druschel",
+      "year": 2001,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 18,
+      "title": "FAB: building distributed enterprise disk arrays from commodity components",
+      "authors": "Saito et al.",
+      "year": 2004,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 19,
+      "title": "Coda: A Resilient Distributed File System",
+      "authors": "Satyanarayanan, Kistler and Siegel",
+      "year": 1987,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 20,
+      "title": "Chord: A scalable peer-to-peer lookup service for internet applications",
+      "authors": "Stoica et al.",
+      "year": 2001,
+      "pdfPage": 15,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 21,
+      "title": "Managing update conflicts in Bayou, a weakly connected replicated storage system",
+      "authors": "Terry et al.",
+      "year": 1995,
+      "pdfPage": 16,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 22,
+      "title": "A majority consensus approach to concurrency control for multiple copy databases",
+      "authors": "Thomas",
+      "year": 1979,
+      "pdfPage": 16,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 23,
+      "title": "Antiquity: exploiting a secure log for wide-area distributed storage",
+      "authors": "Weatherspoon et al.",
+      "year": 2007,
+      "pdfPage": 16,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    },
+    {
+      "number": 24,
+      "title": "SEDA: an architecture for well-conditioned, scalable internet services",
+      "authors": "Welsh, Culler and Brewer",
+      "year": 2001,
+      "pdfPage": 16,
+      "source": "Bibliography in supplied PDF; not independently reviewed",
+      "externalUrl": null
+    }
+  ],
+  "acknowledgements": {
+    "source": "PDF p.15",
+    "people": [
+      "Pat Helland: contribution to initial design",
+      "Marvin Theimer and Robert van Renesse: comments",
+      "Jeff Mogul: shepherd and camera-ready feedback"
+    ]
+  },
+  "missingMechanisms": [
+    "Exact Amazon retry schedules, context encoding, restart-safe clock allocation, membership race arbitration and balancing algorithm are not fully specified; teaching choices are labeled.",
+    "Capstone uses atomic macro-events for multi-message repair and confirmed transfer; request lab separately exposes persistence versus acknowledgement. No real network or database benchmark.",
+    "Controller formula, link delays and workload are synthetic. Original raw experimental samples unavailable.",
+    "Physical touch devices and screen-reader speech not directly tested; keyboard, labels and rendered layout checked."
+  ],
+  "numericalAnomalies": [
+    "Version percentages sum to 99.94113%; remainder unexplained. Do not normalize.",
+    "Table 2 average improvement 2.35/2.12 ms conflicts with prose 3–4 ms. Preserve both."
+  ],
+  "referenceExtractionNote": "Bibliography entries indexed by number with faithful titles, shortened author lists and year; no URLs invented. Original two-column extraction is interleaved; complete raw bibliography retained below.",
+  "rawBibliographyExtraction": "REFERENCES\ndistributed system. ACM Communications, 21(7), pp. 558-\n[1] Adya, A., Bolosky, W. J., Castro, M., Cermak, G., Chaiken, 565, 1978.\nR., Douceur, J. R., Howell, J., Lorch, J. R., Theimer, M., and\n[13] Merkle, R. A digital signature based on a conventional\nWattenhofer, R. P. 2002. Farsite: federated, available, and\nencryption function. Proceedings of CRYPTO, pages 369–\nreliable storage for an incompletely trusted environment.\n378. Springer-Verlag, 1988.\nSIGOPS Oper. Syst. Rev. 36, SI (Dec. 2002), 1-14.\n[14] Ramasubramanian, V., and Sirer, E. G. Beehive: O(1)lookup\n[2] Bernstein, P.A., and Goodman, N. An algorithm for\nperformance for power-law query distributions in peer-to-\nconcurrency control and recovery in replicated distributed\npeer overlays. In Proceedings of the 1st Conference on\ndatabases. ACM Trans. on Database Systems, 9(4):596-615,\nSymposium on Networked Systems Design and\nDecember 1984\nImplementation, San Francisco, CA, March 29 - 31, 2004.\n[3] Chang, F., Dean, J., Ghemawat, S., Hsieh, W. C., Wallach,\n[15] Reiher, P., Heidemann, J., Ratner, D., Skinner, G., and\nD. A., Burrows, M., Chandra, T., Fikes, A., and Gruber, R.\nPopek, G. 1994. Resolving file conflicts in the Ficus file\nE. 2006. Bigtable: a distributed storage system for structured\nsystem. In Proceedings of the USENIX Summer 1994\ndata. In Proceedings of the 7th Conference on USENIX\nTechnical Conference on USENIX Summer 1994 Technical\nSymposium on Operating Systems Design and\nConference - Volume 1 (Boston, Massachusetts, June 06 - 10,\nImplementation - Volume 7 (Seattle, WA, November 06 - 08,\n1994). USENIX Association, Berkeley, CA, 12-12..\n2006). USENIX Association, Berkeley, CA, 15-15.\n[16] Rowstron, A., and Druschel, P. Pastry: Scalable,\n[4] Douceur, J. R. and Bolosky, W. J. 2000. Process-based\ndecentralized object location and routing for large-scale peer-\nregulation of low-importance processes. SIGOPS Oper. Syst.\nto-peer systems. Proceedings of Middleware, pages 329-350,\nRev. 34, 2 (Apr. 2000), 26-27.\nNovember, 2001.\n[5] Fox, A., Gribble, S. D., Chawathe, Y., Brewer, E. A., and\n[17] Rowstron, A., and Druschel, P. Storage management and\nGauthier, P. 1997. Cluster-based scalable network services.\ncaching in PAST, a large-scale, persistent peer-to-peer\nIn Proceedings of the Sixteenth ACM Symposium on\nstorage utility. Proceedings of Symposium on Operating\nOperating Systems Principles (Saint Malo, France, October\nSystems Principles, October 2001.\n05 - 08, 1997). W. M. Waite, Ed. SOSP '97. ACM Press,\nNew York, NY, 78-91. [18] Saito, Y., Frølund, S., Veitch, A., Merchant, A., and Spence,\nS. 2004. FAB: building distributed enterprise disk arrays\n[6] Ghemawat, S., Gobioff, H., and Leung, S. 2003. The Google\nfrom commodity components. SIGOPS Oper. Syst. Rev. 38, 5\nfile system. In Proceedings of the Nineteenth ACM\n(Dec. 2004), 48-58.\nSymposium on Operating Systems Principles (Bolton\nLanding, NY, USA, October 19 - 22, 2003). SOSP '03. ACM [19] Satyanarayanan, M., Kistler, J.J., Siegel, E.H. Coda: A\nPress, New York, NY, 29-43. Resilient Distributed File System. IEEE Workshop on\nWorkstation Operating Systems, Nov. 1987.\n[7] Gray, J., Helland, P., O'Neil, P., and Shasha, D. 1996. The\ndangers of replication and a solution. In Proceedings of the [20] Stoica, I., Morris, R., Karger, D., Kaashoek, M. F., and\n1996 ACM SIGMOD international Conference on Balakrishnan, H. 2001. Chord: A scalable peer-to-peer\nManagement of Data (Montreal, Quebec, Canada, June 04 - lookup service for internet applications. In Proceedings of\n06, 1996). J. Widom, Ed. SIGMOD '96. ACM Press, New the 2001 Conference on Applications, Technologies,\nYork, NY, 173-182. Architectures, and Protocols For Computer Communications\n(San Diego, California, United States). SIGCOMM '01.\n[8] Gupta, I., Chandra, T. D., and Goldszmidt, G. S. 2001. On\nACM Press, New York, NY, 149-160.\nscalable and efficient distributed failure detectors. In\nProceedings of the Twentieth Annual ACM Symposium on\n220199\n--- PDF PAGE 16 ---\n[21] Terry, D. B., Theimer, M. M., Petersen, K., Demers, A. J., [23] Weatherspoon, H., Eaton, P., Chun, B., and Kubiatowicz, J.\nSpreitzer, M. J., and Hauser, C. H. 1995. Managing update 2007. Antiquity: exploiting a secure log for wide-area\nconflicts in Bayou, a weakly connected replicated storage distributed storage. SIGOPS Oper. Syst. Rev. 41, 3 (Jun.\nsystem. In Proceedings of the Fifteenth ACM Symposium on 2007), 371-384.\nOperating Systems Principles (Copper Mountain, Colorado,\n[24] Welsh, M., Culler, D., and Brewer, E. 2001. SEDA: an\nUnited States, December 03 - 06, 1995). M. B. Jones, Ed.\narchitecture for well-conditioned, scalable internet services.\nSOSP '95. ACM Press, New York, NY, 172-182.\nIn Proceedings of the Eighteenth ACM Symposium on\n[22] Thomas, R. H. A majority consensus approach to Operating Systems Principles (Banff, Alberta, Canada,\nconcurrency control for multiple copy databases. ACM October 21 - 24, 2001). SOSP '01. ACM Press, New York,\nTransactions on Database Systems 4 (2): 180-209, 1979. NY, 230-243.\n221200"
+}

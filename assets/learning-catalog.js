@@ -3,6 +3,7 @@ export const projects = {
 };
 
 export const sites = {
+  dynamo: { title: 'Dynamo Paper Companion', path: '/labs/dynamo/', tags: ['Distributed systems', 'Storage', 'Research paper'] },
   gpu: { project: 'llm-systems', title: 'GPU Architecture and Performance Engineering', path: '/labs/gpu/', tags: ['GPU', 'Performance', 'Inference'] },
   'architecture-explorer': { project: 'llm-systems', title: 'Transformer Architecture Explorer', path: '/labs/attention/architecture-explorer/', tags: ['Attention', '3D'] },
   'math-fluency': { project: 'llm-systems', title: 'Mathematical Notation for Systems Engineers', path: '/labs/math-fluency/', tags: ['Mathematics', 'Attention'] },

@@ -1,0 +1,612 @@
+{
+  "source": "Dynamo: Amazon’s Highly Available Key-value Store (2007), user-supplied 16-page PDF",
+  "scope": "Historical Dynamo; teaching reconstructions explicitly labeled; no modern production claims.",
+  "lessons": [
+    {
+      "lesson": 1,
+      "title": "Availability starts with a business decision",
+      "source": "§§1–2.3 · PDF pp.1–4 · Figure 1",
+      "definitions": [
+        {
+          "term": "Replica",
+          "meaning": "A separately stored copy of an object on another host."
+        },
+        {
+          "term": "Latency",
+          "meaning": "Elapsed time between sending a request and receiving its response."
+        },
+        {
+          "term": "Availability",
+          "meaning": "Ability to complete a request under the stated workload, failure conditions, and deadline."
+        },
+        {
+          "term": "Datacenter",
+          "meaning": "A facility containing machines and shared infrastructure; failures can affect many hosts together."
+        },
+        {
+          "term": "Replica consistency",
+          "meaning": "Whether separate copies expose compatible versions of the same object."
+        },
+        {
+          "term": "Database consistency",
+          "meaning": "Preservation of application/database invariants; do not silently substitute this meaning for agreement between replicas."
+        },
+        {
+          "term": "Tail latency",
+          "meaning": "The slow end of a latency distribution, expressed here through high percentiles."
+        }
+      ],
+      "sections": [
+        {
+          "title": "A slow dependency becomes a slow page",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Suppose rendering waits for every required service. Its dependency wait is at least the maximum of those response times, before rendering overhead. If service X normally takes 5 ms but takes 400 ms on this request, fast replies from the other services cannot complete the page. This wait-for-all model explains the motivation; it is not a claim that every Amazon request used this exact scheduling policy.",
+            "If independent dependencies each meet a deadline with probability p, all m meet it with probability p to the power m. Independence is essential: a shared network failure correlates their delays. Neither this calculation nor an animation supplies a production availability estimate."
+          ]
+        },
+        {
+          "title": "What a percentile does and does not promise",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "For a sorted toy sample of 1,000 latencies, the nearest-rank convention places p99.9 at item 999. That threshold permits one sample above it; it does not cap the worst request. Different estimators differ on small samples. Mean is the arithmetic average; median splits the ordered sample near its middle. Neither describes the slowest fraction adequately."
+          ]
+        },
+        {
+          "title": "Scope is part of the design",
+          "kind": "Paper states",
+          "paragraphs": [
+            "The illustrated contract combines 300 ms, 99.9% of requests, and a peak load of 500 requests per second. Object size, offered load and workload shape affect whether latency targets are meaningful. The paper selects 99.9% using a cost-benefit judgment rather than claiming every higher percentile is equally affordable.",
+            "Dynamo serves relatively small opaque blobs through primary keys, with single-item updates and no isolation guarantee. Its trusted internal environment and initial scale of hundreds of storage hosts remove requirements that other systems may need. The trade-off is appropriate to this workload; it is not a universal verdict against relational databases."
+          ]
+        },
+        {
+          "title": "Production motivation and the limits of disclosure",
+          "kind": "Paper states",
+          "paragraphs": [
+            "The introduction reports a shopping-cart service serving tens of millions of requests and well over three million checkouts in a single day, plus session-state service activity involving hundreds of thousands of concurrent sessions. These examples motivate the requirements; they are historical reported workload observations, not a benchmark produced by this website.",
+            "The paper explicitly withholds some absolute request rates, outage lengths and inter- and intra-datacenter latency details for business reasons. Aggregate charts demonstrate experiences under the described deployments; they do not specify a reproducible workload generator."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Why can a good average coexist with a bad customer experience?",
+        "answer": "An average mixes fast and slow requests. A small slow fraction can barely move that average while repeatedly affecting customers with expensive histories or pages with many dependencies. High-percentile targets expose this tail, under a stated workload."
+      }
+    },
+    {
+      "lesson": 2,
+      "title": "Context carries an observed history",
+      "source": "§§4.1,4.4 · PDF pp.5–7; §6 · pp.10–11",
+      "definitions": [
+        {
+          "term": "Context",
+          "meaning": "Opaque system metadata returned with an object and supplied with an update."
+        },
+        {
+          "term": "Sibling",
+          "meaning": "One of multiple causally incomparable object versions."
+        }
+      ],
+      "sections": [
+        {
+          "title": "A put is a replacement object, not a cart command",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Read cart:42 as {book} with context C. The application constructs {book,pen} and submits put(cart:42,C,{book,pen}). Dynamo sees bytes and metadata; it does not know whether the change meant adding pen, replacing an item, or correcting a bug. Those semantics belong to the service.",
+            "If another client removed book while this client read an older version, merely delivering the second put later does not prove it incorporates the removal. Its context tells the store what history it is based on. Wall-clock arrival is not that evidence."
+          ]
+        },
+        {
+          "title": "The interface deliberately exposes unresolved work",
+          "kind": "Paper states",
+          "paragraphs": [
+            "A get can return a list of conflicting objects along with context. After the application resolves their contents, an update with that returned context collapses the represented branches. The store handles syntactic ancestry; the application supplies a meaningful value.",
+            "The paper describes business-specific reconciliation, physical-timestamp reconciliation, and read-heavy configurations. Context is not an instruction that every application must understand or serialize clocks itself. HTTP is mentioned as Amazon infrastructure transport, but no public payload schema or context byte encoding is specified."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Why is returning one arbitrarily selected sibling dangerous?",
+        "answer": "The store would hide a concurrent branch whose business effect may still matter. Without application semantics it cannot establish that the selected value incorporates the other update."
+      }
+    },
+    {
+      "lesson": 3,
+      "title": "Ownership and replica placement are different maps",
+      "source": "§§4.2–4.3 · PDF pp.5–6 · Figure 2",
+      "definitions": [
+        {
+          "term": "Token",
+          "meaning": "A position in hash space assigned to a physical host."
+        },
+        {
+          "term": "Virtual node",
+          "meaning": "A logical placement position for which a physical host is responsible."
+        },
+        {
+          "term": "Preference list",
+          "meaning": "An ordered list of distinct physical candidate hosts for a key, extending beyond N."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Count hosts, not positions",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Suppose clockwise tokens after a key belong to A,A,B,C,D. For N=3, the three physical replicas are A,B,C. Counting the first three tokens would yield only A and B, failing the three-host intent. Additional candidates such as D remain useful when earlier hosts are unreachable.",
+            "A teaching ring often uses small integers and predecessor-exclusive, successor-inclusive intervals (a,b]. Paper Figure 2 puts K in the range ending at B and stores it at B,C,D. These endpoint and collision conventions make the toy deterministic; an integer diagram is not the original 128-bit MD5 space."
+          ]
+        },
+        {
+          "title": "More tokens do not split one hot object",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Virtual nodes distribute the impact of a physical host departure across peers and allow capacity weighting. Their benefit concerns ownership over many ranges. A concentrated workload on one key still targets that key’s replica group. The later evaluation explicitly assumes enough popular keys to spread hot traffic.",
+            "The placement ring is not network topology. Datacenter diversity is a further placement requirement: three physical hosts inside one failed facility do not provide the same protection as copies spread across facilities."
+          ]
+        },
+        {
+          "title": "Join changes metadata before data can arrive",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Inserting a token changes interval ownership and potentially replica responsibilities. Those are calculations over a placement map. Actual values still need transfer. An animation that instantly fills the new host would erase the bootstrap interval and its resource cost."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Why can balanced hash-space ownership coexist with an overloaded host?",
+        "answer": "Key-space share measures placement, not popularity. A few very popular keys can dominate requests even when each host owns equal hash-space intervals."
+      }
+    },
+    {
+      "lesson": 4,
+      "title": "Thresholds count completed participants",
+      "source": "§4.5 · PDF pp.7–8; §5 · pp.9–10; §6.4 · pp.13–14",
+      "definitions": [
+        {
+          "term": "Coordinator",
+          "meaning": "The node or client-side state machine managing one operation."
+        },
+        {
+          "term": "N",
+          "meaning": "Number of distinct replica hosts targeted for a key."
+        },
+        {
+          "term": "R",
+          "meaning": "Minimum read responses required to complete a read."
+        },
+        {
+          "term": "W",
+          "meaning": "Minimum write acknowledgements required to complete a write."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Trace the acknowledgement boundary",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Let A coordinate N=3,W=2 and persist locally at time 2. Let B acknowledge at 8 and C at 90. In this synthetic unbuffered trace, the write may complete at 8: A and B count, and C remains outstanding. W−1 remote acknowledgements plus the local write total W; adding W remote replies would mistakenly demand three.",
+            "For parallel requests with identical start times, completion follows the threshold-th successful reply, with coordination overhead and deadlines added. It is not necessarily the slowest of all N. If the deadline expires after only one qualifying response, the client receives failure even though a copy may exist. The paper leaves detailed retry states out."
+          ]
+        },
+        {
+          "title": "Derive overlap without overclaiming",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "For read set U and acknowledged write set V inside the same N-member universe, |U∪V|≤N. Since |U∪V|=|U|+|V|−|U∩V|, their intersection is at least R+W−N. With N=3 and R=W=2, at least one participant overlaps.",
+            "This proves a set fact under fixed membership, completed operations and the chosen persistence model. It does not define ordering for simultaneous writes, ensure the read samples every branch, or prove linearizability. Sloppy placement may use different universes, invalidating the premise."
+          ]
+        },
+        {
+          "title": "The coordinator role evolves across the paper",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Section 4.5 presents forwarding to a top-N node. Section 6.4 later allows any node to coordinate reads, while vector-clock writes remain coordinated within the current preference list. These are stages of the described design, not evidence of one permanent elected primary."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "If a put times out, can the client infer that nothing was written?",
+        "answer": "No. Some replicas may have stored the version before too few replies arrived. Timeout reports an unsuccessful completion condition, not proof that all side effects were absent."
+      }
+    },
+    {
+      "lesson": 5,
+      "title": "Causal order survives without wall-clock order",
+      "source": "§4.4 · PDF pp.6–7 · Figure 3; §6.3 · p.13",
+      "definitions": [
+        {
+          "term": "Causality",
+          "meaning": "Whether an update incorporates the history of an earlier update, rather than merely arriving later."
+        },
+        {
+          "term": "Strict dominance",
+          "meaning": "Every clock component is at least as large, with at least one strictly larger."
+        },
+        {
+          "term": "Syntactic reconciliation",
+          "meaning": "Discarding versions whose histories are subsumed by another version."
+        },
+        {
+          "term": "Semantic reconciliation",
+          "meaning": "Deciding how conflicting business values combine."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Read every component in Figure 3",
+          "kind": "Paper states",
+          "paragraphs": [
+            "D1 has {Sx:1}; D2 has {Sx:2}; D3 has {Sx:2,Sy:1}; D4 has {Sx:2,Sz:1}. D3 and D4 both subsume D2. Comparing D3 with D4 gives Sy:1>0 but Sz:0<1, so neither dominates. Treat an absent component as zero for this comparison.",
+            "The context representing both branches joins their components to {Sx:2,Sy:1,Sz:1}. A reconciled update coordinated by Sx produces D5={Sx:3,Sy:1,Sz:1}. The new value must actually incorporate the intended business reconciliation; joining maps alone does not choose its contents."
+          ]
+        },
+        {
+          "title": "A cart merge can undo a removal",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Start at {book}. One branch removes book, producing {}; another independently adds pen to its old view, producing {book,pen}. Union gives {book,pen}. The addition survives but book returns. This illustrates the paper’s reported resurrection effect, not a complete specification of Amazon’s cart resolver.",
+            "Physical last-write-wins can instead choose one branch based on its timestamp. That is a policy, not a causal proof; clock skew and concurrent meaningful edits make its loss behavior important. Vector clocks identify incomparability but cannot decide the correct business outcome."
+          ]
+        },
+        {
+          "title": "Pruning buys bounded metadata by losing information",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Full clocks X={A:1,B:1} and Y={A:1,B:2} establish that Y descends from X. If B is removed from Y, the retained map {A:1} no longer establishes that relationship and can misleadingly appear older under a naive comparison. This is a synthetic information-loss example, not a documented production incident or a complete implementation of Dynamo pruning.",
+            "The paper records last-update timestamps per clock entry, removes the oldest around a threshold such as ten, and explicitly says descendant relationships may not be derived accurately afterward. It reports that the issue had not surfaced and was not thoroughly investigated. Counter allocation across restarts and exact pruning corner cases remain open details."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Does reading two siblings merge them?",
+        "answer": "No. The read can return both values and a context covering both histories. A later application-chosen value written with that context performs the semantic reconciliation and creates a version subsuming both."
+      }
+    },
+    {
+      "lesson": 6,
+      "title": "Sloppy placement keeps work moving through local failure",
+      "source": "§4.6 · PDF p.8; §6 · pp.10–11",
+      "definitions": [
+        {
+          "term": "Hint",
+          "meaning": "Metadata naming the intended home of a temporary replica."
+        },
+        {
+          "term": "Local suspicion",
+          "meaning": "One participant’s conclusion that a peer is presently unreachable."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Follow the actual sets",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Homes are A,B,C; fallback candidates extend to D,E,F. Split the network into A/D/E and B/C/F. A left-side write can obtain acknowledgements from A,D; a right-side read can obtain replies from B,C. Both thresholds equal two while the sets have no member in common.",
+            "The identity R+W>N remains numerically true for N=3. What fails is the assumption that both response sets are subsets of the same three members. Raising thresholds without tracing actual reachable placement cannot restore that missing premise."
+          ]
+        },
+        {
+          "title": "A temporary copy has a destination",
+          "kind": "Paper states",
+          "paragraphs": [
+            "A fallback records the intended recipient and stores hinted data separately. It scans that storage periodically, attempts delivery when the recipient recovers and may delete the temporary object after successful transfer. A failed delivery is not successful handoff. Temporary failure does not itself rewrite permanent membership."
+          ]
+        },
+        {
+          "title": "Distinguish three different successes",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "A request can succeed now, the stored value can remain readable later, and acknowledged data can survive future failures. These are different properties. If W=1 acknowledges the sole persisted copy and that host fails before replication, no repair mechanism can recover bytes that exist nowhere.",
+            "Datacenter replication reduces correlated-loss risk when placements and reachable thresholds actually span surviving facilities. The paper’s availability objective does not remove request deadlines, resource limits or the need for enough responsive storage participants."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Why keep a hint until transfer succeeds?",
+        "answer": "Removing it earlier could delete the temporary copy before the intended home receives it, reducing surviving copies and potentially losing the only representation of that update."
+      }
+    },
+    {
+      "lesson": 7,
+      "title": "Repair finds missing history; it cannot invent it",
+      "source": "§§4.6–4.7 · PDF p.8; §5 · pp.9–10",
+      "definitions": [
+        {
+          "term": "Read repair",
+          "meaning": "Opportunistic updating of stale replicas exposed during a read."
+        },
+        {
+          "term": "Anti-entropy",
+          "meaning": "Background replica synchronization independent of client reads."
+        },
+        {
+          "term": "Merkle tree",
+          "meaning": "A tree whose internal hashes summarize child hashes."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Client completion and repair completion differ",
+          "kind": "Paper states",
+          "paragraphs": [
+            "A read returns after enough responses. Its state machine then waits a short period for outstanding replies, using newly discovered stale versions to repair replicas. That continuation can improve future reads without extending the already completed client response.",
+            "Cold keys may never trigger read repair. Hinted handoff addresses a known temporary recipient, while anti-entropy compares shared ranges in the background. These triggers explain why the three mechanisms complement one another."
+          ]
+        },
+        {
+          "title": "A root mismatch is a location clue",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "With eight deterministic leaves, a single changed leaf changes its ancestors through the root. Compare roots, compare child summaries on the differing path, then locate the changed key. Transfer the real value/version information afterward. Hashes themselves do not contain a recoverable copy of the value.",
+            "For a missing key or several concurrent versions, both replicas need a compatible representation before hash comparison is meaningful. A teaching encoding can sort keys and version sets deterministically. That encoding, exact branching factor and hash choice are teaching decisions, not specified production internals."
+          ]
+        },
+        {
+          "title": "Equal roots and unresolved values",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Nodes compare trees for ranges hosted in common. Changing ranges can force expensive rebuilding, connecting anti-entropy cost to the partition design. Hash equality is used to avoid unnecessary synchronization; hash assumptions still matter.",
+            "Repair that encounters concurrent siblings must preserve the unresolved histories for semantic reconciliation. Replacing them with an arbitrary timestamp winner would change the application’s reconciliation policy."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Can a Merkle tree resolve whether a removed cart item should return?",
+        "answer": "No. It identifies differing content. Version metadata can identify ancestry, but the application still decides how incomparable business values should reconcile."
+      }
+    },
+    {
+      "lesson": 8,
+      "title": "Membership, suspicion and freshness are independent",
+      "source": "§4.8 · PDF pp.8–9",
+      "definitions": [
+        {
+          "term": "Membership history",
+          "meaning": "Persisted explicit additions/removals and their issue times."
+        },
+        {
+          "term": "Seed",
+          "meaning": "Externally discoverable participant used to connect membership knowledge."
+        }
+      ],
+      "sections": [
+        {
+          "title": "An outage does not equal a departure",
+          "kind": "Paper states",
+          "paragraphs": [
+            "A transient outage can last a long time without implying permanent removal. Rebalancing for every timeout would create unnecessary transfers and churn. Explicit administration initiates joins and departures; a restarted process alone must not accidentally become a new member.",
+            "Each node gossips with a random peer every second in the described system, reconciling membership histories and node-token mappings. This spreads placement knowledge; it does not force all nodes to observe the same network connectivity simultaneously."
+          ]
+        },
+        {
+          "title": "Seeds solve a discovery problem",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "A and B can each start with only its own token map. Without contact or a discoverable common participant they may remain logically separate views. Reconciliation through seeds introduces information across those views. Seeds are normally functioning storage peers, not a permanent leader approving every request."
+          ]
+        },
+        {
+          "title": "Ask three separate questions about B",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Is B a configured member? Can A reach B now? Does B hold the latest relevant versions? A timeout answers only the second question from A’s perspective. C can still reach B, while B can remain stale for a particular key.",
+            "The paper uses request traffic to discover failures and periodically retries suspected nodes. Without traffic between two nodes, immediate detection is unnecessary for their work. Detailed simultaneous administrative-change arbitration is not specified."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "If A marks B unreachable, should every node immediately remove B from the ring?",
+        "answer": "No. Reachability is local and may reflect a partition between A and B. Permanent membership uses explicit changes; other nodes may still reach B and B may later recover."
+      }
+    },
+    {
+      "lesson": 9,
+      "title": "Fixed partitions make background work manageable",
+      "source": "§4.9 · PDF p.9; §6.2 · pp.11–13 · Figures 6–8",
+      "definitions": [
+        {
+          "term": "Partitioning",
+          "meaning": "Dividing hash space into ranges."
+        },
+        {
+          "term": "Placement",
+          "meaning": "Assigning those ranges to physical replica hosts."
+        },
+        {
+          "term": "Load-balancing efficiency",
+          "meaning": "Mean per-node requests divided by the maximum per-node requests."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Why the joining node needs predecessor ranges",
+          "kind": "Paper states",
+          "paragraphs": [
+            "With N=3, X joining between A and B stores (F,G], (G,A], and (A,X]. X becomes a successor replica for ranges before its own primary interval. B,C,D offer the appropriate ranges and transfer after confirmation, preventing duplicate range transfers. A join is therefore not just taking a slice from B."
+          ]
+        },
+        {
+          "title": "Separate stable units from changing owners",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Strategy 1 uses T random tokens per node; consecutive tokens define unequal ranges. Changing membership changes boundaries. Donors scan stores, rebuild affected trees and archive awkward collections of ranges. Running bootstrap at low priority protects customers but reportedly stretched it to almost a day during busy periods.",
+            "Strategy 2 fixes Q equal partitions while retaining T random placement tokens per node. With S nodes, Q is chosen much larger than both N and S×T. Walk from a partition endpoint to the first N distinct hosts. Boundaries remain stable while placements change. It was an interim migration strategy.",
+            "Strategy 3 retains equal partitions and assigns Q/S tokens per node. Joins steal tokens and departures redistribute them while preserving assignment properties. Partition files transfer and archive as units. Maintaining balanced assignments requires coordination; the exact allocation algorithm is not supplied."
+          ]
+        },
+        {
+          "title": "Read Figure 8 on its own comparison axis",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "The comparison uses S=30,N=3 and equal amounts of per-node membership metadata, not equal T across strategies. If average load is 100 and hottest load 200, efficiency is 0.5. It approaches one as the hottest host approaches the average.",
+            "Compact metadata also reduces gossip traffic. The paper reports a three-order reduction for strategy 3 relative to strategy 1 in this comparison. That historical result does not guarantee uniform load for every key popularity distribution or teach a complete scheduler for heterogeneous hosts."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Why can fixed partitions improve bootstrap even with the same number of stored keys?",
+        "answer": "They provide stable transfer units. Files can move as units rather than requiring a scan to select keys from newly cut ranges, and range-tree boundaries do not change merely because ownership changes."
+      }
+    },
+    {
+      "lesson": 10,
+      "title": "Optimizations move costs across boundaries",
+      "source": "§5 · PDF pp.9–10; §§6.1,6.4–6.5 · pp.11,13–14",
+      "definitions": [
+        {
+          "term": "Write buffer",
+          "meaning": "Memory holding writes before periodic persistence."
+        },
+        {
+          "term": "Admission controller",
+          "meaning": "A controller allocating background resource slices using foreground feedback."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Implementation components and persistence choices",
+          "kind": "Paper states",
+          "paragraphs": [
+            "The implementation is Java. Request coordination runs over a staged event-driven messaging substrate inspired by SEDA, using Java NIO channels. One state machine handles exactly one client operation: determine targets, send requests, wait for enough replies, handle deadlines, reconcile causally related values and package the response context. Some retry and failure states are omitted from the paper.",
+            "Local persistence is pluggable: BDB Transactional Data Store, BDB Java Edition, MySQL, or an in-memory buffer with persistent backing. BDB is described as suitable for objects on the order of tens of kilobytes; MySQL handles larger objects. Applications choose according to their object-size distribution and access pattern. Most production instances described use BDB Transactional Data Store."
+          ]
+        },
+        {
+          "title": "The fastest prior reader is a placement hint",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Always choosing the first home for coordination caused uneven request load. The system instead allows a top-N node that responded fastest to the previous read to coordinate the subsequent write, recording that information in context. This favors a node with the observed data and reduces latency variation. It increases the chances of read-your-writes rather than supplying a general guarantee."
+          ]
+        },
+        {
+          "title": "Durable destination does not mean durable completion",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "In buffered mode, a memory acknowledgement can precede disk persistence. Suppose N=3,W=2: A and B acknowledge buffered values while C is selected for a durable write but remains delayed. The operation can return before C persists. If A and B fail before flushing and C never stores the value, acknowledging two replies did not establish two durable copies. This schedule explains the risk; it is synthetic.",
+            "The paper reports a fivefold p99.9 improvement with a buffer of a thousand objects during peak traffic. Selecting one durable replica mitigates risk while avoiding waiting for it specifically. It does not justify describing every successful buffered write as synchronously durable."
+          ]
+        },
+        {
+          "title": "Avoid hops, accept metadata staleness",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Client-driven reads use a cached membership view and a local coordination state machine. Clients poll a random node every ten seconds and refresh on detected stale membership. Pull reduces server-side per-client state; the cached view may remain stale during the polling window. Vector-clock writes still use a preference-list node."
+          ]
+        },
+        {
+          "title": "Recovery and foreground latency share resources",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Handoff, repair and bootstrap consume database and other resources needed by gets and puts. The controller reserves slices for background work and monitors disk latency, lock contention, transaction timeouts and queue delay. An example compares trailing sixty-second p99 database reads with a preset threshold such as 50 ms.",
+            "Reducing background slices can protect current response times while prolonging the period of incomplete recovery. The paper describes this feedback structure without specifying an exact control law. The threshold example is historical, not a present-day configuration recommendation."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Why can faster client reads improve tails more than averages?",
+        "answer": "Removing forwarding and load-balancer work removes both delay and variability. Storage caching already makes many average requests fast, while extra variable hops disproportionately affect high-percentile observations."
+      }
+    },
+    {
+      "lesson": 11,
+      "title": "Evidence has units, denominators and missing details",
+      "source": "§6 · PDF pp.10–14 · Figures 4–8 · Table 2",
+      "definitions": [
+        {
+          "term": "Observation",
+          "meaning": "A measurement from the described workload and period."
+        },
+        {
+          "term": "Guarantee",
+          "meaning": "A property that holds under explicit conditions, not merely one observed run."
+        }
+      ],
+      "sections": [
+        {
+          "title": "Three production usage patterns",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Business-specific reconciliation lets the service merge siblings according to application meaning; the shopping cart is the example. Timestamp-based reconciliation delegates last-write-wins to the store; customer session state is an example. These are distinct conflict policies, not a requirement that every Dynamo deployment use cart-style merging.",
+            "Read-heavy engines can set R=1 and W=N: reading one replica is cheap, while successful updates must reach every required participant. Product catalogs and promotional-item services fit this pattern; some instances act as authoritative persistence caches for heavier backing stores. This configuration trades write availability and latency for fast reads. It does not remove sloppy-membership and versioning caveats.",
+            "The common production configuration discussed is N=3,R=2,W=2. Higher W can reduce the period when too few copies hold an acknowledged write, while increasing the chance a write cannot meet its threshold. Availability and durability therefore do not always improve together. These are per-instance settings selected for service requirements, not universal defaults or present-day production values."
+          ]
+        },
+        {
+          "title": "Use the actual experimental scope",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Measurements use live systems with typical N=3,R=2,W=2 and a couple hundred homogeneous nodes across datacenters. Absolute request rates, outage lengths and some latency details are withheld. Those omissions prevent exact workload reconstruction.",
+            "Figure 4 covers roughly thirty days in December 2006 with twelve-hour ticks. Figure 5 covers twenty-four hours with hourly ticks. Figure 6 uses thirty-minute windows over twenty-four hours and treats deviation from average load beyond 15% as out of balance. These axes measure different populations and cannot be interchanged."
+          ]
+        },
+        {
+          "title": "Preserve inconvenient arithmetic",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "The printed version percentages sum to 99.94113%: 99.94 + 0.00057 + 0.00047 + 0.00009. The remainder is 0.05887 percentage points. The paper does not explain it; silently normalizing or inventing an extra category would misrepresent the evidence.",
+            "Table 2 averages change from 3.9 to 1.55 ms for reads and 4.02 to 1.9 ms for writes, giving improvements of 2.35 and 2.12 ms. That differs from the prose statement of three to four milliseconds. Tail differences are 38.5 and 38.1 ms from 68.9/68.5 to 30.4/30.4. Preserve the table and the prose discrepancy."
+          ]
+        },
+        {
+          "title": "Rare siblings do not prove partitions harmless",
+          "kind": "Paper states",
+          "paragraphs": [
+            "The twenty-four-hour profile observes few divergent versions, with increases associated mainly with concurrent automated writers. The mechanism still permits divergence under failures. The paper withholds detailed causal data, so the profile is not a general failure-to-conflict probability model.",
+            "The discussion reports 99.9995% successful responses and no observed data-loss event to date. The denominator and measurement window are not fully specified. An observed absence of loss does not establish impossibility of loss under the buffered or low-W schedules already discussed."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Why should a simulated graph never be presented as a reconstruction of Figure 4 raw data?",
+        "answer": "The paper does not provide its underlying samples. A simulator can demonstrate a mechanism with labeled invented inputs, but matching a qualitative shape does not recover the original workload or measurement series."
+      }
+    },
+    {
+      "lesson": 12,
+      "title": "Defend the design by naming the conditions",
+      "source": "§3 · PDF pp.4–5; §6.6 · p.14; §7 · pp.14–16",
+      "definitions": [
+        {
+          "term": "Zero-hop routing",
+          "meaning": "Maintaining enough placement information to contact the appropriate destination directly, rather than traversing a DHT overlay."
+        },
+        {
+          "term": "Eventual convergence",
+          "meaning": "Convergence after communication and repair resume, subject to retained data and a resolving policy; no arbitrary-partition deadline is implied."
+        }
+      ],
+      "sections": [
+        {
+          "title": "The contribution is a coherent production synthesis",
+          "kind": "Paper states",
+          "paragraphs": [
+            "The paper combines consistent hashing, replication, versioning, sloppy thresholds, hints, anti-entropy and gossip, then reports operational experience. Its related-work section contrasts its requirements with structured P2P routing, file systems, disconnected databases and other stores. These are comparisons made by the 2007 authors, not independently updated evaluations.",
+            "Chord and Pastry motivate the cost of multi-hop lookup. PAST focuses on immutable objects; OceanStore uses ordered updates in a different trust setting. Coda, Ficus and Bayou illustrate disconnected operation and different reconciliation choices. Bigtable offers a structured map, while Dynamo targets opaque key/value access."
+          ]
+        },
+        {
+          "title": "A full map buys latency at a scaling cost",
+          "kind": "Paper states",
+          "paragraphs": [
+            "Every node knows placement across the ring, enabling direct routing. Gossiping the full routing table makes overhead grow with membership. The design worked for hundreds of nodes; scaling to tens of thousands is explicitly nontrivial. Hierarchical extensions are suggested, not evaluated."
+          ]
+        },
+        {
+          "title": "Run the reasoning in both directions",
+          "kind": "Worked reconstruction",
+          "paragraphs": [
+            "Start with the invariant: must every accepted cart addition remain meaningful despite partial failures? Accepting versions and reconciling may serve that goal, while deletion semantics need care. If instead the decision requires globally serialized invariant checks across objects, this paper’s single-key eventual model does not provide that contract.",
+            "Now trace an accepted write: which nodes acknowledged, what persistence mode, what subsequent read participants, what causal context, what conflict policy, and which repair path? This chain exposes assumptions hidden by slogans such as quorum, always writable or eventual consistency.",
+            "Convergence cannot resurrect a uniquely lost version, make a permanent partition heal, or choose correct business meaning without a reconciliation policy. State these conditions beside the mechanism, then explain the benefit they enable."
+          ]
+        }
+      ],
+      "teachback": {
+        "prompt": "Explain a stale read after an acknowledged write without claiming vector clocks failed.",
+        "answer": "A write may acknowledge on one reachable set while a partitioned read samples another set holding older values. Vector clocks compare versions that are actually observed; they do not summon an unreachable version. Once both branches are observed, causal comparison can expose incomparability and the application can reconcile."
+      }
+    }
+  ]
+}
