@@ -70,8 +70,8 @@ test('the catalog registers the site in the LLM systems collection', async () =>
   assert.equal(sites.attention.project, 'llm-systems');
   assert.equal(sites.attention.path, '/labs/attention/');
   assert.deepEqual(siteTags(projects['llm-systems'], sites.attention), ['AI', 'LLM systems', 'Attention', 'KV cache']);
-  assert.match(read('labs/llm-systems/index.html'), /5 sites/);
-  assert.match(read('index.html'), /Collection · 5 sites/);
+  assert.match(read('labs/llm-systems/index.html'), /6 sites/);
+  assert.match(read('index.html'), /Collection · 6 sites/);
 });
 
 test('knowledge-check evaluation gives feedback without scoring', () => {

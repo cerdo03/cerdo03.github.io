@@ -1,0 +1,58 @@
+.efficient-course main { min-width: 0; }
+.efficient-course p, .efficient-course li, .efficient-course dd { line-height: 1.65; }
+.efficient-course h1 { font-size: clamp(1.8rem, 4vw, 3rem); }
+.efficient-course section { scroll-margin-top: 1rem; }
+.efficient-course .lab, .ea-player { border: 1px solid var(--line); border-radius: 12px; padding: clamp(.8rem, 2vw, 1.5rem); background: var(--card); margin-block: 1.2rem; min-width: 0; }
+.efficient-course button, .efficient-course select, .efficient-course input { font: inherit; }
+.efficient-course button, .efficient-course select { border: 1px solid var(--line); border-radius: 6px; color: var(--ink); background: var(--surface-alt); padding: .6rem .8rem; min-height: 44px; }
+.efficient-course button { cursor: pointer; }
+.efficient-course button:disabled { cursor: default; opacity: .55; }
+.efficient-course button:focus-visible, .efficient-course select:focus-visible, .efficient-course input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.ea-controls, .ea-transport, .ea-options, .ea-modes { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; }
+.ea-controls label { display: flex; flex-direction: column; gap: .3rem; }
+.ea-transport { justify-content: space-between; margin-block: 1rem; }
+.ea-transport [role="status"] { font-variant-numeric: tabular-nums; }
+.ea-scene { min-width: 0; }
+.ea-key-strip, .ea-summary, .ea-residency, .ea-pool, .ea-tables, .ea-memory { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin-block: 1rem; }
+.ea-tables { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ea-node, .ea-key, .ea-block { border: 1px solid var(--line); border-radius: 8px; padding: .8rem; background: var(--surface-alt); min-width: 0; overflow-wrap: anywhere; }
+.ea-node strong, .ea-key strong, .ea-block strong, .ea-key span, .ea-block > span { display: block; margin-bottom: .35rem; }
+.ea-key { border-top: 4px solid var(--llm-key); }
+.ea-node { font-variant-numeric: tabular-nums; }
+.ea-selected { outline: 2px solid var(--accent); outline-offset: -2px; background: var(--accent-soft); }
+.ea-active { border: 2px solid var(--accent); }
+.ea-pending { border: 2px dashed var(--accent); }
+.ea-connector { height: 3px; background: var(--accent); transform-origin: left; margin: .9rem auto; max-width: 90%; }
+.ea-equation, .ea-address, .ea-metric { padding: .8rem; background: var(--surface-alt); border-left: 3px solid var(--accent); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.ea-slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .3rem; }
+.ea-slot { padding: .45rem .2rem; text-align: center; border: 1px solid var(--line); background: var(--card); }
+.ea-table, .ea-scroll { min-width: 0; overflow-x: auto; }
+.efficient-course table { width: 100%; border-collapse: collapse; font-size: .94rem; margin-block: .6rem; }
+.efficient-course th, .efficient-course td { text-align: left; padding: .55rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.efficient-course pre { overflow: auto; max-width: 100%; border: 1px solid var(--line); padding: 1rem; background: var(--surface-alt); line-height: 1.6; }
+.efficient-course .course-core { max-width: none; }
+.ea-options { margin-top: 1rem; }
+.ea-options label { display: flex; gap: .5rem; align-items: center; }
+.ea-options input { width: 1.2rem; height: 1.2rem; }
+.ea-feedback { padding: .7rem; border-left: 3px solid var(--accent); }
+.ea-note { color: var(--muted); font-size: .92rem; }
+.ea-links { display: flex; flex-wrap: wrap; gap: 1rem; }
+.efficient-course dl { display: grid; grid-template-columns: minmax(7rem, 1fr) 3fr; gap: .6rem 1rem; }
+.efficient-course dd { margin: 0; }
+.efficient-course dt { font-weight: 700; }
+.ea-scene h3 { margin-top: 0; }
+.ea-player [hidden] { display: none; }
+@media (max-width: 800px) {
+ .ea-key-strip, .ea-summary, .ea-residency, .ea-pool, .ea-memory { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+ .ea-tables { grid-template-columns: 1fr; }
+ .efficient-course dl { grid-template-columns: 1fr; }
+ .ea-transport { position: sticky; top: 0; z-index: 2; background: var(--card); padding-block: .5rem; }
+ .ea-node, .ea-key, .ea-block { padding: .6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+ .efficient-course * { scroll-behavior: auto; }
+}
+
+.efficient-course a { color: var(--accent); }
+.efficient-course main p { max-width: 78ch; }
+.efficient-course footer { display: flex; flex-wrap: wrap; gap: 1rem; }

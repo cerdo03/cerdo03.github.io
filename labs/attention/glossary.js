@@ -4,6 +4,14 @@
 // changes between lessons, so the surrounding prose defines them instead.
 
 export const glossary = {
+  T_q: 'Number of query rows processed in this attention call',
+  T_k: 'Number of key/value positions available to this attention call',
+  C: 'Token positions per KV storage block; not CUDA threads',
+  m: 'Running maximum among allowed attention scores seen so far',
+  'ℓ': 'Sum of exponentials at the current running maximum scale',
+  u: 'Unnormalized weighted-value numerator at the current running maximum scale',
+  'α': 'Rescaling factor exp(old maximum minus new maximum)',
+
   U: 'Left matrix: input rows [r × k] in the GPU examples',
   W: 'Right matrix: projection weights [k × c] in the GPU examples',
   Y: 'Matrix product U W, with shape [r × c]',

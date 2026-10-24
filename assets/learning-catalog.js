@@ -3,6 +3,7 @@ export const projects = {
 };
 
 export const sites = {
+  'efficient-attention': { project: 'llm-systems', title: 'Efficient Attention and Memory', path: '/labs/efficient-attention/', tags: ['Attention', 'Memory', 'Inference'] },
   dynamo: { title: 'Dynamo Paper Companion', path: '/labs/dynamo/', tags: ['Distributed systems', 'Storage', 'Research paper'] },
   gpu: { project: 'llm-systems', title: 'GPU Architecture and Performance Engineering', path: '/labs/gpu/', tags: ['GPU', 'Performance', 'Inference'] },
   'architecture-explorer': { project: 'llm-systems', title: 'Transformer Architecture Explorer', path: '/labs/attention/architecture-explorer/', tags: ['Attention', '3D'] },
