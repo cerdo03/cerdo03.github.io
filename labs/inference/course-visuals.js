@@ -61,7 +61,7 @@ export function diagramHTML(id,s={}){
  <details><summary>Add concurrent requests</summary><label for="batch">Requests with this context length</label><select id="batch">${[1,2,4,8,16].map(x=>`<option ${x===batch?'selected':''}>${x}</option>`).join('')}</select><p>Each independent request adds its own cache here. Shared prefixes are not counted as shared in this estimate.</p></details>
  <p>Fixed assumptions: 32 layers, 8 KV heads per layer, head dimension 128, 2 bytes per cached element. K and V are both counted. <a href="../attention/lesson-3.html#s2-3-3">Compare head sharing</a> or <a href="../attention/lesson-5.html#s2-5-2">Change model and precision</a>.</p>
  <p>${base.toLocaleString()} bytes/position × ${length.toLocaleString()} positions × ${batch} requests = ${total.toLocaleString()} bytes. Excludes model weights and working memory.</p>
- <div class="node-grid">${node('Prefill','Many new positions → more arithmetic together')}${node('Decode','One new position/request → read weights and growing K/V')}</div><p class="sub">These are work and memory estimates, not latency measurements.</p>`;
+ <div class="node-grid">${node('Prefill, typically','Many new positions → more arithmetic together')}${node('Decode, typically','One new position/request → read weights and growing K/V')}</div><p class="sub">These are work and memory estimates, not latency measurements.</p>`;
  }
  return '';
 }
