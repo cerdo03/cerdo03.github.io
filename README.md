@@ -34,10 +34,10 @@ This repository is public. Keep credentials, private notes, internal company mat
 
 Edit `defaultTheme` in `assets/theme-config.js` (`paper`, `midnight`, `contrast`), then push to main. Every page uses this owner palette. The shared Light/Dark button switches appearance, persists under `journal-appearance`, and synchronizes across pages and tabs; it does not select a separate palette.
 
-Edit `assets/theme.css` to change the global warm editorial palette (tokens, serif/sans type, spacing, radii). The homepage, journal and all learning sites inherit the same light, dark and high-contrast tokens. Local page CSS controls layout only.
+Edit `assets/theme.css` to change the global colorful bento palette (page, tile and step tokens, display serif and rounded sans type, spacing, radii). The homepage, journal and all learning sites inherit the same light, dark and high-contrast tokens. Local page CSS controls layout only.
 
 ## Shared chrome
 
-`assets/chrome.css` + `assets/chrome.js` provide the header (wordmark, Learning / Writing / Reading, icon Light/Dark toggle), breadcrumb, footer, plain-text tags, text-link actions and ruled rows. A page needs `theme.css`, `chrome.css` and `chrome.js` (relative paths), plus `<header class="chrome-header" data-chrome="header" data-current="learn"></header>` and `<footer class="chrome-footer" data-chrome="footer"></footer>`; empty placeholders are filled by `chrome.js`. See the comment block at the top of `assets/chrome.js` for the full API and `assets/chrome.css` for component classes.
+`assets/chrome.css` + `assets/chrome.js` provide the header (brand mark, Learn / Writing / Reading, icon Light/Dark toggle), breadcrumb, footer, pill tags and actions, bento tiles (`.tile-<colour>`) and the module staircase. A page needs `theme.css`, `chrome.css` and `chrome.js` (relative paths), plus `<header class="chrome-header" data-chrome="header" data-current="learn"></header>` and `<footer class="chrome-footer" data-chrome="footer"></footer>`; empty placeholders are filled by `chrome.js`. See the comment block at the top of `assets/chrome.js` for the full API and `assets/chrome.css` for component classes.
 
 `CLAUDE.md` symlinks to `AGENTS.md`; edit the latter for future-agent design and privacy rules.

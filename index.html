@@ -9,104 +9,190 @@
   <link rel="stylesheet" href="assets/chrome.css">
   <link rel="stylesheet" href="styles.css">
   <script type="module" src="assets/chrome.js"></script>
-  <script type="module" src="assets/learning-tags.js"></script>
   <script type="module" src="assets/learning-index.js"></script>
 </head>
 <body>
-  <a class="chrome-skip" href="#main">Skip to content</a>
-  <header class="chrome-header" data-chrome="header" data-spy>
+  <a class="chrome-skip" href="#learn">Skip to tiles</a>
+  <header class="chrome-header" data-chrome="header">
     <div class="chrome-container chrome-header-inner">
-      <a class="chrome-brand" href="./">Surya’s journal</a>
-      <nav class="chrome-nav" aria-label="Primary"><a href="#learn" data-nav="learn">Learning</a><a href="#writing" data-nav="writing">Writing</a><a href="#reading" data-nav="reading">Reading</a></nav>
+      <a class="chrome-brand" href="./" aria-label="Surya Shukla, home"><span class="chrome-mark" aria-hidden="true">S</span><span>Surya Shukla</span></a>
+      <nav class="chrome-nav" aria-label="Primary"><a href="#learn" data-nav="learn">Learn</a><a href="#writing" data-nav="writing">Writing</a><a href="#reading" data-nav="reading">Reading</a></nav>
       <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
     </div>
   </header>
-  <main id="main" class="chrome-container">
-    <section class="intro" aria-labelledby="intro-title">
-      <h1 id="intro-title">Surya Shukla</h1>
-      <p class="intro-lede">Software engineer at <a href="https://temple.com/">Temple</a>, previously at <a href="https://www.zomato.com/">Zomato</a> and <a href="https://paytm.com/">Paytm</a> and a graduate of <a href="https://iitgoa.ac.in/">IIT Goa</a>, building backend services, search systems and event-driven pipelines.</p>
-      <p class="intro-aside">Outside work: tennis, swimming and running. This is where I keep what I’m learning, reading and thinking about.</p>
-      <ul class="intro-links">
-        <li><a href="mailto:official.surya3jan@gmail.com">Email</a></li>
-        <li><a href="https://www.linkedin.com/in/cerdo/">LinkedIn <span aria-hidden="true">↗</span></a></li>
-        <li><a href="https://github.com/cerdo03">GitHub <span aria-hidden="true">↗</span></a></li>
-      </ul>
-    </section>
+  <main id="main" class="chrome-container wrap">
+    <div class="filters" data-topic-filter hidden></div>
 
-    <section id="learn" class="section" aria-labelledby="learn-title">
-      <h2 id="learn-title">Learning</h2>
-      <p class="section-note">9 interactive sites: one collection and 3 standalone guides.</p>
-      <div class="filter" data-topic-filter hidden></div>
-      <ul class="site-list" data-site-grid>
-        <li class="featured" data-entry="llm-systems">
-          <article>
-            <p class="badge">Collection · 6 sites</p>
-            <h3><a href="labs/llm-systems/">Learning LLM Systems</a></h3>
-            <p class="row-summary">My ongoing study of how language models generate text, reuse computation and serve requests: the KV cache, attention math, GPUs and efficient attention.</p>
-            <div data-learning-project="llm-systems"><ul class="chip-list"><li class="chip">AI</li><li class="chip">LLM systems</li></ul></div>
-            <ol class="member-list">
-              <li data-site="math-fluency"><a href="labs/math-fluency/"><span class="member-label">Module 0</span><span class="member-title">Mathematical Notation for Systems Engineers</span></a></li>
-              <li data-site="inference"><a href="labs/inference/"><span class="member-label">Module 1</span><span class="member-title">LLM Inference: Foundations &amp; KV Cache</span></a></li>
-              <li data-site="attention"><a href="labs/attention/"><span class="member-label">Module 2</span><span class="member-title">Attention Mechanisms &amp; KV-Cache Internals</span></a></li>
-              <li data-site="gpu"><a href="labs/gpu/"><span class="member-label">Module 3</span><span class="member-title">GPU Architecture and Performance Engineering</span></a></li>
-              <li data-site="efficient-attention"><a href="labs/efficient-attention/"><span class="member-label">Module 4</span><span class="member-title">Efficient Attention and Memory</span></a></li>
-              <li data-site="architecture-explorer"><a href="labs/attention/architecture-explorer/"><span class="member-label">Optional</span><span class="member-title">Transformer Architecture Explorer</span></a></li>
-            </ol>
-            <p class="row-action"><a class="btn" href="labs/llm-systems/">View the collection <span aria-hidden="true">→</span></a></p>
-          </article>
-        </li>
-        <li class="card card-link" data-entry="dynamo" data-site="dynamo">
-          <h3><a class="card-stretch" href="labs/dynamo/">Dynamo Paper Companion</a></h3>
-          <p class="row-summary">The 2007 Dynamo paper through replica placement, version histories and failure experiments.</p>
-          <div class="row-meta"><span class="row-kind">Paper companion</span><div data-learning-site="dynamo"><ul class="chip-list"><li class="chip">Distributed systems</li><li class="chip">Storage</li><li class="chip">Research paper</li></ul></div></div>
-          <span class="row-go" aria-hidden="true">Read →</span>
-        </li>
-        <li class="card card-link" data-entry="kafka" data-site="kafka">
-          <h3><a class="card-stretch" href="labs/kafka/">Kafka Design Reader</a></h3>
-          <p class="row-summary">Partitions, offsets, replication and delivery guarantees, after Chirag Hasija’s message-queue design.</p>
-          <div class="row-meta"><span class="row-kind">Interactive guide</span><div data-learning-site="kafka"><ul class="chip-list"><li class="chip">Kafka</li><li class="chip">System design</li></ul></div></div>
-          <span class="row-go" aria-hidden="true">Read →</span>
-        </li>
-        <li class="card card-link" data-entry="scion" data-site="scion">
-          <h3><a class="card-stretch" href="labs/scion/">Source control, rethought</a></h3>
-          <p class="row-summary">Follow one code change through content-addressed storage and cache tiers, after Anthropic’s Scion article.</p>
-          <div class="row-meta"><span class="row-kind">Interactive guide</span><div data-learning-site="scion"><ul class="chip-list"><li class="chip">Distributed systems</li><li class="chip">Source control</li></ul></div></div>
-          <span class="row-go" aria-hidden="true">Read →</span>
-        </li>
-      </ul>
-    </section>
+    <div class="bento" id="learn">
 
-    <section id="writing" class="section" aria-labelledby="writing-title">
-      <h2 id="writing-title">Writing</h2>
-      <ul class="note-list">
-        <li>
-          <time class="note-date" datetime="2026-10-11">11 Oct 2026</time>
-          <div>
-            <a href="journal/starting-this-journal.html">Starting this journal</a>
-            <p>A small home for the things I explore, build, and learn along the way.</p>
-          </div>
-        </li>
-      </ul>
-    </section>
+      <article class="tile tile-sun t-intro" aria-labelledby="intro-title">
+        <svg class="deco" viewBox="0 0 150 150" aria-hidden="true" focusable="false">
+          <circle cx="100" cy="50" r="62" fill="var(--tile-fill)"/>
+          <rect x="18" y="22" width="52" height="52" rx="14" fill="var(--tile-fill)" transform="rotate(18 44 48)"/>
+          <circle cx="46" cy="112" r="14" fill="var(--tile-fill)"/>
+        </svg>
+        <p class="tile-eyebrow"><span>Hello, I’m</span></p>
+        <h1 id="intro-title">Surya Shukla</h1>
+        <p class="line">Software engineer at <a href="https://temple.com/">Temple</a>, building backend services, search systems and event-driven pipelines.</p>
+        <p class="sub">Previously <a href="https://www.zomato.com/">Zomato</a> and <a href="https://paytm.com/">Paytm</a>; <a href="https://iitgoa.ac.in/">IIT Goa</a> graduate. Tennis, swimming, running.</p>
+        <ul class="links">
+          <li><a href="mailto:official.surya3jan@gmail.com">Email</a></li>
+          <li><a href="https://www.linkedin.com/in/cerdo/">LinkedIn</a></li>
+          <li><a href="https://github.com/cerdo03">GitHub</a></li>
+        </ul>
+      </article>
 
-    <section id="reading" class="section" aria-labelledby="reading-title">
-      <h2 id="reading-title">Reading</h2>
-      <ul class="note-list">
-        <li>
-          <span class="note-date">Now reading</span>
-          <div><cite>The Palace of Illusions</cite>, Chitra Banerjee Divakaruni</div>
-        </li>
-        <li>
-          <span class="note-date">Read</span>
-          <div><cite>The White Tiger</cite>, <cite>Anxious People</cite>, <cite>Days at the Morisaki Bookshop</cite></div>
-        </li>
-      </ul>
-    </section>
+      <article class="tile tile-indigo t-llm" data-entry="llm-systems" data-art="stairs" data-tile="indigo" aria-labelledby="h-llm">
+        <p class="tile-eyebrow"><span>Collection · 6 sites</span><span class="tile-state"></span></p>
+        <h2 id="h-llm"><a class="tile-stretch" href="labs/llm-systems/">Learning LLM Systems</a></h2>
+        <p class="sub">Work up the steps, one module at a time.</p>
+        <ol class="stairs">
+            <li data-site="math-fluency"><a href="labs/math-fluency/" aria-label="Module 0: Mathematical Notation for Systems Engineers"><span class="step-word">Module</span><span class="step-num">0</span><span class="step-name">Math</span></a></li>
+            <li data-site="inference"><a href="labs/inference/" aria-label="Module 1: LLM Inference: Foundations &amp; KV Cache"><span class="step-word">Module</span><span class="step-num">1</span><span class="step-name">Inference</span></a></li>
+            <li data-site="attention"><a href="labs/attention/" aria-label="Module 2: Attention Mechanisms &amp; KV-Cache Internals"><span class="step-word">Module</span><span class="step-num">2</span><span class="step-name">Attention</span></a></li>
+            <li data-site="gpu"><a href="labs/gpu/" aria-label="Module 3: GPU Architecture and Performance Engineering"><span class="step-word">Module</span><span class="step-num">3</span><span class="step-name">GPU</span></a></li>
+            <li data-site="efficient-attention"><a href="labs/efficient-attention/" aria-label="Module 4: Efficient Attention and Memory"><span class="step-word">Module</span><span class="step-num">4</span><span class="step-name">Efficient</span></a></li>
+            <li data-site="architecture-explorer"><a href="labs/attention/architecture-explorer/" aria-label="Optional: Transformer Architecture Explorer"><span class="step-word">Optional</span><span class="step-num">+</span><span class="step-name">Explorer</span></a></li>
+        </ol>
+        <p class="cap"><span>Modules 0–4, then an optional explorer. Start at Module 1.</span><span class="cta">Start learning <b aria-hidden="true">→</b></span></p>
+      </article>
+
+    <div class="tile tile-coral t-dyn" data-entry="dynamo" data-art="ring" data-tile="coral">
+      <p class="tile-eyebrow"><span>Paper companion</span><span class="tile-state"></span></p>
+      <h3><a class="tile-stretch" href="labs/dynamo/">Dynamo Paper Companion</a></h3>
+      <p class="tile-blurb">Replicas, version histories, failure and repair.</p>
+      <svg class="tile-art" viewBox="0 0 220 200" role="img" aria-label="A ring of eight nodes. A key lands on the ring and is copied to the next three nodes, R1 to R3. R3 is marked down with an X, and the next node stands in for it.">
+        <path class="arc" d="M83.8 35.1 A70 70 0 0 1 180 100"/>
+        <circle class="s" cx="110" cy="100" r="70"/>
+        <circle class="f" cx="110" cy="170" r="10"/>
+        <circle class="f" cx="60.5" cy="149.5" r="10"/>
+        <circle class="f" cx="40" cy="100" r="10"/>
+        <circle class="f" cx="60.5" cy="50.5" r="10"/>
+        <circle class="solid" cx="110" cy="30" r="13"/>
+        <circle class="solid" cx="159.5" cy="50.5" r="13"/>
+        <text class="inv" x="110" y="34.5" text-anchor="middle">R1</text>
+        <text class="inv" x="159.5" y="55" text-anchor="middle">R2</text>
+        <circle class="f d" cx="180" cy="100" r="13"/>
+        <path class="s" d="M174 94l12 12M186 94l-12 12"/>
+        <text x="186" y="128">down</text>
+        <circle class="f" cx="159.5" cy="149.5" r="12"/>
+        <circle class="s d" cx="159.5" cy="149.5" r="18"/>
+        <path class="s d" d="M178 114 Q176 134 166 140"/>
+        <text x="159.5" y="190" text-anchor="middle">stand-in</text>
+        <path class="solid" d="M83.8 27l8 8-8 8-8-8z"/>
+        <text x="62" y="20" text-anchor="middle">key</text>
+      </svg>
+      <ul class="chip-list"><li class="chip">Distributed systems</li><li class="chip">Storage</li><li class="chip">Research paper</li></ul>
+    </div>
+
+    <div class="tile tile-mint t-kaf" data-entry="kafka" data-art="lanes" data-tile="mint">
+      <p class="tile-eyebrow"><span>Interactive guide</span><span class="tile-state"></span></p>
+      <h3><a class="tile-stretch" href="labs/kafka/">Kafka Design Reader</a></h3>
+      <p class="tile-blurb">Partitions, offsets, replication.</p>
+      <svg class="tile-art" viewBox="0 0 240 160" role="img" aria-label="Three parallel lanes, P0 to P2, each a row of numbered blocks counting up from offset 0. A fourth dashed lane labeled copy repeats lane P0.">
+        <text x="4" y="38">P0</text>
+        <text x="4" y="78">P1</text>
+        <text x="4" y="118">P2</text>
+        <g>
+          <rect class="f" x="44" y="20" width="26" height="26" rx="6"/><text x="57" y="38" text-anchor="middle">0</text>
+          <rect class="f" x="74" y="20" width="26" height="26" rx="6"/><text x="87" y="38" text-anchor="middle">1</text>
+          <rect class="f" x="104" y="20" width="26" height="26" rx="6"/><text x="117" y="38" text-anchor="middle">2</text>
+          <rect class="f" x="134" y="20" width="26" height="26" rx="6"/><text x="147" y="38" text-anchor="middle">3</text>
+          <rect class="f" x="164" y="20" width="26" height="26" rx="6"/><text x="177" y="38" text-anchor="middle">4</text>
+          <rect class="solid" x="194" y="20" width="26" height="26" rx="6"/><text class="inv" x="207" y="38" text-anchor="middle">5</text>
+        </g>
+        <g>
+          <rect class="f" x="44" y="60" width="26" height="26" rx="6"/><text x="57" y="78" text-anchor="middle">0</text>
+          <rect class="f" x="74" y="60" width="26" height="26" rx="6"/><text x="87" y="78" text-anchor="middle">1</text>
+          <rect class="f" x="104" y="60" width="26" height="26" rx="6"/><text x="117" y="78" text-anchor="middle">2</text>
+          <rect class="solid" x="134" y="60" width="26" height="26" rx="6"/><text class="inv" x="147" y="78" text-anchor="middle">3</text>
+        </g>
+        <g>
+          <rect class="f" x="44" y="100" width="26" height="26" rx="6"/><text x="57" y="118" text-anchor="middle">0</text>
+          <rect class="f" x="74" y="100" width="26" height="26" rx="6"/><text x="87" y="118" text-anchor="middle">1</text>
+          <rect class="f" x="104" y="100" width="26" height="26" rx="6"/><text x="117" y="118" text-anchor="middle">2</text>
+          <rect class="f" x="134" y="100" width="26" height="26" rx="6"/><text x="147" y="118" text-anchor="middle">3</text>
+          <rect class="solid" x="164" y="100" width="26" height="26" rx="6"/><text class="inv" x="177" y="118" text-anchor="middle">4</text>
+        </g>
+        <text x="4" y="152">copy</text>
+        <g>
+          <rect class="f d" x="44" y="134" width="22" height="20" rx="5"/>
+          <rect class="f d" x="70" y="134" width="22" height="20" rx="5"/>
+          <rect class="f d" x="96" y="134" width="22" height="20" rx="5"/>
+          <rect class="f d" x="122" y="134" width="22" height="20" rx="5"/>
+          <rect class="f d" x="148" y="134" width="22" height="20" rx="5"/>
+          <rect class="f d" x="174" y="134" width="22" height="20" rx="5"/>
+        </g>
+      </svg>
+      <ul class="chip-list"><li class="chip">Kafka</li><li class="chip">System design</li></ul>
+    </div>
+
+    <div class="tile tile-lilac t-src" data-entry="scion" data-art="versions" data-tile="lilac">
+      <p class="tile-eyebrow"><span>Interactive guide</span><span class="tile-state"></span></p>
+      <h3><a class="tile-stretch" href="labs/scion/">Source control, rethought</a></h3>
+      <p class="tile-blurb">Content-addressed storage, sparse checkouts, caches.</p>
+      <svg class="tile-art" viewBox="0 0 240 160" role="img" aria-label="Left: a main line of commits with a branch that splits off and merges back. Right: three stacked blocks labeled commit, tree and blob, each pointing to the next.">
+        <text x="14" y="22">main</text>
+        <path class="s" d="M20 40H140"/>
+        <path class="s" d="M60 40C68 92 78 100 95 100H125C136 100 140 76 140 47"/>
+        <circle class="solid" cx="20" cy="40" r="7"/>
+        <circle class="solid" cx="60" cy="40" r="7"/>
+        <circle class="solid" cx="100" cy="40" r="7"/>
+        <circle class="solid" cx="140" cy="40" r="7"/>
+        <circle class="f" cx="95" cy="100" r="7"/>
+        <circle class="f" cx="125" cy="100" r="7"/>
+        <text x="110" y="128" text-anchor="middle">branch</text>
+        <rect class="f" x="162" y="16" width="72" height="28" rx="8"/>
+        <text x="198" y="35" text-anchor="middle">commit</text>
+        <rect class="f" x="162" y="60" width="72" height="28" rx="8"/>
+        <text x="198" y="79" text-anchor="middle">tree</text>
+        <rect class="f" x="162" y="104" width="72" height="28" rx="8"/>
+        <text x="198" y="123" text-anchor="middle">blob</text>
+        <path class="s" d="M198 46v12M193 53l5 6 5-6"/>
+        <path class="s" d="M198 90v12M193 97l5 6 5-6"/>
+        <text x="198" y="153" text-anchor="middle">objects</text>
+        <text x="80" y="153" text-anchor="middle">history</text>
+      </svg>
+      <ul class="chip-list"><li class="chip">Distributed systems</li><li class="chip">Source control</li></ul>
+    </div>
+
+      <a class="tile tile-pink t-wri" id="writing" href="journal/starting-this-journal.html" aria-labelledby="h-wri">
+        <div class="tx">
+          <p class="tile-eyebrow"><span>Writing</span></p>
+          <h3 id="h-wri">Starting this journal</h3>
+          <time datetime="2026-10-11">11 Oct 2026</time>
+        </div>
+        <div class="pen" aria-hidden="true">
+          <svg viewBox="0 0 100 90" focusable="false">
+            <path class="s" d="M8 22h58M8 40h44M8 58h30"/>
+            <g transform="rotate(-38 70 62)">
+              <rect class="f" x="52" y="56" width="38" height="11" rx="3"/>
+              <polygon class="solid" points="52,56 38,61.5 52,67"/>
+            </g>
+          </svg>
+        </div>
+      </a>
+
+      <article class="tile tile-sky t-rea" id="reading" aria-labelledby="h-rea">
+        <div>
+          <p class="tile-eyebrow"><span>Reading</span></p>
+          <h3 id="h-rea">The Palace of Illusions</h3>
+          <p class="by">by Chitra Banerjee Divakaruni, currently reading</p>
+        </div>
+        <ul class="shelf">
+          <li class="book now"><div class="nm"><small>Reading now</small>The Palace of Illusions</div></li>
+          <li class="book book-coral"><div class="nm"><small>Read</small>The White Tiger</div></li>
+          <li class="book book-indigo"><div class="nm"><small>Read</small>Anxious People</div></li>
+          <li class="book book-mint"><div class="nm"><small>Read</small>Days at the Morisaki Bookshop</div></li>
+        </ul>
+      </article>
+
+    </div>
   </main>
   <footer class="chrome-footer" data-chrome="footer">
     <div class="chrome-container chrome-footer-inner">
       <span>Surya’s personal journal</span>
-      <nav aria-label="Footer"><a href="#learn">Learning</a><a href="#writing">Writing</a><a href="#reading">Reading</a><a href="https://github.com/cerdo03">GitHub <span aria-hidden="true">↗</span></a></nav>
+      <nav aria-label="Footer"><a href="#learn">Learn</a><a href="#writing">Writing</a><a href="#reading">Reading</a><a href="https://github.com/cerdo03">GitHub <span aria-hidden="true">↗</span></a></nav>
     </div>
   </footer>
 </body>

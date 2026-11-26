@@ -1,83 +1,139 @@
-/* Warm editorial design tokens for the journal and every learning site.
-   Cream paper, warm off-black ink, one muted clay accent, soft warm hairlines, serif
-   headings and reading text with a plain sans for UI. Colours live only here; page
-   styles own layout. Existing token names keep working for lab pages.
+/* Colorful bento design tokens for the journal and every learning site.
+   Warm cream or warm-dark pages, strong colour blocks (tiles), hard ink edges, a
+   characterful system display serif plus a rounded system sans for UI. Colours live
+   only here; page styles own layout. Existing token names keep working for lab pages.
 
    Themes (set on <html data-theme="...">, owner default in theme-config.js):
-     paper    warm cream, the default
-     midnight warm charcoal
-     contrast black/white with yellow accents
+     paper    warm cream with bright tiles, the default
+     midnight warm dark with deep tiles
+     contrast black/white with yellow accents (tiles are black with white edges)
 
    Token groups
      Surfaces   --paper --card --surface-alt --line --line-strong
      Text       --ink --muted
-     Accent     --accent --accent-hover --on-accent --accent-soft
+     Accent     --accent --accent-hover --on-accent --accent-soft --focus-ring
      Status     --success --success-soft --danger-soft
      Diagrams   --diagram* and Q/K/V roles --llm-query --llm-key --llm-value
-     Chips      --chip-bg --chip-ink (tags render as plain muted text)
-     Fonts      --heading-font / --reading-font (serif), --body-font (sans UI)
-     Scale      --text-* --space-* --radius-* --shadow-* --measure --header-h */
+     Tiles      --tile-<colour> + --tile-<colour>-ink for sun, indigo (+ -accent), coral,
+                mint, lilac, pink, sky; --tile-indigo-accent(-ink) for buttons on indigo; --tile-edge --tile-fill --tile-chip;
+                stair/module steps --step-1..6 with --step-ink --step-edge.
+                Every ink meets AA (4.5:1) on its own background.
+     Fonts      --heading-font (display serif), --body-font (rounded sans UI),
+                --reading-font (serif long-form)
+     Scale      --text-* --space-* --radius-* --measure --container --header-h */
 
 :root, :root[data-theme="paper"] {
   color-scheme: light;
 
-  --paper: #faf6ef;
-  --ink: #2a2520;
-  --muted: #6a6055;
-  --line: #e5dccb;
-  --line-strong: #8f8472;
-  --card: #fffcf6;
-  --surface-alt: #f2ebdd;
-  --accent: #9c4a2f;
-  --accent-hover: #7d3a24;
-  --on-accent: #fffaf2;
-  --accent-soft: #f4e3d8;
-  --success: #226a5b;
-  --success-soft: #dfece4;
-  --danger-soft: #f6dfd9;
-  --chip-bg: #f2ebdd;
-  --chip-ink: #5c5247;
-  --header-bg: #faf6ef;
-  --shadow-sm: none;
-  --shadow-md: 0 1px 2px rgb(42 37 32 / 8%), 0 8px 24px rgb(42 37 32 / 8%);
-  --diagram: #2a2520;
-  --diagram-surface: #f2ebdd;
-  --diagram-ink: #2a2520;
-  --diagram-muted: #6a6055;
-  --llm-query: #1f5f99;
-  --llm-key: #7b3f94;
-  --llm-value: #1f6f62;
+  --paper: #fff6e6;
+  --ink: #1f1710;
+  --muted: #55432f;
+  --line: #dcc9a8;
+  --line-strong: #8a7355;
+  --card: #fffdf8;
+  --surface-alt: #fdecd0;
+  --accent: #2b2a8f;
+  --accent-hover: #1c1b6e;
+  --on-accent: #ffffff;
+  --accent-soft: #e6e4fb;
+  --focus-ring: #0b45d6;
+  --success: #0d6b52;
+  --success-soft: #d4f1e6;
+  --danger-soft: #ffdcd2;
+  --chip-bg: #fdecd0;
+  --chip-ink: #3d2f1f;
+  --header-bg: #fff6e6;
+  --diagram: #1f1710;
+  --diagram-surface: #fdecd0;
+  --diagram-ink: #1f1710;
+  --diagram-muted: #55432f;
+  --llm-query: #0067b8;
+  --llm-key: #a3207c;
+  --llm-value: #246f28;
+  --tile-edge: #1f1710;
+  --tile-fill: rgb(255 255 255 / 55%);
+  --tile-chip: rgb(255 255 255 / 60%);
+  --tile-sun: #ffd84d;
+  --tile-sun-ink: #1e1608;
+  --tile-indigo: #2b2a8f;
+  --tile-indigo-ink: #ffffff;
+  --tile-indigo-accent: #ffd84d;
+  --tile-indigo-accent-ink: #1e1608;
+  --tile-coral: #ff7a59;
+  --tile-coral-ink: #1a0c07;
+  --tile-mint: #2fbf9b;
+  --tile-mint-ink: #04201a;
+  --tile-lilac: #b79cff;
+  --tile-lilac-ink: #1b1038;
+  --tile-pink: #ff9ec4;
+  --tile-pink-ink: #2a0a19;
+  --tile-sky: #9cd3ff;
+  --tile-sky-ink: #08213a;
+  --step-1: #fff0a8;
+  --step-2: #ffc48a;
+  --step-3: #ff9db8;
+  --step-4: #c5aaff;
+  --step-5: #8fd7ff;
+  --step-6: #86e8c6;
+  --step-ink: #15102e;
+  --step-edge: #0e0d3d;
 }
 
 :root[data-theme="midnight"] {
   color-scheme: dark;
 
-  --paper: #1f1b17;
-  --ink: #efe7da;
-  --muted: #b5a999;
-  --line: #3a332c;
-  --line-strong: #8a7e6e;
-  --card: #27221d;
-  --surface-alt: #2e2823;
-  --accent: #e39a80;
-  --accent-hover: #f0b49e;
-  --on-accent: #1f1b17;
-  --accent-soft: #4b3125;
-  --success: #7fd0bd;
-  --success-soft: #1f3a33;
-  --danger-soft: #46282a;
-  --chip-bg: #2e2823;
-  --chip-ink: #cfc4b3;
-  --header-bg: #1f1b17;
-  --shadow-sm: none;
-  --shadow-md: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 28px rgb(0 0 0 / 45%);
-  --diagram: #1f1b17;
-  --diagram-surface: #2e2823;
-  --diagram-ink: #efe7da;
-  --diagram-muted: #b5a999;
-  --llm-query: #86b9e6;
-  --llm-key: #d3a6e6;
-  --llm-value: #74d1bd;
+  --paper: #14110d;
+  --ink: #fbefdc;
+  --muted: #d9c7ad;
+  --line: #3a3025;
+  --line-strong: #8a7a66;
+  --card: #1d1812;
+  --surface-alt: #261f17;
+  --accent: #ffd84d;
+  --accent-hover: #ffe98a;
+  --on-accent: #1e1608;
+  --accent-soft: #4a3c10;
+  --focus-ring: #ffd84d;
+  --success: #7fe3c3;
+  --success-soft: #123f33;
+  --danger-soft: #5a2218;
+  --chip-bg: #261f17;
+  --chip-ink: #ecdcc3;
+  --header-bg: #14110d;
+  --diagram: #14110d;
+  --diagram-surface: #261f17;
+  --diagram-ink: #fbefdc;
+  --diagram-muted: #d9c7ad;
+  --llm-query: #7cc0ff;
+  --llm-key: #ff9fd6;
+  --llm-value: #8be59b;
+  --tile-edge: #857560;
+  --tile-fill: rgb(255 255 255 / 14%);
+  --tile-chip: rgb(255 255 255 / 12%);
+  --tile-sun: #5a4300;
+  --tile-sun-ink: #fff1c2;
+  --tile-indigo: #17165f;
+  --tile-indigo-ink: #ffffff;
+  --tile-indigo-accent: #ffd84d;
+  --tile-indigo-accent-ink: #1e1608;
+  --tile-coral: #6b2112;
+  --tile-coral-ink: #ffe3da;
+  --tile-mint: #0f4a3b;
+  --tile-mint-ink: #d6fff2;
+  --tile-lilac: #3e2a7a;
+  --tile-lilac-ink: #ebe2ff;
+  --tile-pink: #6b1f3f;
+  --tile-pink-ink: #ffe0ee;
+  --tile-sky: #123f63;
+  --tile-sky-ink: #dceeff;
+  --step-1: #6b5200;
+  --step-2: #8a3a12;
+  --step-3: #8f2347;
+  --step-4: #5b3a9e;
+  --step-5: #12609a;
+  --step-6: #0f6a52;
+  --step-ink: #ffffff;
+  --step-edge: #b9b4ff;
 }
 
 :root[data-theme="contrast"] {
@@ -94,16 +150,13 @@
   --accent-hover: #ffffff;
   --on-accent: #000000;
   --accent-soft: #262600;
+  --focus-ring: #ffff00;
   --success: #ffff00;
   --success-soft: #262600;
   --danger-soft: #3b1d1d;
-  --radius-md: 3px;
-  --radius-lg: 4px;
   --chip-bg: #000000;
   --chip-ink: #ffffff;
   --header-bg: #000000;
-  --shadow-sm: none;
-  --shadow-md: none;
   --diagram: #000000;
   --diagram-surface: #242424;
   --diagram-ink: #ffffff;
@@ -111,14 +164,41 @@
   --llm-query: var(--accent);
   --llm-key: var(--accent);
   --llm-value: var(--accent);
+  --tile-edge: #ffffff;
+  --tile-fill: rgb(255 255 255 / 18%);
+  --tile-chip: rgb(255 255 255 / 14%);
+  --tile-sun: #000000;
+  --tile-sun-ink: #ffffff;
+  --tile-indigo: #000000;
+  --tile-indigo-ink: #ffffff;
+  --tile-indigo-accent: #ffff00;
+  --tile-indigo-accent-ink: #000000;
+  --tile-coral: #000000;
+  --tile-coral-ink: #ffffff;
+  --tile-mint: #000000;
+  --tile-mint-ink: #ffffff;
+  --tile-lilac: #000000;
+  --tile-lilac-ink: #ffffff;
+  --tile-pink: #000000;
+  --tile-pink-ink: #ffffff;
+  --tile-sky: #000000;
+  --tile-sky-ink: #ffffff;
+  --step-1: #000000;
+  --step-2: #000000;
+  --step-3: #000000;
+  --step-4: #000000;
+  --step-5: #000000;
+  --step-6: #000000;
+  --step-ink: #ffffff;
+  --step-edge: #ffff00;
 }
 
 /* Scale: type, spacing, radii, layout. Shared by every theme. */
 :root {
-  --body-font: system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
-  --serif-font: charter, "Bitstream Charter", "Iowan Old Style", "Sitka Text", "Palatino Linotype", palatino, georgia, serif;
-  --heading-font: var(--serif-font);
-  --reading-font: var(--serif-font);
+  --body-font: ui-rounded, "SF Pro Rounded", "Avenir Next", "Segoe UI", system-ui, -apple-system, roboto, sans-serif;
+  --heading-font: "Iowan Old Style", "Palatino Linotype", palatino, "Book Antiqua", georgia, serif;
+  --serif-font: var(--heading-font);
+  --reading-font: var(--heading-font);
   --mono-font: ui-monospace, "SF Mono", menlo, consolas, monospace;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -136,14 +216,15 @@
   --space-6: 2rem;
   --space-7: 3rem;
   --space-8: 4.5rem;
-  --radius-sm: 2px;
-  --radius-md: 3px;
-  --radius-lg: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
   --radius-pill: 999px;
   --measure: 65ch;
-  --container: 46rem;
-  --gutter: clamp(1rem, 4vw, 2rem);
-  --header-h: 3.25rem;
+  --container: 85rem;
+  --gutter: clamp(0.75rem, 3vw, 1.25rem);
+  --header-h: 3.5rem;
 
   /* Legacy learning components consume the same semantic palette. */
   --orange: var(--accent);
@@ -154,7 +235,7 @@
 }
 
 :where(a, button, input, select, summary, [tabindex]):focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 3px solid var(--focus-ring);
   outline-offset: 3px;
 }
 
@@ -177,38 +258,38 @@ h1, h2, h3, h4 {
 }
 
 h2, h3, h4 {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 h1 {
-  font-weight: 500;
+  font-weight: 800;
 }
 
 ::selection {
-  background: var(--accent-soft);
-  color: var(--ink);
+  background: var(--tile-sun);
+  color: var(--tile-sun-ink);
 }
 
-/* Light/Dark toggle: a small borderless icon. Markup and API are documented in chrome.js. */
+/* Light/Dark toggle: a round icon button with an ink edge. Markup and API are documented in chrome.js. */
 html button.theme-toggle {
   display: inline-grid;
   place-items: center;
   flex: none;
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
-  color: var(--muted);
+  color: var(--ink);
   background: transparent;
-  border: 0;
-  border-radius: var(--radius-lg);
+  border: 2px solid var(--tile-edge);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   font: inherit;
   letter-spacing: normal;
 }
 
 html button.theme-toggle:hover {
-  color: var(--accent);
-  background: transparent;
+  color: var(--ink);
+  background: var(--tile-chip);
 }
 
 button.theme-toggle:not([data-ready]) {
@@ -216,11 +297,11 @@ button.theme-toggle:not([data-ready]) {
 }
 
 button.theme-toggle svg {
-  width: 1.125rem;
-  height: 1.125rem;
+  width: 1.25rem;
+  height: 1.25rem;
   fill: none;
   stroke: currentcolor;
-  stroke-width: 1.6;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }

@@ -1,60 +1,87 @@
-/* Collection landing page: the same editorial list pattern as the homepage.
-   Layout only; colours and type come from assets/theme.css. */
-.llm-course .chrome-header ~ .course-sidebar { top: var(--header-h); }
+/* Collection landing page in the bento language: a hero staircase and one tile per module.
+   Layout only; colours come from assets/theme.css tokens. */
+.llm-course .chrome-header ~ .course-sidebar { top: calc(var(--header-h) + 2px); }
 .llm-course .page .chrome-header { margin: 0; }
 .llm-course .chrome-header .chrome-container { max-width: none; }
 
 .llm-course main.overview {
-  padding: 0 var(--gutter) var(--space-7);
-  font-family: var(--reading-font);
-  font-size: var(--text-prose);
-  line-height: 1.7;
+  padding: 0 var(--gutter) var(--space-6);
+  font-family: var(--body-font);
 }
-.llm-course main.overview > * { max-width: 44rem; }
-.llm-course .chrome-footer { margin-top: var(--space-6); padding: var(--space-5) var(--gutter); }
+.llm-course .chrome-footer { margin-top: var(--space-5); padding: var(--space-5) var(--gutter); }
 .llm-course .chrome-footer .chrome-container { max-width: none; padding-inline: 0; margin-inline: 0; }
 
-.llm-course main.overview h1,
-.llm-course main.overview h2,
-.llm-course main.overview h3 { margin: 0; font-family: var(--heading-font); letter-spacing: -0.01em; line-height: 1.2; }
-.llm-course .overview-hero { display: grid; justify-items: start; gap: var(--space-3); padding-block: var(--space-5) var(--space-6); }
-.llm-course .overview-hero .badge { margin: 0; }
-.llm-course main.overview .overview-hero h1 { font-size: var(--text-3xl); font-weight: 500; letter-spacing: -0.02em; }
-.llm-course main.overview .overview-lede { max-width: var(--measure); margin: 0; font-size: 1.3125rem; line-height: 1.55; }
-.llm-course .overview-actions { margin: var(--space-2) 0 0; }
-
-.llm-course .overview-section { padding-block: var(--space-5) var(--space-4); }
-.llm-course main.overview .overview-section h2 { font-size: var(--text-2xl); font-weight: 500; }
-.llm-course .overview-sub { margin: var(--space-1) 0 var(--space-4); color: var(--muted); font: var(--text-sm) / 1.5 var(--body-font); }
-
-.llm-course .path, .llm-course .optional-list { display: block; margin: 0; padding: 0; list-style: none; }
-.llm-course .path { counter-reset: step; }
-.llm-course .overview .card { display: grid; gap: var(--space-1); padding-block: var(--space-4); border-top: 1px solid var(--line); }
-.llm-course .path-step { counter-increment: step; grid-template-columns: 3rem minmax(0, 1fr); column-gap: var(--space-3); }
-.llm-course .path-step::before {
-  content: counter(step);
-  grid-row: 1 / span 4;
-  color: var(--accent);
-  font: 500 2rem / 1.1 var(--heading-font);
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin-top: var(--space-4);
 }
-.llm-course .path-step > * { grid-column: 2; }
-.llm-course main.overview .card h3 { font-size: var(--text-xl); font-weight: 600; }
-.llm-course main.overview .card h3 a { color: var(--ink); text-decoration: none; }
-.llm-course main.overview .card h3 a:hover { color: var(--accent); }
-.llm-course .overview .chip-list { margin: 0; }
-.llm-course .path-desc { margin: var(--space-1) 0 0; max-width: var(--measure); }
-.llm-course .path-sources { margin: var(--space-1) 0 0; max-width: var(--measure); color: var(--muted); font: var(--text-sm) / 1.55 var(--body-font); }
-.llm-course .path-sources a { position: relative; z-index: 1; color: var(--muted); text-underline-offset: 3px; }
-.llm-course .path-sources a:hover { color: var(--accent); }
+
+.llm-course .overview-grid .tile h1,
+.llm-course .overview-grid .tile h3 { margin: 0; font-family: var(--heading-font); font-weight: 800; letter-spacing: -0.025em; line-height: 1.02; }
+.llm-course .overview-grid .tile h3 { font-size: clamp(1.45rem, 2.1vw, 1.9rem); }
+.llm-course .overview-grid .tile h3 a { color: inherit; }
+
+.overview-hero { gap: 14px; padding: 24px; }
+.overview-hero .tile-eyebrow { color: var(--tile-indigo-accent); }
+.llm-course .overview-grid .overview-hero h1 { font-size: clamp(2.3rem, 5vw, 4.2rem); }
+.overview-lede { max-width: 44ch; margin: 0; font: 650 1.05rem / 1.45 var(--body-font); }
+.overview-hero .stairs { height: clamp(150px, 18vw, 210px); }
+.overview-foot { margin-top: var(--space-2); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; }
+.overview-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  color: var(--tile-indigo-accent-ink);
+  background: var(--tile-indigo-accent);
+  border: 2px solid var(--tile-indigo-accent-ink);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 3px 0 var(--tile-edge);
+  font: 800 1.05rem / 1.2 var(--body-font);
+  text-decoration: none;
+}
+.overview-cta b { display: inline-block; transition: transform 0.2s; }
+.overview-cta:hover b { transform: translateX(5px); }
+
+.bento-label {
+  margin: var(--space-4) 0 0;
+  font: 800 0.8rem / 1.2 var(--body-font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.llm-course main.overview .bento-label { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.12em; }
+
+.tile-step-1 { --tb: var(--step-1); --ti: var(--step-ink); }
+.tile-step-2 { --tb: var(--step-2); --ti: var(--step-ink); }
+.tile-step-3 { --tb: var(--step-3); --ti: var(--step-ink); }
+.tile-step-4 { --tb: var(--step-4); --ti: var(--step-ink); }
+.tile-step-5 { --tb: var(--step-5); --ti: var(--step-ink); }
+.tile-step-6 { --tb: var(--step-6); --ti: var(--step-ink); }
+
+.tile-num { margin: 0; font: 800 4rem / 0.85 var(--heading-font); letter-spacing: -0.04em; }
+.tile-note { max-width: 40ch; margin: 0; font: 700 0.88rem / 1.4 var(--body-font); }
+.tile-sources { max-width: 48ch; margin: 0; font: 600 0.8rem / 1.45 var(--body-font); }
+.tile-sources a { position: relative; z-index: 1; color: inherit; text-decoration-thickness: 2px; text-underline-offset: 2px; }
+.overview-grid .tile-blurb { max-width: 46ch; font-size: 1rem; }
+
+@media (min-width: 640px) {
+  .overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .overview-hero, .bento-label { grid-column: 1 / -1; }
+}
 
 @media (max-width: 900px) {
   .llm-course .chrome-header ~ .course-sidebar { top: auto; }
-  .llm-course main.overview { padding: 0 var(--gutter) var(--space-6); }
   .llm-course .chrome-footer { padding-inline: var(--gutter); }
 }
 
 @media (max-width: 520px) {
-  .llm-course main.overview { font-size: 1.0625rem; }
-  .llm-course .path-step { grid-template-columns: 2rem minmax(0, 1fr); column-gap: var(--space-2); }
-  .llm-course .path-step::before { font-size: 1.5rem; }
+  .overview-hero { padding: 20px 16px; }
+  .tile-num { font-size: 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overview-cta b { transition: none; }
+  .overview-cta:hover b { transform: none; }
 }

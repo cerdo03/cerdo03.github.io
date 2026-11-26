@@ -1,31 +1,40 @@
 import { matchTag, tagCounts, sites } from './learning-catalog.js';
 
-// Homepage topic filter, driven by the learning catalog. Without JavaScript the full list stays visible.
-// Markup contract: [data-topic-filter] (empty, hidden) and [data-site-grid] with <li data-entry> cards;
-// collection cards list members as <li data-site>.
+// Homepage topic filter, driven by the learning catalog. Without JavaScript the full bento stays visible.
+// Markup contract: [data-topic-filter] (empty, hidden) and a .bento grid whose learning tiles carry
+// data-entry="<catalog id>". A collection tile lists member sites as .stairs > li[data-site].
+// Filtering either hides non-matching tiles and reflows the grid, or dims them (the checkbox).
 const host = document.querySelector('[data-topic-filter]');
-const grid = document.querySelector('[data-site-grid]');
+const grid = document.querySelector('.bento');
 
 if (host && grid) {
   const visibleCount = 8;
   const counts = tagCounts();
   const total = Object.keys(sites).length;
+  const tiles = [...grid.querySelectorAll('[data-entry]')];
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   const params = new URLSearchParams(location.search);
   let selected = counts.some(item => item.tag === params.get('topic')) ? params.get('topic') : '';
   let expanded = counts.slice(visibleCount).some(item => item.tag === selected);
+  let hideOthers = true;
 
-  const label = document.createElement('span');
-  label.className = 'filter-label';
-  label.id = 'filter-label';
-  label.textContent = 'Topics';
+  const heading = document.createElement('h2');
+  heading.id = 'filter-label';
+  heading.textContent = 'Learn by topic';
   const chips = document.createElement('div');
   chips.className = 'filter-chips';
   chips.setAttribute('role', 'group');
   chips.setAttribute('aria-labelledby', 'filter-label');
+  const option = document.createElement('label');
+  option.className = 'filter-option';
+  const box = document.createElement('input');
+  box.type = 'checkbox';
+  box.checked = hideOthers;
+  option.append(box, ' Hide others (unchecked: dim)');
   const status = document.createElement('p');
   status.className = 'filter-status';
   status.setAttribute('role', 'status');
-  host.replaceChildren(label, chips, status);
+  host.replaceChildren(heading, chips, option, status);
 
   const makeChip = (text, tag, count) => {
     const button = document.createElement('button');
@@ -35,7 +44,7 @@ if (host && grid) {
     if (count) {
       const badge = document.createElement('span');
       badge.className = 'chip-count';
-      badge.textContent = count;
+      badge.textContent = `(${count})`;
       button.append(badge);
       button.setAttribute('aria-label', `${text}, ${count} ${count === 1 ? 'site' : 'sites'}`);
     }
@@ -49,7 +58,7 @@ if (host && grid) {
     const more = document.createElement('button');
     more.type = 'button';
     more.className = 'chip-button';
-    more.textContent = expanded ? 'Fewer topics' : `${counts.length - visibleCount} more`;
+    more.textContent = expanded ? 'Fewer topics' : `${counts.length - visibleCount} more topics`;
     more.setAttribute('aria-expanded', String(expanded));
     more.addEventListener('click', () => { expanded = !expanded; build(); update(); });
     chips.replaceChildren(makeChip('All', ''), ...shown.map(item => makeChip(item.tag, item.tag, item.count)), more);
@@ -59,25 +68,61 @@ if (host && grid) {
     for (const button of chips.querySelectorAll('[data-tag]')) button.setAttribute('aria-pressed', String(button.dataset.tag === selected));
   }
 
-  function apply(user) {
-    const results = matchTag(selected);
-    let entriesShown = 0;
-    let sitesShown = 0;
-    for (const result of results) {
-      const card = grid.querySelector(`[data-entry="${result.id}"]`);
-      if (!card) continue;
-      card.hidden = !result.matches;
-      if (result.matches) entriesShown += 1;
-      const members = card.querySelectorAll('[data-site]');
-      if (members.length > 1 || card.classList.contains('is-collection')) {
-        for (const member of card.querySelectorAll('.member-list [data-site]')) {
-          member.hidden = !!selected && !result.memberIds.includes(member.dataset.site);
-          if (!member.hidden) sitesShown += 1;
-        }
-      } else if (result.matches) sitesShown += 1;
+  // FLIP: animate tiles from their old box to the new one (skipped for reduced motion).
+  function flip(change) {
+    const first = new Map(tiles.map(tile => [tile, tile.hidden ? null : tile.getBoundingClientRect()]));
+    change();
+    if (reduced?.matches || !tiles[0]?.animate) return;
+    for (const tile of tiles) {
+      if (tile.hidden) continue;
+      const from = first.get(tile);
+      const to = tile.getBoundingClientRect();
+      if (!from) {
+        tile.animate([{ opacity: 0, transform: 'scale(.92)' }, { opacity: 1, transform: 'none' }], { duration: 320, easing: 'ease-out' });
+        continue;
+      }
+      const dx = from.left - to.left;
+      const dy = from.top - to.top;
+      const sx = from.width / to.width;
+      const sy = from.height / to.height;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) continue;
+      tile.animate([{ transformOrigin: 'top left', transform: `translate(${dx}px,${dy}px) scale(${sx},${sy})` }, { transformOrigin: 'top left', transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.2,.8,.2,1)' });
     }
+  }
+
+  function apply(user) {
+    const filtering = Boolean(selected);
+    const hide = filtering && hideOthers;
+    const results = new Map(matchTag(selected).map(result => [result.id, result]));
+    let tilesShown = 0;
+    let sitesShown = 0;
+    (user ? flip : change => change())(() => {
+      grid.classList.toggle('reflow', hide);
+      for (const tile of tiles) {
+        const result = results.get(tile.dataset.entry);
+        const matches = Boolean(result?.matches);
+        tile.hidden = hide && !matches;
+        tile.classList.toggle('dim', filtering && !hide && !matches);
+        const state = tile.querySelector('.tile-state');
+        if (state) state.textContent = !filtering ? '' : matches ? 'Match' : 'Other topic';
+        const steps = tile.querySelectorAll('.stairs [data-site]');
+        for (const step of steps) {
+          const on = filtering && result.memberIds.includes(step.dataset.site);
+          step.classList.toggle('is-match', on);
+          step.classList.toggle('is-off', filtering && !on);
+        }
+        if (matches) {
+          tilesShown += 1;
+          sitesShown += steps.length ? result.memberIds.length : 1;
+        }
+      }
+    });
     update();
-    status.textContent = selected ? `${sitesShown} of ${total} sites tagged “${selected}”.` : '';
+    box.disabled = !filtering;
+    status.textContent = filtering
+      ? `Topic: ${selected}. ${sitesShown} of ${total} learning sites match${hide ? '; other tiles hidden' : '; other tiles dimmed'}.`
+      : `Showing all ${total} learning sites.`;
+    if (tilesShown === 0) status.textContent += ' Nothing matches.';
     if (user) {
       const url = new URL(location.href);
       if (selected) url.searchParams.set('topic', selected); else url.searchParams.delete('topic');
@@ -85,6 +130,7 @@ if (host && grid) {
     }
   }
 
+  box.addEventListener('change', () => { hideOthers = box.checked; apply(false); });
   build();
   apply(false);
   host.hidden = false;
