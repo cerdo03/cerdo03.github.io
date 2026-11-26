@@ -19,31 +19,31 @@
 // from this module's URL. Replace the placeholder with the static markup built by
 // headerMarkup()/footerMarkup() when a page must render without JavaScript (the homepage does).
 //
-//   data-current   learn | writing | books  marks the primary-nav item (aria-current="page").
+//   data-current   learn | writing | reading  marks the primary-nav item (aria-current="page").
 //                  Optional: inferred from the path (/labs/ → learn, /journal/ → writing).
-//   data-spy       on the header: also highlight sections #learn, #writing, #books while
+//   data-spy       on the header: also highlight sections #learn, #writing, #reading while
 //                  scrolling (homepage only; aria-current="location").
 //   Breadcrumb     optional, plain markup inside the page, styled by chrome.css:
 //                    <nav class="chrome-breadcrumb chrome-container" aria-label="Breadcrumb">
-//                      <ol><li><a href="…/">Learn</a></li><li aria-current="page">Title</li></ol></nav>
+//                      <ol><li><a href="…/">Learning</a></li><li aria-current="page">Title</li></ol></nav>
 //   Theme toggle   <button class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button> anywhere on the
 //                  page; theme.js fills icons + the accessible name, persists the choice
 //                  under localStorage "journal-appearance" and syncs other tabs.
-//   Chips/badges/cards/buttons: classes documented at the top of chrome.css.
+//   Tags/badges/ruled rows/text-link actions: classes documented at the top of chrome.css.
 import { bindThemeToggles } from './theme.js';
 
 const root = new URL('../', import.meta.url).pathname;
 
 const nav = [
-  { key: 'learn', label: 'Learn', href: '#learn' },
+  { key: 'learn', label: 'Learning', href: '#learn' },
   { key: 'writing', label: 'Writing', href: '#writing' },
-  { key: 'books', label: 'Books', href: '#books' },
+  { key: 'reading', label: 'Reading', href: '#reading' },
 ];
 
 export function headerMarkup(base = root, current = '') {
   const links = nav.map(item => `<a href="${base}${item.href}" data-nav="${item.key}"${item.key === current ? ' aria-current="page"' : ''}>${item.label}</a>`).join('');
   return `<div class="chrome-container chrome-header-inner">
-  <a class="chrome-brand" href="${base}" aria-label="Surya, home"><span class="chrome-mark" aria-hidden="true">S</span>Surya</a>
+  <a class="chrome-brand" href="${base}">Surya’s journal</a>
   <nav class="chrome-nav" aria-label="Primary">${links}</nav>
   <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
 </div>`;
@@ -52,7 +52,7 @@ export function headerMarkup(base = root, current = '') {
 export function footerMarkup(base = root) {
   return `<div class="chrome-container chrome-footer-inner">
   <span>Surya’s personal journal</span>
-  <nav aria-label="Footer"><a href="${base}#learn">Learn</a><a href="${base}#writing">Writing</a><a href="${base}#books">Books</a><a href="https://github.com/cerdo03">GitHub <span aria-hidden="true">↗</span></a></nav>
+  <nav aria-label="Footer"><a href="${base}#learn">Learning</a><a href="${base}#writing">Writing</a><a href="${base}#reading">Reading</a><a href="https://github.com/cerdo03">GitHub <span aria-hidden="true">↗</span></a></nav>
 </div>`;
 }
 

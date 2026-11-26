@@ -9,21 +9,21 @@ export const projects = {
     title: 'Learning LLM Systems',
     path: '/labs/llm-systems/',
     kind: 'Collection',
-    summary: 'My ongoing study of how language models generate text, reuse computation and serve requests: tokens and KV cache, attention math, GPUs and efficient attention.',
+    summary: 'My ongoing study of how language models generate text, reuse computation and serve requests: the KV cache, attention math, GPUs and efficient attention.',
     tags: ['AI', 'LLM systems']
   }
 };
 
 export const sites = {
-  'math-fluency': { project: 'llm-systems', title: 'Mathematical Notation for Systems Engineers', path: '/labs/math-fluency/', kind: 'Optional toolkit', label: 'Module 0', summary: 'Six short lessons on notation, indices, tensor shapes and stable softmax, so the attention equations read easily.', tags: ['Mathematics', 'Attention'] },
-  inference: { project: 'llm-systems', title: 'LLM Inference: Foundations & KV Cache', path: '/labs/inference/', kind: 'Interactive guide', label: 'Module 1', summary: 'Tokens, prefill, decode, attention, cache memory and prefix reuse through simplified interactive diagrams. Nothing here runs a real model.', tags: ['Inference', 'KV cache'] },
-  attention: { project: 'llm-systems', title: 'Attention Mechanisms & KV-Cache Internals', path: '/labs/attention/', kind: 'Interactive module', label: 'Module 2', summary: 'Derive scaled dot-product attention, trace shapes through MHA, MQA and GQA, and calculate what the KV cache stores. Toy numbers, raw storage only.', tags: ['Attention', 'KV cache'] },
-  gpu: { project: 'llm-systems', title: 'GPU Architecture and Performance Engineering', path: '/labs/gpu/', kind: 'Five lessons', label: 'Module 3', summary: 'Map work to threads and memory, derive tiled matrix traffic, then compare prefill and decode with roofline models. Analytical, not measured.', tags: ['GPU', 'Performance', 'Inference'] },
-  'efficient-attention': { project: 'llm-systems', title: 'Efficient Attention and Memory', path: '/labs/efficient-attention/', kind: 'Five lessons', label: 'Module 4', summary: 'Online softmax, attention tile residency and IO, then KV block tables, sharing and copy-on-write. Computed teaching models, no GPU speedup claimed.', tags: ['Attention', 'Memory', 'Inference'] },
-  'architecture-explorer': { project: 'llm-systems', title: 'Transformer Architecture Explorer', path: '/labs/attention/architecture-explorer/', kind: 'Visual companion', label: 'Optional', summary: 'Open a causal decoder in 3D, trace Q/K/V and head sharing, and inspect tensor shapes. A schematic; it runs no pretrained model.', tags: ['Attention', '3D'] },
-  dynamo: { title: 'Dynamo Paper Companion', path: '/labs/dynamo/', kind: 'Paper companion', summary: 'The 2007 Dynamo paper through replica placement, version histories, failure and repair experiments. Simulations are labelled apart from the paper’s measurements.', tags: ['Distributed systems', 'Storage', 'Research paper'] },
-  kafka: { title: 'Kafka Design Reader', path: '/labs/kafka/', kind: 'Interactive guide', summary: 'Partitions, consumer offsets, replication and delivery guarantees, following Chirag Hasija’s “Design a Distributed Message Queue”.', tags: ['Kafka', 'System design'] },
-  scion: { title: 'Source control, rethought', path: '/labs/scion/', kind: 'Interactive guide', summary: 'Follow one code change through content-addressed storage, sparse checkouts and cache tiers, then break it with competing writes. Companion to Anthropic’s Scion article.', tags: ['Distributed systems', 'Source control'] }
+  'math-fluency': { project: 'llm-systems', title: 'Mathematical Notation for Systems Engineers', path: '/labs/math-fluency/', kind: 'Optional toolkit', label: 'Module 0', summary: 'Six short lessons on notation, indices, tensor shapes and stable softmax.', tags: ['Mathematics', 'Attention'] },
+  inference: { project: 'llm-systems', title: 'LLM Inference: Foundations & KV Cache', path: '/labs/inference/', kind: 'Interactive guide', label: 'Module 1', summary: 'Tokens, prefill, decode and the KV cache through simplified diagrams; no real model runs.', tags: ['Inference', 'KV cache'] },
+  attention: { project: 'llm-systems', title: 'Attention Mechanisms & KV-Cache Internals', path: '/labs/attention/', kind: 'Interactive module', label: 'Module 2', summary: 'Derive scaled dot-product attention, trace MHA, MQA and GQA shapes, and size the KV cache.', tags: ['Attention', 'KV cache'] },
+  gpu: { project: 'llm-systems', title: 'GPU Architecture and Performance Engineering', path: '/labs/gpu/', kind: 'Five lessons', label: 'Module 3', summary: 'Threads, memory, tiling and roofline models to compare prefill and decode; analytical, not measured.', tags: ['GPU', 'Performance', 'Inference'] },
+  'efficient-attention': { project: 'llm-systems', title: 'Efficient Attention and Memory', path: '/labs/efficient-attention/', kind: 'Five lessons', label: 'Module 4', summary: 'Online softmax, tile IO, block tables and copy-on-write as computed teaching models.', tags: ['Attention', 'Memory', 'Inference'] },
+  'architecture-explorer': { project: 'llm-systems', title: 'Transformer Architecture Explorer', path: '/labs/attention/architecture-explorer/', kind: 'Visual companion', label: 'Optional', summary: 'A causal decoder in 3D with Q/K/V, head sharing and tensor shapes; a schematic, not a model.', tags: ['Attention', '3D'] },
+  dynamo: { title: 'Dynamo Paper Companion', path: '/labs/dynamo/', kind: 'Paper companion', summary: 'The 2007 Dynamo paper through replica placement, version histories and failure experiments.', tags: ['Distributed systems', 'Storage', 'Research paper'] },
+  kafka: { title: 'Kafka Design Reader', path: '/labs/kafka/', kind: 'Interactive guide', summary: 'Partitions, offsets, replication and delivery guarantees, after Chirag Hasija’s message-queue design.', tags: ['Kafka', 'System design'] },
+  scion: { title: 'Source control, rethought', path: '/labs/scion/', kind: 'Interactive guide', summary: 'Follow one code change through content-addressed storage and cache tiers, after Anthropic’s Scion article.', tags: ['Distributed systems', 'Source control'] }
 };
 
 export function siteTags(project, site) {

@@ -1,17 +1,27 @@
-/* Shared chrome and UI primitives for the journal, collections and (soon) lessons.
+/* Shared chrome and editorial primitives for the journal, collections and (soon) lessons.
    Needs assets/theme.css first. Class names are prefixed so they never collide with
-   legacy lab CSS (.site-header, .topbar, nav, footer ...).
+   legacy lab CSS (.site-header, .topbar, nav, footer ...). Hairlines, whitespace and
+   type carry hierarchy; there are no filled pills or shadowed cards.
 
    Components
-     .chrome-header   sticky compact header (brand, primary nav, theme toggle)
-     .chrome-breadcrumb  optional trail under the header
-     .chrome-footer   refined footer
-     .chrome-container  centred content width with responsive gutters
-     .chrome-skip     skip link
-     .chip / .chip-list  tag chips (static labels; .chip-button for filters)
-     .badge           small type label (collection, paper companion ...)
-     .btn / .btn-primary  buttons and link-buttons
-     .card            rounded surface; add .card-link to make the whole card clickable */
+     .chrome-header     header: plain serif wordmark, three text links, theme toggle
+     .chrome-breadcrumb optional trail under the header
+     .chrome-footer     quiet footer
+     .chrome-container  centred reading column (--container) with responsive gutters
+     .chrome-skip       skip link
+     .chip-list / .chip tags as plain muted text separated by middots
+     .chip-button       text-link button (filters); aria-pressed marks the choice
+     .badge             small uppercase sans label (collection, paper companion ...)
+     .btn / .btn-primary  action as a text link; reserve for primary actions
+     .card              ruled row (hairline above); .card-link + a.card-stretch make the
+                        whole row clickable
+     .ui-text           sans UI/meta text inside serif reading pages */
+
+.chrome-container,
+.card,
+.btn {
+  box-sizing: border-box;
+}
 
 .chrome-skip {
   position: absolute;
@@ -21,18 +31,13 @@
   padding: var(--space-2) var(--space-4);
   color: var(--on-accent);
   background: var(--accent);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
+  font: 500 var(--text-sm) / 1.4 var(--body-font);
   text-decoration: none;
 }
 
 .chrome-skip:focus {
   top: var(--space-2);
-}
-
-.chrome-container,
-.card,
-.btn {
-  box-sizing: border-box;
 }
 
 .chrome-container {
@@ -49,7 +54,6 @@
   z-index: 50;
   background: var(--header-bg);
   border-bottom: 1px solid var(--line);
-  backdrop-filter: saturate(180%) blur(12px);
 }
 
 .chrome-header-inner {
@@ -60,68 +64,50 @@
 }
 
 .chrome-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
   color: var(--ink);
-  font-weight: 650;
+  font: 600 var(--text-lg) / 1.2 var(--heading-font);
   letter-spacing: -0.01em;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .chrome-brand:hover {
-  color: var(--ink);
-}
-
-.chrome-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  color: var(--on-accent);
-  background: var(--accent);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  font-weight: 700;
+  color: var(--accent);
 }
 
 .chrome-nav {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-4);
   margin-left: auto;
 }
 
 .chrome-nav a {
-  padding: var(--space-2) var(--space-3);
+  padding-block: var(--space-1);
   color: var(--muted);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-sm);
-  font-weight: 500;
+  font: 500 var(--text-sm) / 1.4 var(--body-font);
   text-decoration: none;
 }
 
 .chrome-nav a:hover {
   color: var(--ink);
-  background: var(--surface-alt);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 6px;
 }
 
 .chrome-nav a[aria-current] {
-  color: var(--accent);
-  background: var(--accent-soft);
-  font-weight: 600;
-}
-
-:root[data-theme="contrast"] .chrome-nav a[aria-current] {
-  color: var(--on-accent);
-  background: var(--accent);
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
 }
 
 /* Breadcrumb: <nav class="chrome-breadcrumb"><ol><li><a>…</a></li><li aria-current="page">…</li></ol></nav> */
 .chrome-breadcrumb {
-  padding-block: var(--space-3) 0;
-  font-size: var(--text-sm);
+  padding-block: var(--space-4) 0;
+  font: var(--text-sm) / 1.4 var(--body-font);
 }
 
 .chrome-breadcrumb ol {
@@ -156,10 +142,10 @@
 /* Footer */
 .chrome-footer {
   margin-top: var(--space-8);
-  padding-block: var(--space-6);
+  padding-block: var(--space-5) var(--space-6);
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: var(--text-sm);
+  font: var(--text-sm) / 1.5 var(--body-font);
 }
 
 .chrome-footer-inner {
@@ -167,13 +153,13 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-3) var(--space-5);
+  gap: var(--space-2) var(--space-5);
 }
 
 .chrome-footer nav {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1) var(--space-5);
+  gap: var(--space-1) var(--space-4);
 }
 
 .chrome-footer a {
@@ -185,137 +171,106 @@
   color: var(--accent);
 }
 
-/* Chips and badges: text always carries the meaning; colour only supports it. */
+/* Tags: plain muted text separated by middots. */
 .chip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1) var(--space-2);
   margin: 0;
   padding: 0;
+  color: var(--muted);
+  font: var(--text-sm) / 1.5 var(--body-font);
   list-style: none;
 }
 
-.chip,
-.chip-button {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.125rem 0.625rem;
-  color: var(--chip-ink);
-  background: var(--chip-bg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-pill);
-  font: 500 var(--text-xs) / 1.6 var(--body-font);
-  white-space: nowrap;
+.chip {
+  display: inline;
+  color: var(--muted);
+  font: var(--text-sm) / 1.5 var(--body-font);
 }
 
+.chip:not(:last-child)::after {
+  content: "·";
+  margin-inline: 0.5em;
+}
+
+/* Text-link buttons (topic filter). */
 .chip-button {
-  gap: var(--space-2);
-  min-height: 2rem;
-  padding-inline: var(--space-3);
-  font-size: var(--text-sm);
+  padding: var(--space-1) 0;
+  color: var(--muted);
+  background: none;
+  border: 0;
   cursor: pointer;
+  font: var(--text-sm) / 1.4 var(--body-font);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 4px;
+}
+
+.chip-button:hover {
+  color: var(--accent);
+}
+
+.chip-button[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
 }
 
 .chip-count {
+  margin-left: 0.25em;
   color: var(--muted);
   font-size: var(--text-xs);
   font-variant-numeric: tabular-nums;
 }
 
-.chip-button[aria-pressed="true"] .chip-count {
-  color: inherit;
-  opacity: 0.85;
-}
-
-.chip-button:hover {
-  border-color: var(--accent);
-  color: var(--ink);
-}
-
-.chip-button[aria-pressed="true"] {
-  color: var(--on-accent);
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: 0.125rem 0.5rem;
   color: var(--accent);
-  background: var(--accent-soft);
-  border-radius: var(--radius-sm);
-  font: 600 var(--text-xs) / 1.6 var(--body-font);
-  letter-spacing: 0.02em;
+  font: 600 var(--text-xs) / 1.5 var(--body-font);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-:root[data-theme="contrast"] .badge {
-  border: 1px solid var(--accent);
-}
-
-/* Buttons */
+/* Actions: a text link with an arrow is usually enough. */
 .btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 2.5rem;
-  padding: 0.5rem var(--space-4);
-  color: var(--ink);
-  background: var(--card);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
-  font: 600 var(--text-sm) / 1.4 var(--body-font);
-  text-decoration: none;
+  gap: var(--space-1);
+  padding: 0;
+  color: var(--accent);
+  background: none;
+  border: 0;
   cursor: pointer;
+  font: 600 var(--text-sm) / 1.5 var(--body-font);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-underline-offset: 4px;
 }
 
 .btn:hover {
-  color: var(--ink);
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--accent-hover);
+  text-decoration-color: currentcolor;
 }
 
 .btn-primary {
-  color: var(--on-accent);
-  background: var(--accent);
-  border-color: var(--accent);
+  font-size: var(--text-base);
 }
 
-.btn-primary:hover {
-  color: var(--on-accent);
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
-}
-
-/* Cards */
+/* Ruled rows */
 .card {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  padding-block: var(--space-4);
+  border-top: 1px solid var(--line);
 }
 
-.card-link:hover,
-.card-link:focus-within {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-md);
+.card-link:hover h3 a,
+.card-link:focus-within h3 a {
+  color: var(--accent);
 }
 
-/* One link covers the card; nested links keep position: relative to stay clickable. */
+/* One link covers the row; nested links keep position: relative to stay clickable. */
 .card-link a.card-stretch::after {
   content: "";
   position: absolute;
   inset: 0;
-  border-radius: inherit;
 }
 
 .card-link a.card-stretch:focus-visible {
@@ -324,14 +279,11 @@
 
 .card-link:has(a.card-stretch:focus-visible) {
   outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline-offset: 2px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .card,
-  .chrome-nav a {
-    transition: none;
-  }
+.ui-text {
+  font-family: var(--body-font);
 }
 
 @media (max-width: 480px) {
@@ -339,7 +291,11 @@
     gap: var(--space-2);
   }
 
-  .chrome-nav a {
-    padding-inline: var(--space-2);
+  .chrome-brand {
+    font-size: var(--text-base);
+  }
+
+  .chrome-nav {
+    gap: var(--space-3);
   }
 }

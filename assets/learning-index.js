@@ -14,10 +14,10 @@ if (host && grid) {
   let selected = counts.some(item => item.tag === params.get('topic')) ? params.get('topic') : '';
   let expanded = counts.slice(visibleCount).some(item => item.tag === selected);
 
-  const label = document.createElement('p');
+  const label = document.createElement('span');
   label.className = 'filter-label';
   label.id = 'filter-label';
-  label.textContent = 'Filter by topic';
+  label.textContent = 'Topics';
   const chips = document.createElement('div');
   chips.className = 'filter-chips';
   chips.setAttribute('role', 'group');
@@ -49,7 +49,7 @@ if (host && grid) {
     const more = document.createElement('button');
     more.type = 'button';
     more.className = 'chip-button';
-    more.textContent = expanded ? 'Fewer topics' : `${counts.length - visibleCount} more topics`;
+    more.textContent = expanded ? 'Fewer topics' : `${counts.length - visibleCount} more`;
     more.setAttribute('aria-expanded', String(expanded));
     more.addEventListener('click', () => { expanded = !expanded; build(); update(); });
     chips.replaceChildren(makeChip('All', ''), ...shown.map(item => makeChip(item.tag, item.tag, item.count)), more);
