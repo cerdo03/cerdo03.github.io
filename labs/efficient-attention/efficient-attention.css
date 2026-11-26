@@ -36,6 +36,7 @@
 .ea-options input { width: 1.2rem; height: 1.2rem; }
 .ea-feedback { padding: .7rem; border-left: 3px solid var(--accent); }
 .ea-note { color: var(--muted); font-size: .92rem; }
+.ea-takeaway { padding: .8rem 1rem; background: var(--accent-soft); border-left: 4px solid var(--accent); border-radius: var(--radius-sm); margin-top: 1.5rem; }
 .ea-links { display: flex; flex-wrap: wrap; gap: 1rem; }
 .efficient-course dl { display: grid; grid-template-columns: minmax(7rem, 1fr) 3fr; gap: .6rem 1rem; }
 .efficient-course dd { margin: 0; }

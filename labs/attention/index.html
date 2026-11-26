@@ -102,15 +102,15 @@
           <tbody>
             <tr><td><var>T</var></td><td>Sequence length (number of token positions)</td></tr>
             <tr><td><var>d</var><sub>model</sub></td><td>Model (hidden) width</td></tr>
-            <tr><td><var>d</var><sub>k</sub>, <var>d</var><sub>v</sub></td><td>Key/query width and value width of one head</td></tr>
-            <tr><td><var>H</var>, <var>H</var><sub>KV</sub></td><td>Query heads and key/value heads</td></tr>
-            <tr><td><var>D</var></td><td>Head dimension used in KV-memory formulas</td></tr>
+            <tr><td><var>d</var><sub>k</sub>, <var>d</var><sub>v</sub>, <var>d</var><sub>head</sub>, <var>D</var></td><td>Four spellings of one number: the width of a single head’s key/query vectors (<var>d</var><sub>k</sub>) and value vectors (<var>d</var><sub>v</sub>). Lesson 2.1 writes <var>d</var><sub>k</sub> and <var>d</var><sub>v</sub>; lesson 2.2 calls it <var>d</var><sub>head</sub> = <var>d</var><sub>model</sub> / <var>H</var>; the KV-memory lessons 2.3–2.5 write <var>D</var>. With equal-width heads (assumed throughout) <var>D</var> = <var>d</var><sub>head</sub> = <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub>.</td></tr>
+            <tr><td><var>H</var>, <var>H</var><sub>q</sub>, <var>H</var><sub>KV</sub></td><td>Query heads (<var>H</var> in lesson 2.2 and <var>H</var><sub>q</sub> from lesson 2.3 on: <var>H</var> = <var>H</var><sub>q</sub>) and key/value heads (<var>H</var><sub>KV</sub>). In multi-head attention <var>H</var><sub>KV</sub> = <var>H</var><sub>q</sub>; GQA and MQA make <var>H</var><sub>KV</sub> smaller.</td></tr>
+            <tr><td><var>M</var>, <var>M</var><sub>KV</sub></td><td>Two unrelated symbols: <var>M</var> is the attention mask (lesson 2.1), <var>M</var><sub>KV</sub> is KV-cache memory in bytes (lessons 2.3–2.5). The subscript marks the memory.</td></tr>
             <tr><td><var>L</var></td><td>Number of attention layers</td></tr>
             <tr><td><var>B</var></td><td>Bytes per stored element (2 for BF16/FP16)</td></tr>
           </tbody>
         </table>
       </div>
-      <p>Conventions used throughout: row vectors (a sequence is <var>X</var> ∈ ℝ<sup><var>T</var>×<var>d</var><sub>model</sub></sup> and projections are <var>X</var><var>W</var>); biases omitted; no batch dimension; contiguous logical tensors; equal head dimensions. Numbers in examples are invented toy values unless a source is given. Memory figures count raw KV storage only.</p>
+      <p>Conventions used throughout: row vectors (a sequence is <var>X</var> ∈ ℝ<sup><var>T</var>×<var>d</var><sub>model</sub></sup> and projections are <var>X</var><var>W</var>); biases omitted; no batch dimension; contiguous logical tensors; equal head dimensions. Numbers in examples are invented toy values unless a source is given. Memory figures count raw KV storage only. <strong>Numbering:</strong> token labels in worked tables count from 1 (the first token is token 1). Where a page says an index is zero-based it counts from 0: column ranges such as 0–63 in lesson 2.2, the head index <var>i</var> in lesson 2.3 and the cache position <var>p</var> in lesson 2.4 (whose tracer shows the label <var>p</var> + 1). Each page states which one it uses.</p>
     </section>
 
     <section id="references" aria-labelledby="references-title">

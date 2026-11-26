@@ -172,7 +172,7 @@
             <li>allocator metadata, block tables and fragmentation;</li>
             <li>padding and partially filled blocks in block-based allocators (2.5.3);</li>
             <li>the serving framework’s own memory, CUDA context and communication buffers;</li>
-            <li>savings from prefix sharing or KV compression/quantization schemes beyond the chosen <var>B</var>.</li>
+            <li>savings from prefix sharing or KV compression/quantization schemes beyond the chosen <var>B</var>. For example, multi-head latent attention (MLA, <a href="https://arxiv.org/abs/2405.04434">DeepSeek-V2</a>) caches a compressed latent per token, so the formula above does not apply to it.</li>
           </ul>
         </div>
       </section>
@@ -233,7 +233,10 @@
         <h3>KV bytes read per decode step</h3>
         <p>Assume the new query attends to all <var>T</var> cached positions and every cached byte is read from GPU memory exactly once per step. Then one decode step for one sequence reads approximately the whole cache:</p>
         <div class="eq" role="math" aria-label="KV bytes read per decode step approximately equals 2 times L times T times H KV times D times B" data-math="\text{KV bytes read per step}\approx2LTH_{\mathrm{KV}}DB" data-display="true">KV bytes read per step ≈ 2 · <var>L</var> · <var>T</var> · <var>H</var><sub>KV</sub> · <var>D</var> · <var>B</var></div>
-        <p>Worked example: for the default configuration at <var>T</var> = 4,096, every generated token requires reading ≈ 536,870,912 B = <strong>512 MiB</strong> of K/V for that one sequence, and the amount grows by 128 KiB with each token generated. With 32 such sequences in a decode batch, a step reads ≈ 16 GiB (≈ 17.18 GB) of K/V. For scale: the weights of a hypothetical 8-billion-parameter model in BF16 are about 16 GB, so at this batch size and context the KV reads are comparable to the weight reads.</p>
+        <div class="callout limit">
+          <p><span class="callout-label">Read the next number with these caveats.</span> It is a first-order traffic estimate, not a timing model. It assumes every cached byte is read exactly once per step: caches resident in on-chip memory, kernel optimisations, overlap of compute and memory traffic, and attention variants that read fewer positions (such as sliding windows) all change it. Real step time depends on kernels, parallelism and hardware.</p>
+        </div>
+        <p>Worked example: for the default configuration at <var>T</var> = 4,096, every generated token requires reading ≈ 536,870,912 B = <strong>512 MiB</strong> of K/V for that one sequence, and the amount grows by 128 KiB with each token generated. With 32 such sequences in a decode batch, a step reads ≈ 16 GiB (≈ 17.18 GB) of K/V. For scale: the weights of a hypothetical 8-billion-parameter model in BF16 are about 16 GB, so in this example (this batch size and context, under the assumptions above) the KV reads are of the same order as the weight reads.</p>
 
         <h3>Arithmetic intensity: why KV reads are hard to hide</h3>
         <p><em>Arithmetic intensity</em> is FLOPs performed per byte moved from memory. Work whose intensity is below the hardware’s compute-to-bandwidth ratio (commonly tens to hundreds of FLOPs per byte on modern data-centre GPUs) tends to be limited by memory bandwidth rather than arithmetic.</p>
@@ -243,8 +246,12 @@
           <li><strong>The asymmetry.</strong> Each sequence has its own cache, so KV reads do not amortise across the batch. Raising decode batch size improves weight-read utilisation, but total KV traffic grows with Σ <var>T</var><sub>i</sub> and attention’s intensity stays low. Long contexts therefore make decode increasingly dominated by KV reads, and fewer KV heads (GQA/MQA) or smaller <var>B</var> reduce those bytes directly.</li>
         </ul>
 
+        <div class="callout key-takeaway">
+          <p><span class="callout-label">Key takeaway.</span> KV reads do not amortise across the batch. A weight matrix is read once and serves every sequence; each sequence reads only its own cache, so total KV traffic grows with every sequence and every token of context. Only fewer KV heads or fewer bytes per element reduce it. The GPU module derives this with a calculator: <a href="../gpu/lesson-5.html#kv-traffic">Module 3, lesson 3.5, “Cached does not mean free to read”</a>.</p>
+        </div>
+
         <div class="callout limit">
-          <p><span class="callout-label">Limits.</span> Decode is often bandwidth-sensitive but not always bandwidth-bound: with short contexts, small batches dominated by fixed overheads, or large batches whose weight multiplies become compute-heavy, other limits appear. Prefill attention, with many queries per cached key, has much higher intensity. There is no universal latency equation: real step time depends on kernels, overlap of compute and memory traffic, cache residency, parallelism and hardware. The per-step read formula is a first-order estimate of traffic, not a timing model.</p>
+          <p><span class="callout-label">Limits.</span> Decode is often bandwidth-sensitive but not always bandwidth-bound: with short contexts, small batches dominated by fixed overheads, or large batches whose weight multiplies become compute-heavy, other limits appear. Prefill attention, with many queries per cached key, has much higher intensity. There is no universal latency equation; see the caveats before the worked example.</p>
         </div>
         <p>IO-aware attention kernels such as FlashAttention (<a href="https://arxiv.org/abs/2205.14135">Dao et al., 2022</a>) reduce memory traffic by avoiding materialising the full attention matrix in GPU memory; they still have to read the cached K and V. Their internals are outside this module.</p>
       </section>

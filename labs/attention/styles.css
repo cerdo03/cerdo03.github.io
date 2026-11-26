@@ -819,6 +819,11 @@ svg text {
   font-weight: 700;
 }
 
+.callout.key-takeaway {
+  border-left-width: 6px;
+  background: var(--accent-soft);
+}
+
 .callout.limit {
   border-left-style: dashed;
   border-left-color: var(--muted);

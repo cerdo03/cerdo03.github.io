@@ -59,7 +59,7 @@
 
       <section id="s2-3-1" aria-labelledby="s2-3-1-title">
         <h2 id="s2-3-1-title">2.3.1 Three ways to share key/value heads</h2>
-        <p>Write <var>H</var><sub>q</sub> for the number of query heads and <var>H</var><sub>KV</sub> for the number of key/value heads in one attention layer. Each KV head has one key projection and one value projection, so it produces one cached key vector and one cached value vector per token. Query heads never shrink in these designs: every query head still computes its own attention pattern. What changes is how many distinct key/value heads those queries read.</p>
+        <p>Write <var>H</var><sub>q</sub> for the number of query heads (the count that Lesson 2.2 wrote as <var>H</var>; <var>H</var> = <var>H</var><sub>q</sub>) and <var>H</var><sub>KV</sub> for the number of key/value heads in one attention layer. Each KV head has one key projection and one value projection, so it produces one cached key vector and one cached value vector per token. Query heads never shrink in these designs: every query head still computes its own attention pattern. What changes is how many distinct key/value heads those queries read.</p>
         <div class="table-scroll">
           <table class="key-table">
             <caption>Reference layouts with 16 query heads and head dimension <var>D</var> = 128 (example values)</caption>
@@ -128,7 +128,7 @@ for i in range(H_q):
           <dt><var>L</var></dt><dd>number of attention layers (fixed at 32 in the tool).</dd>
           <dt><var>T</var></dt><dd>cached sequence length in tokens.</dd>
           <dt><var>H</var><sub>KV</sub></dt><dd>key/value heads per layer. <var>H</var><sub>q</sub> does not appear.</dd>
-          <dt><var>D</var></dt><dd>head dimension.</dd>
+          <dt><var>D</var></dt><dd>head dimension: the length of one key or value vector. It is the same number as <var>d</var><sub>head</sub> in Lesson 2.2 and <var>d</var><sub>k</sub> = <var>d</var><sub>v</sub> in Lesson 2.1, since heads have equal width here.</dd>
           <dt><var>B</var></dt><dd>bytes per element (fixed at 2 for BF16 in the tool).</dd>
         </dl>
 
@@ -222,6 +222,7 @@ for i in range(H_q):
             <li><strong>Quality cannot be read from this diagram.</strong> Sharing K/V reduces how many distinct key and value projections the model can learn. Whether that costs accuracy is an empirical result for a given model, data set and training budget.</li>
             <li><strong>Reported findings, not guarantees.</strong> Shazeer (2019) reports that multi-query attention decodes much faster in his experiments with only minor quality degradation. Ainslie et al. (2023) report that uptrained GQA models reach quality close to MHA while running at speeds comparable to MQA, on the models and tasks they evaluated.</li>
             <li><strong>Trained models cannot be converted arbitrarily.</strong> The number of KV heads is baked into the learned <var>W</var><sup>K</sup> and <var>W</var><sup>V</sup>. Ainslie et al. convert multi-head checkpoints by mean-pooling the key and value projection heads within each group, then continue pre-training (uptraining) using about 5% of the original pre-training compute. Simply deleting or repeating heads in a trained model is not the same model.</li>
+            <li><strong>Cache-compression designs change the formula.</strong> Multi-head latent attention (MLA), introduced in <a href="https://arxiv.org/abs/2405.04434">DeepSeek-V2</a>, caches one compressed latent vector per token instead of per-head keys and values, so the <var>H</var><sub>KV</sub> and <var>D</var> formula in this lesson does not describe it. Everything here assumes ordinary K and V rows per KV head.</li>
             <li><strong>Divisibility.</strong> In the standard formulation, <var>H</var><sub>q</sub> must be divisible by <var>H</var><sub>KV</sub>; the tool only offers such values.</li>
           </ul>
         </div>
