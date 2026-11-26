@@ -181,9 +181,9 @@
         </dl>
         <h3>Why W<sub>O</sub> is needed</h3>
         <p>Without W<sub>O</sub>, output columns 0–63 would come only from head 1, columns 64–127 only from head 2, and so on: each head would own a fixed block of the residual stream. W<sub>O</sub> lets every output dimension draw on every head. It also maps back to d<sub>model</sub> when <var>H</var>·<var>d</var><sub>head</sub> ≠ d<sub>model</sub>.</p>
-        <h3>Where attention sits in a layer: block overview</h3>
-        <p>Multi-head attention is one of two sub-blocks in a layer. A common layer (a “pre-normalised” decoder block) applies the steps below to every token’s vector. This is a fixed sketch, not an interactive calculation; the <a href="architecture-explorer/">architecture explorer</a> opens it up for a chosen model.</p>
-        <figure class="diagram">
+        <h3 class="course-core">Where attention sits in a layer: block overview</h3>
+        <p class="course-core">Multi-head attention is one of two sub-blocks in a layer. A common layer (a “pre-normalised” decoder block) applies the steps below to every token’s vector. This is a fixed sketch, not an interactive calculation; the <a href="architecture-explorer/">architecture explorer</a> opens it up for a chosen model.</p>
+        <figure class="diagram course-core">
           <ol class="flow-steps">
             <li><strong>Incoming <var>x</var></strong>: [<var>T</var>, d<sub>model</sub>], the residual stream.</li>
             <li><strong>Normalise</strong>: rescale each token’s vector to a steady size so the next sub-block sees well-behaved numbers.</li>
@@ -193,8 +193,8 @@
             <li><strong>Feed-forward network</strong> (FFN, also called MLP): a small learned network applied to each position on its own. It does not mix positions; attention is the only sub-block that does.</li>
             <li><strong>Add</strong> again: <var>x</var>′ = <var>u</var> + FFN(norm(<var>u</var>)). <var>x</var>′ is the next layer’s input.</li>
           </ol>
-          <figcaption>One decoder layer for one token position, in order. Exact arrangements vary by model (for example where normalisation sits); this lesson’s equations cover only the attention step. Lesson 2.4 uses this loop to explain what the KV cache stores.</figcaption>
         </figure>
+        <p class="course-core small">One decoder layer for one token position, in order. Exact arrangements vary by model (for example where normalisation sits); this lesson’s equations cover only the attention step. Lesson 2.4 uses this loop to explain what the KV cache stores.</p>
         <details>
           <summary>Advanced: concatenate-then-project equals a sum over heads</summary>
           <p>Split W<sub>O</sub> by rows into <var>H</var> blocks <var>W</var><sub>O</sub><sup>(<var>i</var>)</sup> ∈ ℝ<sup><var>d</var><sub>head</sub>×d<sub>model</sub></sup> (block <var>i</var> is the rows that multiply head <var>i</var>'s columns). Block matrix multiplication gives</p>

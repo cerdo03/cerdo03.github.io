@@ -246,7 +246,7 @@
           <li><strong>The asymmetry.</strong> Each sequence has its own cache, so KV reads do not amortise across the batch. Raising decode batch size improves weight-read utilisation, but total KV traffic grows with Σ <var>T</var><sub>i</sub> and attention’s intensity stays low. Long contexts therefore make decode increasingly dominated by KV reads, and fewer KV heads (GQA/MQA) or smaller <var>B</var> reduce those bytes directly.</li>
         </ul>
 
-        <div class="callout key-takeaway">
+        <div class="callout key-takeaway course-core">
           <p><span class="callout-label">Key takeaway.</span> KV reads do not amortise across the batch. A weight matrix is read once and serves every sequence; each sequence reads only its own cache, so total KV traffic grows with every sequence and every token of context. Only fewer KV heads or fewer bytes per element reduce it. The GPU module derives this with a calculator: <a href="../gpu/lesson-5.html#kv-traffic">Module 3, lesson 3.5, “Cached does not mean free to read”</a>.</p>
         </div>
 
