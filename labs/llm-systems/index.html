@@ -20,7 +20,7 @@
         <article class="tile tile-indigo overview-hero" aria-labelledby="collection-title">
           <p class="tile-eyebrow"><span>Collection · 6 sites</span></p>
           <h1 id="collection-title">Learning LLM Systems</h1>
-          <p class="overview-lede">How language models generate text, reuse computation and serve requests. Work up the steps in order; each module builds on the one before.</p>
+          <p class="overview-lede">How language models generate text, reuse computation and serve requests. Work through Modules 1–4 in order, each building on the one before; Module 0 and the Explorer are optional.</p>
           <ol class="stairs" aria-hidden="true">
             <li><span class="step"><span class="step-word">Module</span><span class="step-num">0</span><span class="step-name">Math</span></span></li>
             <li><span class="step"><span class="step-word">Module</span><span class="step-num">1</span><span class="step-name">Inference</span></span></li>
@@ -35,7 +35,7 @@
           </div>
         </article>
 
-        <h2 class="bento-label">Start here: four modules, in order</h2>
+        <h2 class="bento-label">Start here: Modules 1–4, in order</h2>
 
         <article class="tile tile-step-2" aria-labelledby="m1-title">
           <p class="tile-eyebrow"><span>Module 1</span><span>Interactive guide</span></p>
@@ -43,7 +43,7 @@
           <h3 id="m1-title"><a class="tile-stretch" href="../inference/">LLM Inference: Foundations &amp; KV Cache</a></h3>
           <p class="tile-blurb">Tokens, prefill, decode, attention, cache memory and prefix reuse through interactive diagrams.</p>
           <p class="tile-note">Simplified simulations: no real model runs and no performance is measured.</p>
-          <ul class="chip-list"><li class="chip">No prerequisite</li></ul>
+          <ul class="chip-list"><li class="chip">Know dot products and matrix multiplication; Module 0 is a refresher</li></ul>
           <p class="tile-sources">Built while studying <a href="https://arxiv.org/abs/2309.06180">PagedAttention</a>, the <a href="https://huggingface.co/docs/transformers/kv_cache">Hugging Face cache guide</a> and <a href="https://docs.vllm.ai/en/latest/features/automatic_prefix_caching/">vLLM prefix caching</a>. Covers prerequisites and related mechanisms, not the entire paper.</p>
           <span class="tile-go">Open module <b aria-hidden="true">→</b></span>
         </article>
@@ -75,6 +75,7 @@
           <h3 id="m4-title"><a class="tile-stretch" href="../efficient-attention/">Efficient Attention and Memory</a></h3>
           <p class="tile-blurb">Derive online softmax, follow tile residency and IO, then resolve KV block tables, sharing and copy-on-write.</p>
           <p class="tile-note">Computed CPU teaching models: no GPU or measured speedup.</p>
+          <p class="tile-note">Needs from earlier modules: 2.1 and 2.3–2.5 (attention, KV heads, cache, memory), plus 3.3 and 3.5 (tiling; prefill vs decode). Lessons 4.1–4.3 open with the Module 3 terms they use.</p>
           <ul class="chip-list"><li class="chip">5 lessons</li><li class="chip">After Module 3</li></ul>
           <span class="tile-go">Open module <b aria-hidden="true">→</b></span>
         </article>

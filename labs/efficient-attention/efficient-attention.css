@@ -56,3 +56,10 @@
 .efficient-course a { color: var(--accent); }
 .efficient-course main p { max-width: 78ch; }
 .efficient-course footer { display: flex; flex-wrap: wrap; gap: 1rem; }
+.ea-terms { border: 2px solid var(--tile-edge, var(--line-strong)); border-left-width: 6px; border-left-color: var(--accent); border-radius: var(--radius-md, 12px); padding: clamp(.8rem, 2vw, 1.2rem); background: var(--surface-alt); margin-block: 1.2rem; min-width: 0; }
+.ea-terms h2 { margin-top: 0; font-size: var(--text-lg, 1.15rem); }
+.ea-terms dl { margin: 0; }
+.ea-terms dd a { white-space: nowrap; }
+@media (max-width: 600px) {
+  .ea-terms { padding: .6rem; border-left-width: 4px; }
+}

@@ -43,6 +43,7 @@
           <li><a href="#s2-5-3">2.5.3 Memory vs context length</a></li>
           <li><a href="#s2-5-4">2.5.4 Bandwidth during decode</a></li>
           <li><a href="#s2-5-5">2.5.5 Exercise</a></li>
+          <li><a href="#s2-5-6">2.5.6 Where this leads</a></li>
           </ol>
         </details>
       </nav>
@@ -212,7 +213,7 @@
 
         <h3>Real allocators grow in steps</h3>
         <p>Serving engines rarely grow one token at a time. A common design reserves KV memory in fixed-size <em>blocks</em> of tokens; vLLM, for example, exposes a <code>block_size</code> setting, the “size of a contiguous cache block in number of tokens” (<a href="https://docs.vllm.ai/en/latest/configuration/engine_args.html">vLLM engine arguments</a>); 16 tokens is a commonly used value and is used in the example below. With 16-token blocks, a sequence of <var>T</var> tokens reserves ⌈<var>T</var> / 16⌉ × 16 token slots, so the true curve is a staircase that sits on or slightly above the straight line.</p>
-        <p>Example (worked-example config): <var>T</var> = 4,097 needs ⌈4,097 / 16⌉ = 257 blocks = 4,112 slots. The 15 unused slots cost 15 × 131,072 B = 1,966,080 B ≈ 1.88 MiB. The waste per sequence is at most one partly filled block, so it matters most for many short sequences and little for a few long ones. How blocks are allocated, shared and freed is the subject of the planned Module 3 (PagedAttention); here, just remember that the linear formula is a lower bound for what an allocator reserves.</p>
+        <p>Example (worked-example config): <var>T</var> = 4,097 needs ⌈4,097 / 16⌉ = 257 blocks = 4,112 slots. The 15 unused slots cost 15 × 131,072 B = 1,966,080 B ≈ 1.88 MiB. The waste per sequence is at most one partly filled block, so it matters most for many short sequences and little for a few long ones. How blocks are allocated, shared and freed is the subject of <a href="../efficient-attention/lesson-4.html">Lesson 4.4 (PagedAttention)</a> in Module 4; here, just remember that the linear formula is a lower bound for what an allocator reserves.</p>
       </section>
 
       <section id="s2-5-4" aria-labelledby="s2-5-4-title">
@@ -267,9 +268,17 @@
         <p>Further reading: <a href="https://docs.vllm.ai/">vLLM documentation</a> (KV cache memory management and configuration); <a href="https://arxiv.org/abs/2305.13245">Ainslie et al., GQA</a>; <a href="https://arxiv.org/abs/1911.02150">Shazeer, MQA</a>.</p>
       </section>
 
+      <section id="s2-5-6" aria-labelledby="s2-5-6-title">
+        <h2 id="s2-5-6-title">2.5.6 Where this leads: why the GPU matters</h2>
+        <p>Lesson 2.5 established two facts: the KV cache is large (2.5.1–2.5.3), and every decode step has to read it (2.5.4). So decode is often limited by <em>memory bandwidth</em>, the number of bytes per second that can move between a GPU’s memory and the units that do the arithmetic. What this module has not explained is where that memory sits, how fast it is, and why moving bytes can cost more than computing with them.</p>
+        <div class="course-core">
+          <p><strong>Next: <a href="../gpu/">Module 3, GPU architecture</a>.</strong> It explains how a GPU executes work, how its memory hierarchy is organised, how tiling reuses bytes, and how arithmetic intensity and the roofline tell you whether bandwidth or arithmetic is the limit. <strong>Then: <a href="../efficient-attention/">Module 4, efficient attention</a></strong> uses that vocabulary to cut traffic and fragmentation: FlashAttention avoids writing the full score matrix to GPU memory, PagedAttention avoids reserving one contiguous run per sequence, and sharing avoids storing the same K/V twice. Lessons 4.1–4.3 open with the Module 3 terms they need.</p>
+        </div>
+      </section>
+
       <nav class="pager" aria-label="Previous and next lesson">
         <a class="pager-prev" href="lesson-4.html" rel="prev"><span>Previous</span> 2.4 KV-cache internals</a>
-        <a class="pager-next" href="./#references"><span>Next</span> Module references</a>
+        <a class="pager-next" href="../gpu/"><span>Next</span> Module 3: GPU architecture</a>
       </nav>
     </main>
   </div>

@@ -127,9 +127,13 @@ test('linear feed-forward limitation is visible before using the numeric predict
   await lab.locator('[data-command="next"]').click();
   assert.match(await lab.locator('svg').textContent(),/u \+ 0\.1u/);
   assert.ok(await scope.isVisible());
+  assert.match(await lab.locator('details.visual-assumptions').innerText(),/Toy assumptions/);
+ });
+ await lesson('/labs/inference/#predict',async page=>{
+  const lab=page.locator('#scene');
+  assert.match(await lab.locator('.visual-scope').innerText(),/linear.*0\.1u.*real.*nonlinear/i);
   await lab.locator('[data-command="all"]').click();
   assert.match(await lab.locator('svg').textContent(),/Chosen output token/);
-  assert.match(await lab.locator('details.visual-assumptions').innerText(),/Toy assumptions/);
  });
 });
 test('prediction layer handoff never crosses numeric labels',async()=>{

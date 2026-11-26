@@ -40,6 +40,8 @@ if (typeof document !== 'undefined') {
   const efficientPage = location.pathname.includes('/efficient-attention/');
   const gpuPage = location.pathname.includes('/gpu/');
   const currentNumber = efficientNumber || gpuNumber || mathNumber || number;
+  // Module 2 hands off to Module 3 (GPU architecture) rather than back to its own overview.
+  const attentionLast = location.pathname.includes('/attention/') && !location.pathname.includes('architecture-explorer') && number === 5 && !efficientNumber && !gpuNumber && !mathNumber;
   const mathPage = location.pathname.includes('/math-fluency/');
   const mathSearch = equationContext(location.search);
   const sections = currentNumber ? [...document.querySelectorAll('main > section[id]')] : [];
@@ -148,7 +150,7 @@ if (typeof document !== 'undefined') {
         if (heading.firstChild?.nodeType === 3) heading.firstChild.textContent = conceptTitle(heading.firstChild.textContent);
         counter.textContent = `${i + 1} / ${sections.length}`;
         pager.querySelector('[data-prev]').disabled = i === 0 && currentNumber === 1;
-        pager.querySelector('[data-next]').textContent = i === sections.length - 1 ? (currentNumber === (mathNumber ? 6 : 5) ? 'Module overview →' : 'Next lesson →') : `Next: ${buttons[i + 1].textContent.replace(/^\d+\.\s*/, '')} →`;
+        pager.querySelector('[data-next]').textContent = i === sections.length - 1 ? (attentionLast ? 'Next: Module 3, GPU architecture →' : currentNumber === (mathNumber ? 6 : 5) ? 'Module overview →' : 'Next lesson →') : `Next: ${buttons[i + 1].textContent.replace(/^\d+\.\s*/, '')} →`;
         history.replaceState(null, '', `#${sections[i].id}`);
         if (moveFocus) { heading.focus();window.scrollTo(0, 0); }
         document.dispatchEvent(new CustomEvent('course:section', { detail: sections[i].id }));
@@ -157,7 +159,7 @@ if (typeof document !== 'undefined') {
         if (index > 0) show(index - 1, true); else location.href = `lesson-${currentNumber - 1}.html${mathPage ? mathSearch : ''}`;
       };
       pager.querySelector('[data-next]').onclick = () => {
-        if (index < sections.length - 1) show(index + 1, true); else location.href = currentNumber === (mathNumber ? 6 : 5) ? `./${mathPage ? mathSearch : ''}` : `lesson-${currentNumber + 1}.html${mathPage ? mathSearch : ''}`;
+        if (index < sections.length - 1) show(index + 1, true); else if (attentionLast) location.href = '../gpu/'; else location.href = currentNumber === (mathNumber ? 6 : 5) ? `./${mathPage ? mathSearch : ''}` : `lesson-${currentNumber + 1}.html${mathPage ? mathSearch : ''}`;
       };
       window.addEventListener('hashchange', () => { if (sections.some(s => `#${s.id}` === location.hash)) show(sectionIndex(sections.map(s => s.id), location.hash), true); });
       show(index, false);
