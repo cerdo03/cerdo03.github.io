@@ -27,6 +27,7 @@ export const glossary = {
   I: 'Arithmetic intensity F / E, in FLOP per byte',
   P: 'Compute ceiling for the chosen operation and precision, in FLOP per second',
   BW: 'Bandwidth ceiling at the chosen memory boundary, in bytes per second',
+  TC: 'Tensor core: SM hardware that multiplies small matrix tiles and accumulates the result (matrix multiply-accumulate)',
 
   T: 'Sequence length (number of token positions)',
   T_i: 'Cached length of sequence i',
