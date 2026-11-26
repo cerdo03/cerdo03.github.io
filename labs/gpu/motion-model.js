@@ -4,7 +4,7 @@ const step=(title,text)=>({title,text});
 export const chapters=[{
  id:'coalescing', title:'1 · Group memory requests', lesson:'lesson-2.html#coalescing',
  steps:[
- step('One instruction, 32 lane requests','A warp groups 32 threads; a lane is one thread’s position in it. Each lane requests one distinct 4-byte value. A sector here covers 32 aligned bytes. We reveal groups for reading; these are not separate GPU instructions.'),
+ step('One instruction, 32 lane requests','A warp is 32 consecutive threads of one block that run one instruction together; a lane is one thread’s position in it. Each lane requests one distinct 4-byte value. A sector here covers 32 aligned bytes. We reveal groups for reading; these are not separate GPU instructions.'),
  step('Lanes 0–7 fit in one sector','Byte addresses 0, 4, …, 28 all lie inside bytes 0–31. Eight useful 4-byte values share one 32-byte sector.'),
  step('Lanes 8–15 share the next sector','Their addresses 32, 36, …, 60 occupy bytes 32–63. Earlier requests stay visible; two sectors now cover sixteen values.'),
  step('Lanes 16–23 add one sector','Addresses 64 through 92 fit inside bytes 64–95. A lane count and a sector count are different quantities.'),

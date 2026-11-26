@@ -35,6 +35,8 @@
 .gpu-plot text { fill: currentcolor; font-family: var(--body-font); font-size: 13px; }
 .gpu-plot .axis { stroke: var(--muted); fill: none; }
 .gpu-plot .roof { stroke: var(--accent); stroke-width: 3; fill: none; }
+.gpu-plot .ridge { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+.gpu-plot .ridge-label { font-weight: 700; }
 .gpu-plot .point { fill: var(--ink); stroke: var(--card); stroke-width: 2; }
 .gpu-course .gpu-note { font-size: 0.9rem; color: var(--muted); }
 .gpu-course pre { max-width: 100%; overflow-x: auto; padding: 16px; background: var(--surface-alt); border: 1px solid var(--line); }

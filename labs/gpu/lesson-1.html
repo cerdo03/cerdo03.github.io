@@ -11,6 +11,7 @@
 <script type="module" src="../../assets/theme.js"></script>
 <script type="module" src="gpu.js"></script>
 <script type="module" src="../llm-systems/course-shell.js"></script>
+<script src="legacy-anchors.js"></script>
 <script src="../llm-systems/render-guard.js"></script>
 </head>
 <body class="gpu-course" data-gpu-lesson="1">
@@ -21,15 +22,17 @@
 </header>
 <section id="execution" aria-labelledby="execution-title"><h2 id="execution-title">Follow one output onto the GPU</h2>
 <p>Imagine a job that must calculate 1,000 output numbers. We will follow just one, then see how the GPU organizes that work. By the end, distinguish a work item, its group, and the hardware that runs it.</p>
-<p class="course-core"><a href="execution-studio.html">Open the visual GPU walkthrough (prototype)</a> — follow an output through an illustrated GPU, then return to this lesson. Its example and settings are separate from the walkthrough below.</p>
+<div class="course-core"><h3>Two terms first</h3>
+<dl class="gpu-terms"><dt>Kernel</dt><dd>The function the GPU runs. To <strong>launch</strong> a kernel is to start that same function once per work item (here, once per output number). Each copy knows its own number and uses it to pick its data.</dd>
+<dt>SM</dt><dd>Streaming multiprocessor: one of the many independent compute units on a GPU chip. Each SM has its own registers and shared memory and runs the work assigned to it. A data-center GPU has on the order of a hundred (the H100 has 132; sources in 3.2).</dd></dl></div>
 <div class="lab" data-gpu-lab="thread" role="group" aria-label="Follow one output number through threads, blocks, warps and SMs"><h3>Follow one output number</h3>
-<p>Outputs are numbered 0–999. For each output, read an input row and a weight column, multiply matching entries, add the products, and store the result. This is a teaching mapping; optimized matrix implementations can divide the work differently.</p>
+<p>Outputs are numbered 0–999. For each output, read an input row and a weight column, multiply matching entries, add the products, and store the result.</p>
 <div class="gpu-thread-fallback">
 <figure class="gpu-nest" role="group" aria-labelledby="gpu-nest-cap">
 <div class="gpu-nest-side"><p class="gpu-nest-title">Work groups (labels, not hardware)</p>
 <div class="gpu-box gpu-logical"><span><strong>Grid</strong>: the whole launch, 1,000 outputs</span>
 <div class="gpu-box gpu-logical"><span><strong>Block</strong>: 128 threads; 8 blocks here</span>
-<div class="gpu-box gpu-logical"><span><strong>Warp</strong>: 32 threads; 4 per block</span>
+<div class="gpu-box gpu-logical"><span><strong>Warp</strong>: 32 threads that run one instruction together; 4 per block</span>
 <div class="gpu-box gpu-logical"><span><strong>Thread</strong>: computes 1 output</span></div></div></div></div></div>
 <p class="gpu-nest-link" aria-hidden="true">each block runs on one</p>
 <div class="gpu-nest-side"><p class="gpu-nest-title">Hardware (physical chip)</p>
@@ -41,15 +44,32 @@
 <div class="course-core gpu-check" data-check data-thread-check><p><strong>Check the distinction:</strong> A block contains 128 threads. Does that mean it needs 128 SMs?</p>
 <button type="button" data-answer="correct">No; 128 work items in one group</button> <button type="button" data-answer="wrong">Yes; one SM for every thread</button><p class="gpu-feedback" hidden data-feedback data-explanation="128 threads per block describes 128 logical work items in one group. The block runs on one SM, and an SM can host multiple blocks. Thread count does not set the number of SMs."></p>
 <noscript><p>128 threads are logical work items in one group. Their block runs on one SM; an SM can host multiple blocks. Thread count does not set the SM count.</p></noscript></div>
+<div class="course-core"><h3>Why a warp: 32 lanes, one instruction</h3>
+<p>An SM does not run a separate instruction stream for every thread. Its scheduler picks one <strong>warp</strong> (32 consecutive threads of one block) and <strong>issues</strong> (starts) a single instruction, say “multiply”, for all 32 lanes at once. Each lane applies it to its own data: lane 0 multiplies its row-and-column pair while lane 7 multiplies its own. This one-instruction, many-lanes scheme is called <strong>SIMT</strong> (single instruction, multiple threads). It is why neighbouring threads are cheap to run together, and it has two consequences for later lessons: lanes that want different paths hold each other up (below), and lanes that load neighbouring addresses can be served together (3.2).</p>
+<p>A branch chooses a path, such as the true or false side of an <code>if</code>. If lanes in one warp choose different paths, this is <strong>divergence</strong>: each path runs with only its participating lanes active. An <strong>active lane mask</strong> records which lanes participate; branching does not create another warp.</p></div>
+
+<div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Two branches of one warp take different paths. Do we get twice the execution resources?</p>
+<button type="button" data-answer="correct">No; paths use active lane masks</button> <button type="button" data-answer="wrong">Yes; each branch gets a new warp</button><p class="gpu-feedback" hidden data-feedback data-explanation="Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication."></p>
+<noscript><p>Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication.</p>
+</noscript></div>
+<p class="course-core"><a href="execution-studio.html">Open the visual GPU walkthrough</a> — the same example (1,000 outputs, 128 threads per block, output 999) and the same order (thread, block, warp, SM) on an illustrated chip, then return to this lesson.</p>
 <p class="course-core">Keep this picture for the next lessons: neighboring lanes can request neighboring data; threads in a block can reuse shared memory; an SM has limited room for those blocks and their working storage.</p>
 <div class="course-core"><h3>Connect the picture to matrix multiplication</h3>
-<p>For a projection, <var>U</var> [<var>r</var><sub>rows</sub> × <var>k</var><sub>inner</sub>] multiplies weights <var>W</var> [<var>k</var><sub>inner</sub> × <var>c</var><sub>cols</sub>] to produce <var>Y</var> [<var>r</var><sub>rows</sub> × <var>c</var><sub>cols</sub>]. Each output is a dot product. Different outputs can be computed independently once the inputs exist.</p>
+<p>The 1,000 outputs are the entries of one matrix product, a <strong>GEMM</strong> (general matrix multiply): <var>U</var> [<var>r</var><sub>rows</sub> × <var>k</var><sub>inner</sub>] multiplies weights <var>W</var> [<var>k</var><sub>inner</sub> × <var>c</var><sub>cols</sub>] to produce <var>Y</var> [<var>r</var><sub>rows</sub> × <var>c</var><sub>cols</sub>]. These GPU lessons use the letters U, W and Y for any such product. In an LLM they stand for the Module 2 objects you already know:</p>
+<div class="gpu-table-scroll" tabindex="0" aria-label="GPU letters and their LLM meaning"><table><caption>Same projection, two vocabularies</caption><thead><tr><th scope="col">GPU lessons</th><th scope="col">In an LLM</th><th scope="col">Meaning</th></tr></thead><tbody>
+<tr><th scope="row"><var>U</var></th><td data-label="In an LLM"><var>X</var></td><td data-label="Meaning">Token activations: one row per token processed in this step</td></tr>
+<tr><th scope="row"><var>r</var><sub>rows</sub></th><td data-label="In an LLM">tokens in this step</td><td data-label="Meaning">Many during prefill; one per active sequence in an ordinary decode step (3.5)</td></tr>
+<tr><th scope="row"><var>k</var><sub>inner</sub></th><td data-label="In an LLM"><var>d</var><sub>model</sub></td><td data-label="Meaning">Width of each token vector; the length of every dot product</td></tr>
+<tr><th scope="row"><var>W</var></th><td data-label="In an LLM"><var>W</var><sub>Q</sub></td><td data-label="Meaning">Learned weights, here the query projection [<var>d</var><sub>model</sub> × <var>d</var><sub>k</sub>]; <var>W</var><sub>K</sub> and <var>W</var><sub>V</sub> work the same way</td></tr>
+<tr><th scope="row"><var>c</var><sub>cols</sub></th><td data-label="In an LLM"><var>d</var><sub>k</sub></td><td data-label="Meaning">Columns of that weight matrix: the width of each output row</td></tr>
+<tr><th scope="row"><var>Y</var></th><td data-label="In an LLM"><var>Q</var></td><td data-label="Meaning">The projection result: one query row per token</td></tr>
+</tbody></table></div>
+<p>So “output 999” means one number of one token’s query vector: its row says which token and its column says which query dimension (for instance, with <var>c</var><sub>cols</sub> = 10 columns, output 999 is row 99, column 9, as in the visual walkthrough). Each output is a dot product. Different outputs can be computed independently once the inputs exist.</p>
 
 <div class="course-core gpu-formula"><var>Y</var>[<var>i</var><sub>row</sub>, <var>j</var><sub>col</sub>] = Σ over <var>p</var><sub>sum</sub> from 0 to <var>k</var><sub>inner</sub> − 1 of <var>U</var>[<var>i</var><sub>row</sub>, <var>p</var><sub>sum</sub>] × <var>W</var>[<var>p</var><sub>sum</sub>, <var>j</var><sub>col</sub>]. Here <var>i</var><sub>row</sub> selects a row, <var>j</var><sub>col</sub> a column, and <var>p</var><sub>sum</sub> walks through the shared width.</div>
 </div>
 <div class="course-core"><h3>Before trying a larger launch</h3>
-<dl class="gpu-terms"><dt>Kernel</dt><dd>The GPU function being launched. Every thread runs its code with its own thread index.</dd>
-<dt>Grid</dt><dd>All the blocks in that launch.</dd>
+<dl class="gpu-terms"><dt>Grid</dt><dd>All the blocks in that launch.</dd>
 <dt>ceil</dt><dd>Round up: leftover outputs still need another whole block.</dd>
 <dt>Guard</dt><dd>A check that skips an out-of-range thread before it reads inputs or stores an output.</dd></dl>
 </div>
@@ -65,7 +85,7 @@ if (flat &lt; rows * columns) {
     for (p = 0; p &lt; reduction; ++p)
         acc += U[row][p] * W[p][col];
     Y[row][col] = acc;
-}</code></pre><p>The multiply-add loop has an accumulator dependency. Parallel output elements do not eliminate that dependency. Optimized kernels distribute work differently and can use tensor cores for matrix fragments; this one-thread-per-output sketch explains indexing only.</p>
+}</code></pre><p>The multiply-add loop has an accumulator dependency. Parallel output elements do not eliminate that dependency. Optimized kernels distribute work differently and can use tensor cores (3.3); this one-thread-per-output sketch explains indexing only.</p>
 </div></details></section>
 <section id="residency" aria-labelledby="residency-title"><h2 id="residency-title">Enough work is not enough resources</h2><p>A block needs registers and shared memory to reside on an SM. A larger block or more storage per block can reduce how many warps are resident. Before counting how many fit, see why having several matters.</p>
 
@@ -87,22 +107,16 @@ if (flat &lt; rows * columns) {
 <div class="lab" data-gpu-lab="residency" role="group" aria-label="Change one resource limit"><h3>Change one resource limit</h3><p class="gpu-static">Toy SM: 2,048 resident threads, 65,536 32-bit registers, 64 KiB shared memory, at most 8 blocks. With 128 threads/block, 64 registers/thread and 32 KiB/block, shared memory limits residency to 2 blocks (8 warps, 12.5% occupancy).</p>
 </div>
 
-<details class="course-detail"><summary>Why this is only a residency upper bound</summary><div><p>Limits are invented and independently rounded for teaching. Real occupancy includes allocation granularity, architecture-specific limits and compiler decisions. The diagram ignores scheduling policy, issue width, instruction latency and register spilling. Insufficient blocks in the grid can leave SMs idle even when resource occupancy is high.</p>
-<p>Registers hold per-thread state such as the accumulator. More registers can avoid spills or enable reuse; reducing them blindly can add device-memory traffic. Search for a causal trade-off, not maximum occupancy.</p>
-</div></details>
+
 <div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Double registers/thread. Must throughput improve?</p>
 <button type="button" data-answer="correct">No; residency may fall</button> <button type="button" data-answer="wrong">Yes; more storage is always faster</button><p class="gpu-feedback" hidden data-feedback data-explanation="Register demand can reduce resident blocks, leaving fewer warps to switch to while one waits for memory. It may also avoid spills or enable reuse. Only measured execution reveals the net effect."></p>
 <noscript><p>Register demand can reduce resident blocks, leaving fewer warps to switch to while one waits for memory. It may also avoid spills or enable reuse. Only measured execution reveals the net effect.</p>
-</noscript></div></section>
-<section id="dependencies" aria-labelledby="dependencies-title"><h2 id="dependencies-title">Parallelism must respect dependencies</h2><p>In “The sky is”, prefill has three supplied token rows. Within one layer, many projections and output elements can run in parallel. The next layer still needs the previous layer’s outputs. During ordinary autoregressive decode, the next input token is unknown until the current step selects it.</p>
-
-<div class="lab"><div class="gpu-flow"><div class="gpu-stage"><strong>Known inputs → projection grid</strong>Many independent dot products across rows and columns.</div><div class="gpu-stage"><strong>Attention and remaining layer work</strong>Dependencies within the layer still apply. Causal masking prevents future-token information flow.</div><div class="gpu-stage"><strong>Next layer → logits → selection</strong>Only after selection can the new token become the next input.</div></div><p>These are data dependencies, not a GPU scheduling trace. A transformer head is not an SM, a token is not a thread, and one layer is not necessarily one kernel.</p>
-</div><p class="course-core">A branch chooses a path, such as the true or false side of an <code>if</code>. If lanes in one warp choose different paths, this is <strong>divergence</strong>: each path runs with only its participating lanes active. An <strong>active lane mask</strong> records which lanes participate; branching does not create another warp.</p>
-
-<div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Two branches of one warp take different paths. Do we get twice the execution resources?</p>
-<button type="button" data-answer="correct">No; paths use active lane masks</button> <button type="button" data-answer="wrong">Yes; each branch gets a new warp</button><p class="gpu-feedback" hidden data-feedback data-explanation="Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication."></p>
-<noscript><p>Divergent paths execute with different active lanes and may reduce lane utilization. Independent thread scheduling on newer NVIDIA GPUs does not make divergence free. Explicit synchronization is still required for communication.</p>
-</noscript></div></section>
+</noscript></div>
+<details class="course-detail"><summary>Model boundaries</summary><div><p><strong>Mapping.</strong> One thread per output is an indexing sketch; optimized matrix kernels divide the work differently. The thread and launch labs simulate no scheduling: which SM runs a block, and when, is unspecified.</p>
+<p><strong>Latency timeline.</strong> Abstract ticks, not clock cycles; one issue slot and no other bottleneck.</p>
+<p><strong>Residency.</strong> The limits are invented and independently rounded. Real occupancy includes allocation granularity, architecture-specific limits and compiler decisions; the diagram ignores scheduling policy, issue width, instruction latency and register spilling. Too few blocks in the grid can leave SMs idle even when resource occupancy is high.</p>
+<p>Registers hold per-thread state such as the accumulator. More registers can avoid spills or enable reuse; reducing them blindly can add device-memory traffic. Search for a causal trade-off, not maximum occupancy.</p>
+</div></details></section>
 
 <p class="course-core"><a href="./">Module 3 overview</a> · <a href="../attention/lesson-5.html">Revisit KV memory</a></p>
 

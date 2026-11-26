@@ -115,7 +115,10 @@ try{
   await goto('/labs/gpu/');await page.getByText('Notation',{exact:true}).click();
   const symbol=page.locator('var[data-symbol="U"]:visible').first();await symbol.focus();assert.equal(await page.locator('.symbol-tip:visible').count(),1);await page.keyboard.press('Escape');assert.equal(await page.locator('.symbol-tip:visible').count(),0);
   // Last concept advances to the next lesson; final lesson returns to its overview.
-  await goto('/labs/gpu/lesson-1.html#dependencies');await page.locator('[data-next]').click();await page.waitForURL('**/gpu/lesson-2.html*');
+  await goto('/labs/gpu/lesson-1.html#residency');await page.locator('[data-next]').click();await page.waitForURL('**/gpu/lesson-2.html*');
+  // Sections that moved keep working through old deep links.
+  await page.goto(base+'/labs/gpu/lesson-1.html#dependencies');await page.waitForURL('**/gpu/lesson-5.html#dependencies');await page.locator('body.llm-course').waitFor();
+  await page.goto(base+'/labs/gpu/lesson-3.html#attention-link');await page.waitForURL('**/gpu/lesson-5.html#attention-link');await page.locator('body.llm-course').waitFor();assert.match(await page.locator('#attention-link').innerText(),/Materialize/);await page.goto(base+'/labs/gpu/lesson-2.html');
   await goto('/labs/gpu/lesson-5.html#transfer');await page.locator('[data-next]').click();await page.waitForURL('**/gpu/');
   // Existing module routes retain context and now include the same Module 3 hierarchy.
   for(const path of ['/labs/llm-systems/','/labs/math-fluency/lesson-1.html','/labs/inference/','/labs/attention/lesson-2.html','/labs/attention/architecture-explorer/']){

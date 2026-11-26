@@ -1,6 +1,6 @@
 // A one-thread-per-output teaching mapping, not an optimized matrix kernel.
 export function describeLaunch(items, threads, output) {
-  if (!Number.isInteger(items) || items < 1 || items > 384 || ![32,64,128].includes(threads) || !Number.isInteger(output) || output < 0 || output >= items) throw new RangeError('Choose a valid output and a supported block size.');
+  if (!Number.isInteger(items) || items < 1 || items > 1000 || ![32,64,128].includes(threads) || !Number.isInteger(output) || output < 0 || output >= items) throw new RangeError('Choose a valid output and a supported block size.');
   const blocks = Array.from({length:Math.ceil(items / threads)}, (_,block) => ({
     id:block, valid:Math.min(threads,items-block*threads),
     warps:Array.from({length:threads/32},(_,warp)=>{

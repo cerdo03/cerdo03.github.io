@@ -16,9 +16,17 @@ test('output 137 keeps its identity while block regrouping changes its address',
   assert.equal(a.blocks[2].valid,22); assert.equal(a.blocks[2].warps[0].valid,22);
   assert.equal(a.blocks[2].warps[1].valid,0);
 });
+test('the lesson example: output 999 of 1,000 keeps its identity across 128 and 64 threads per block', async () => {
+  const {describeLaunch, outputCalculation} = await model();
+  const a = describeLaunch(1000, 128, 999), b = describeLaunch(1000, 64, 999);
+  assert.deepEqual(a.selected, {output:999, row:99, column:9, block:7, localThread:103, warp:3, lane:7});
+  assert.deepEqual(b.selected, {output:999, row:99, column:9, block:15, localThread:39, warp:1, lane:7});
+  assert.equal(a.guardedThreads,24); assert.equal(a.blocks[7].valid,104); assert.equal(a.blocks[7].warps[3].valid,8);
+  assert.deepEqual(outputCalculation(999), {left:[1,100,2], right:[2,10,1], products:[2,1000,2], value:1004});
+});
 test('every valid output occurs once and guarded threads never claim an output', async () => {
   const {describeLaunch} = await model();
-  for (const items of [96,150,384]) for (const threads of [32,64,128]) {
+  for (const items of [96,150,384,1000]) for (const threads of [32,64,128]) {
     const launch = describeLaunch(items,threads,items-1);
     const lanes = launch.blocks.flatMap(block => block.warps.flatMap(warp => warp.lanes));
     assert.deepEqual(lanes.filter(lane=>lane.valid).map(lane=>lane.output),Array.from({length:items},(_,i)=>i));

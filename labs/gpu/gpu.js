@@ -1,6 +1,7 @@
 import { launchModel, sectorModel, multiply, toyLeft, toyRight, tileTraffic, roofline, projection, decodeAttention, kvReadIntensity, decodeStep, latencyHiding } from './model.js';
 const num = value => new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(value);
 const whole = value => new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(value);
+const LABEL = 'Teaching numbers, not measurements.';
 const precise = value => value === 0 ? '0' : value < 0.001 ? value.toExponential(3) : num(value);
 let controlId = 0;
 function element(tag, text, cls) {
@@ -102,7 +103,7 @@ function thread(root) {
       'One output needs one dot product: multiply an input row by a weight column and add the products. Start by following just this job.',
       'A thread is one logical run of a GPU function, called a kernel. In this example, it owns one output. It is a work item, not a dedicated physical core.',
       'A block groups threads that can share temporary storage (shared memory) and wait for one another. The grid is the collection of all blocks in one launch.',
-      'Inside a block, consecutive threads form warps of 32. A lane is a thread’s position 0–31 in its warp. They execute the same kernel code on their own data; branch paths can mask lanes.',
+      'Inside a block, consecutive threads form warps of 32. The SM issues one instruction to a whole warp: all 32 lanes execute it together, each on its own data (SIMT). A lane is a thread’s position 0–31 in its warp; branch paths can mask lanes.',
       'An SM (streaming multiprocessor) is a physical part of the GPU that executes threads from assigned blocks. One SM can host several blocks; a block stays on one SM during ordinary execution.'
     ];
     explain.textContent=descriptions[step];figure.hidden=step===0;figure.classList.toggle('has-hardware',step===4);
@@ -112,7 +113,7 @@ function thread(root) {
     block.box.dataset.block=String(blockIndex);block.title.textContent=`Zoom into selected block ${blockIndex}`;
     block.definition.textContent=`${perBlock} threads in this block. Selected output ${index} belongs to thread ${local} within the block. Threads here can share temporary storage and synchronize.`;
     warp.box.dataset.warp=String(warpIndex);warp.title.textContent=`Zoom into selected warp ${warpIndex}`;
-    warp.definition.textContent=`32 consecutive threads of block ${blockIndex}, grouped for instruction execution on their own data. Thread ${local} occupies lane ${lane}. A guard skips out-of-range output jobs before reading inputs or storing a result.`;
+    warp.definition.textContent=`32 consecutive threads of block ${blockIndex}, run one instruction together (SIMT), each on its own data. Thread ${local} occupies lane ${lane}. A guard skips out-of-range output jobs before reading inputs or storing a result.`;
     chips(blocks,count,blockIndex,'Block');chips(warps,perBlock/32,warpIndex,'Warp');
     blocks.hidden=step<2;warps.hidden=step<3;lanes.hidden=step<3;
     lanes.replaceChildren();
@@ -124,7 +125,7 @@ function thread(root) {
     }
     picked.textContent=`Thread: one logical run of the GPU function (kernel), not a dedicated core. ★ Selected output ${index}${step>=2?` · thread ${local} in block ${blockIndex}`:''}${step>=3?` · warp ${warpIndex}, lane ${lane}`:''}.`;
     physical.hidden=step<4;link.hidden=step<4;
-    physical.querySelector('p').textContent=`The whole of block ${blockIndex} executes on one SM; which SM and when are unspecified. This box names the hardware type, not an assigned SM number. An SM may host multiple blocks. No schedule or timing is simulated.`;
+    physical.querySelector('p').textContent=`The whole of block ${blockIndex} executes on one SM; which SM and when are unspecified. An SM may host multiple blocks.`;
     caption.textContent=step<2?'The marked thread owns the same output job shown above.':step<3?'The outline follows the selected thread inside its block and grid. All indices start at 0.':`Lane labels are positions 0–31, not core numbers. ★ marks the selected thread; crossed-out lanes fail the output guard. This selected warp has ${Math.max(0,Math.min(32,outputs-warpStart))} useful output jobs.`;
     regroup.hidden=step<2;check.hidden=step<4;
     if(previous&&previous.size!==perBlock&&previous.index===index){
@@ -171,7 +172,7 @@ function residency(root) {
       slot.title=resident?`Block ${Math.floor(warp/a.warps)}, warp ${warp%a.warps}`:'Unallocated warp slot';slots.append(slot);
     }
     const limiting=Object.entries(a.limits).filter(([,v])=>v===a.residentBlocks).map(([key])=>key).join(', ');
-    output.textContent=`Limiting resource(s): ${limiting}. Block labels identify membership; W is the warp index within that block; — = unallocated slot. Slot order is illustrative, not physical placement or execution order. Toy upper bound with enough blocks; no prediction of execution time. Change one resource and explain the new minimum.`;
+    output.textContent=`Limiting resource(s): ${limiting}. Block labels identify membership; W is the warp index within that block; — = unallocated slot. Slot order is illustrative, not physical placement or execution order. ${LABEL} Change one resource and explain the new minimum.`;
   }draw();
 }
 function coalescing(root) {
@@ -183,7 +184,7 @@ function coalescing(root) {
     lanes.replaceChildren();a.addresses.forEach((address,lane)=>{
       const cell=element('span');cell.append(element('strong',`Lane ${lane}`),element('br'),document.createTextNode(`@${address}`),element('br'),document.createTextNode(`S${Math.floor(address/32)}`));lanes.append(cell);
     });
-    output.textContent=`Address in bytes = ${offset.value} + lane × ${stride.value} × 4. S marks the 32-byte sector index. ${a.sectors.length} sectors service 32 distinct values. This is instruction demand, not measured DRAM traffic or a speedup.`;
+    output.textContent=`Address in bytes = ${offset.value} + lane × ${stride.value} × 4. S marks the 32-byte sector index. ${a.sectors.length} sectors service 32 distinct values. ${LABEL}`;
   }draw();
 }
 function matrixTable(host, caption, data, onCell, active) {
@@ -235,15 +236,17 @@ function tiling(root) {
     }
     values.hidden=step<3;
     if(step===3)metrics(values,[['Useful work','128 FLOPs'],['Logical load + store bytes',num(a.bytes)],['Two shared input tiles',`${a.sharedBytes} bytes`],['Logical arithmetic intensity',`≈ ${precise(a.flops/a.bytes)} FLOP/byte`]]);
-    output.textContent=step===3?`Tile side ${b}: ${num(a.bytes)} bytes versus ${num(baseline.bytes)} at side 1, same result and 128 FLOPs. Global-load demand only; HBM reuse and runtime unmeasured.`:`Operation ${step+1} of 4. Predict the total load count before revealing it.`;
+    output.textContent=step===3?`Tile side ${b}: ${num(a.bytes)} bytes versus ${num(baseline.bytes)} at side 1, same result and 128 FLOPs. Each loaded element is reused ${b} times, so operand loads fall ${num(baseline.loads)} → ${num(a.loads)} (÷${b}); the 16 output stores stay. ${LABEL}`:`Operation ${step+1} of 4. Predict the total load count before revealing it.`;
   });
 }
 function plot(host,a,compute,bandwidth) {
   const x=value=>70+(Math.log10(value)+1)/5*580,y=value=>260-(Math.log10(value)+2)/5*230;
   const roof=Array.from({length:100},(_,i)=>{const intensity=10**(-1+i*5/99);return `${i?'L':'M'}${x(intensity)},${y(Math.min(compute,bandwidth*intensity))}`;}).join(' ');
+  const rx=x(a.ridge),ry=y(compute);
+  const ridge=`<path class="ridge" d="M${rx},${ry} V260"></path><text class="ridge-label" x="${rx+6}" y="236">ridge = ${num(a.ridge)} FLOP/byte</text><text x="${rx-6}" y="250" text-anchor="end">← bandwidth-bound</text><text x="${rx+6}" y="250">compute-bound →</text>`;
   const xticks=[0.1,1,10,100,1000,10000].map(v=>`<text x="${x(v)}" y="282" text-anchor="middle">${num(v)}</text>`).join('');
   const yticks=[0.01,0.1,1,10,100,1000].map(v=>`<text x="60" y="${y(v)+4}" text-anchor="end">${v}</text>`).join('');
-  host.innerHTML=`<svg class="gpu-plot" viewBox="0 0 720 330" role="img" aria-label="Logarithmic roofline. Selected intensity ${precise(a.intensity)} FLOP per byte; ideal ceiling ${precise(a.ceilingTF)} TFLOP per second."><title>Hypothetical DRAM roofline</title><desc>Horizontal axis: FLOP per byte. Vertical axis: TFLOP per second. Sloped bandwidth roof joins the horizontal compute roof. The point lies on the ideal roof, not at measured performance.</desc><path class="axis" d="M70 20 V260 H650"></path><path class="roof" d="${roof}"></path><circle class="point" cx="${x(a.intensity)}" cy="${y(a.ceilingTF)}" r="6"></circle>${xticks}${yticks}<text x="360" y="315" text-anchor="middle">Arithmetic intensity (FLOP/byte), log scale</text><text x="70" y="14">TFLOP/s, log scale</text></svg>`;
+  host.innerHTML=`<svg class="gpu-plot" viewBox="0 0 720 330" role="img" aria-label="Logarithmic roofline. Selected intensity ${precise(a.intensity)} FLOP per byte; ideal ceiling ${precise(a.ceilingTF)} TFLOP per second. Dashed vertical line: ridge at ${num(a.ridge)} FLOP per byte."><title>Hypothetical DRAM roofline</title><desc>Horizontal axis: FLOP per byte. Vertical axis: TFLOP per second. Sloped bandwidth roof joins the horizontal compute roof. The point lies on the ideal roof, not at measured performance.</desc><path class="axis" d="M70 20 V260 H650"></path><path class="roof" d="${roof}"></path>${ridge}<circle class="point" cx="${x(a.intensity)}" cy="${y(a.ceilingTF)}" r="6"></circle>${xticks}${yticks}<text x="360" y="315" text-anchor="middle">Arithmetic intensity (FLOP/byte), log scale</text><text x="70" y="14">TFLOP/s, log scale</text></svg>`;
 }
 function roof(root) {
   const {controls,body,output}=setup(root),chart=element('div'),values=element('div',undefined,'gpu-metrics');body.append(chart,values);
@@ -252,7 +255,9 @@ function roof(root) {
     const work=projection(+rows.value,4096,4096,2),a=roofline(work.flops,work.bytes,+compute.value,+bandwidth.value);
     plot(chart,a,+compute.value,+bandwidth.value);
     metrics(values,[['Work',`${num(work.flops)} FLOPs`],['Assumed DRAM bytes',num(work.bytes)],['Intensity',`≈ ${precise(a.intensity)} FLOP/byte`],['Ridge',`${num(a.ridge)} FLOP/byte`],['Compute time bound',`≈ ${precise(a.computeMs)} ms`],['Memory time bound',`≈ ${precise(a.memoryMs)} ms`]]);
-    output.textContent=`Model limit: ${a.bound}. Ideal time lower bound ≈ ${precise(a.timeMs)} ms. Point is an upper roof at this intensity, not measured performance. 4096 input/output width, 2-byte inputs/weights/output; each fetched or stored once. Change compute alone, then bandwidth alone.`;
+    const one=projection(1,4096,4096,2),weightBytes=4096*4096*2;
+    const why=+rows.value===1?`One row does about 1 FLOP per byte: it reads all ${num(weightBytes)} weight bytes to use each weight once. Add rows and watch the point move right.`:`Why the point moved right: the ${num(weightBytes)} weight bytes are read once however many rows use them, so ${rows.value} rows do ${rows.value}× the work of one row on only ${precise(work.bytes/one.bytes)}× the bytes.`;
+    output.textContent=`Model limit: ${a.bound}. Ideal time lower bound ≈ ${precise(a.timeMs)} ms. ${why} 4096 input/output width, 2-byte values, each fetched or stored once. ${LABEL} Change compute alone, then bandwidth alone.`;
   }draw();
 }
 function phases(root) {
@@ -263,7 +268,7 @@ function phases(root) {
     chunk.disabled=!prefill;
     flow(scene,[['Rows available this step',`${batch.value} sequences × ${prefill?chunk.value:1} processed token(s) = ${num(rows)} rows.`],['One shared projection weight matrix',`[${num(rows)} × 4096] × [4096 × 4096] → [${num(rows)} × 4096]. More rows reuse the same 33,554,432 weight bytes under this ideal model.`],['Resource comparison',`100 dense TFLOP/s; 1 TB/s DRAM. Ridge = 100 FLOP/byte. Work and byte assumptions match lesson 3.4.`]]);
     metrics(values,[['Projection work',`${num(work.flops)} FLOPs`],['Assumed DRAM bytes',num(work.bytes)],['Intensity',`≈ ${precise(a.intensity)} FLOP/byte`],['Ideal time bound',`≈ ${precise(a.timeMs)} ms`]]);
-    output.textContent=`${prefill?'Prefill':'Decode'} projection: ${a.bound} roof in this model. ${prefill?'Try a one-token chunk.':'Try 512 active sequences.'} Phase is not the bottleneck. These results exclude attention and all other decoder work.`;
+    output.textContent=`${prefill?'Prefill':'Decode'} projection: ${a.bound} roof in this model. ${prefill?'Try a one-token chunk.':'Try 512 active sequences.'} Phase alone does not decide the bound. Projection only, no attention or other decoder work. ${LABEL}`;
   }draw();
 }
 function kv(root) {
@@ -274,7 +279,7 @@ function kv(root) {
     flow(scene,[['Current query rows',`${batch.value} sequence(s), 32 query heads, width 128. Queries match cached keys, then normalized weights mix cached values.`],['KV-head reuse assumption',`${32/+heads.value} query head(s) per KV head. Assume each KV element is fetched once and reused across grouped queries.`],['Read old/current KV; append new KV',`${context.value} visible positions include the current consumed position. Appending one new K/V row is accounted separately from the read payload.`]]);
     metrics(values,[['One-layer KV read payload',`${num(a.kvBytes)} bytes`],['Read payload in MiB',`${num(a.kvBytes/2**20)} MiB`],['QK + weighted-V work',`${num(a.flops)} FLOPs`],['KV-read-only intensity',`${num(a.flops/a.kvBytes)} FLOP/byte`],['New KV append',`${num(a.appendBytes)} bytes`]]);
     const intensity=kvReadIntensity(32,+heads.value,2);
-    output.textContent=`KV-read intensity = 2·H_q / (H_KV·B) = 2·32 / (${heads.value}·2) = ${num(intensity)} FLOP/byte. Sequences and context are not in that formula: doubling either doubles both bytes and work, so intensity stays put. Only more KV heads (lower) or fewer (higher), or bytes per element, change it. Batching therefore spreads weight reads across sequences but not KV reads: each sequence reads its own cache. ${num(a.kvBytes)} raw KV bytes per step under perfect grouped-query reuse; one layer, simplified model, not an HBM measurement or token latency.`;
+    output.textContent=`KV-read intensity = 2·H_q / (H_KV·B) = 2·32 / (${heads.value}·2) = ${num(intensity)} FLOP/byte. Sequences and context are not in that formula: doubling either doubles both bytes and work, so intensity stays put. Only more KV heads (lower) or fewer (higher), or bytes per element, change it. Batching therefore spreads weight reads across sequences but not KV reads: each sequence reads its own cache. ${num(a.kvBytes)} raw KV bytes per step under perfect grouped-query reuse; one layer. ${LABEL}`;
   }draw();
 }
 function latency(root) {
@@ -296,7 +301,7 @@ function latency(root) {
       timeline.append(row);
     });
     metrics(values,[['Ticks the SM does math',`${a.busy} of ${a.window}`],['Math units busy',`${num(a.utilization*100)}%`],['Warps needed to cover one wait',`${a.warpsToCover}`]]);
-    output.textContent=`${warps.value} resident warp(s): ${a.busy} of ${a.window} ticks do math (${num(a.utilization*100)}%). Each warp computes ${run} ticks, then waits ${wait} ticks for memory, so ${a.warpsToCover} warps (${run}+${wait})/${run} cover one wait; more than that adds nothing here. Teaching numbers in abstract ticks, not clock cycles or a measurement; one issue slot, no other bottleneck.`;
+    output.textContent=`${warps.value} resident warp(s): ${a.busy} of ${a.window} ticks do math (${num(a.utilization*100)}%). Each warp computes ${run} ticks, then waits ${wait} ticks for memory, so ${a.warpsToCover} warps (${run}+${wait})/${run} cover one wait; more than that adds nothing here. Abstract ticks. ${LABEL}`;
   }draw();
 }
 function decode(root) {
@@ -306,7 +311,7 @@ function decode(root) {
     const a=decodeStep(7e9,32,+batch.value,+context.value,32,8,128,2,3);
     flow(scene,[['Weights: read once per step, shared by every sequence',`7 billion parameters × 2 bytes = ${num(a.weightBytes/1e9)} GB, however many sequences are active.`],['KV cache: each sequence reads its own',`32 layers × ${batch.value} sequence(s) × ${num(+context.value)} positions × 8 KV heads × width 128 × K and V × 2 bytes = ${num(a.kvBytes/1e9)} GB.`],['Lower bound on this step',`(${num(a.weightBytes/1e9)} + ${num(a.kvBytes/1e9)}) GB ÷ 3 TB/s = ${precise(a.timeMs)} ms.`]]);
     metrics(values,[['Weight bytes per step',`${num(a.weightBytes/1e9)} GB`],['KV bytes per step',`${num(a.kvBytes/1e9)} GB`],['Weights share of bytes',`${(a.weightShare*100).toFixed(1)}%`],['Step time lower bound',`≈ ${precise(a.timeMs)} ms`],['Steps per second, one batch',`≈ ${whole(a.stepsPerSecond)}`],['Tokens per second, all sequences',`≈ ${whole(a.tokensPerSecond)}`]]);
-    output.textContent=`${batch.value} sequence(s) × ${context.value} positions: step ≥ ${precise(a.timeMs)} ms, so at most about ${whole(a.tokensPerSecond)} tokens/s across the batch. Batching shares the ${num(a.weightBytes/1e9)} GB of weights, so tokens/s grows; the KV bytes grow with every sequence, so the step gets slower. Invented 7B model and 3 TB/s device; reads only, no compute, attention-kernel or launch time; an illustration, not a measurement.`;
+    output.textContent=`${batch.value} sequence(s) × ${context.value} positions: step ≥ ${precise(a.timeMs)} ms, so at most about ${whole(a.tokensPerSecond)} tokens/s across the batch. Batching shares the ${num(a.weightBytes/1e9)} GB of weights, so tokens/s grows; the KV bytes grow with every sequence, so the step gets slower. Invented 7B model and 3 TB/s device; byte reads only. ${LABEL}`;
   }draw();
 }
 const mounts={thread,execution,residency,coalescing,matmul,tiling,roofline:roof,phases,kv,latency,decode};

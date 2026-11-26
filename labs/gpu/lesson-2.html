@@ -42,27 +42,25 @@
 <div class="lab" data-gpu-lab="memory" role="group" aria-label="Operand storage scopes"><h3>One operand: storage scopes and optional staging</h3>
 <p>Compare a global load used directly by a thread with a tiled kernel that explicitly stages operands in shared memory. These are storage scopes, not a mandatory hardware route. Exact cache and instruction paths vary by hardware.</p>
 <div class="gpu-memory-scopes">
-<div><h4>Global load</h4><p>Inputs and weights occupy global allocations backed by device DRAM, often HBM on datacenter GPUs. Hardware caches such as device-wide L2 and SM-local L1 can serve loads: a cache hit can avoid a DRAM fetch. Not every instruction uses every cache.</p></div>
+<div><h4>Global load</h4><p>Inputs and weights occupy global allocations backed by device DRAM, often HBM on datacenter GPUs. Hardware caches such as device-wide L2 and SM-local L1 can serve loads: a cache hit can avoid a DRAM fetch.</p></div>
 <div><h4>Optional shared-memory staging</h4><p>A tiled kernel can cooperatively load operands into block-local shared memory for reuse. A block barrier makes the staged values safe to consume; another barrier is needed before overwriting values still in use. A direct per-thread load can skip this staging.</p></div>
 <div><h4>Per-thread computation</h4><p>Threads use operands in registers and update their multiply-add accumulators. In the tiled example, threads read the staged shared-memory values first. Registers are per-thread working storage, not shared addressable storage.</p></div>
-<div><h4>Output store</h4><p>Completed results are stored to global memory through the applicable store/cache path. This does not imply each store immediately writes HBM.</p></div>
+<div><h4>Output store</h4><p>Completed results are stored to global memory through the applicable store/cache path.</p></div>
 </div>
 <p>Choose a memory boundary before counting traffic. Shared memory is explicitly managed block-local storage; hardware caches are managed by hardware. Reuse can reduce global-load demand. Capacity, logical requests and actual DRAM traffic remain different quantities.</p>
 </div>
 
-<details class="course-detail"><summary>Spills, hardware variation and unified memory</summary><div><p>Excess register demand can spill into thread-local memory backed by device memory. Shared-memory bank conflicts (competing accesses to the same storage bank) and synchronization affect access cost. Exact cache paths and capacities vary by architecture.</p><p>A software KV cache need not fit in hardware L2. Apple unified memory changes the physical organization; these capacity/traffic distinctions still help, while CUDA block and warp details do not transfer verbatim.</p>
-</div></details></section>
+</section>
 <section id="coalescing" aria-labelledby="coalescing-title"><h2 id="coalescing-title">Neighboring lanes, neighboring addresses</h2><p>If adjacent lanes request nearby addresses, hardware can service them with fewer memory sectors. Change the address stride before predicting how much useful data each sector carries.</p>
 
 <div class="course-core"><p><strong>Stride</strong> is the distance between neighboring lanes’ addresses, measured here in 4-byte elements: stride 1 steps 4 bytes, stride 8 steps 32 bytes. A <strong>sector</strong> is a 32-byte address region in this teaching model: bytes 0–31, then 32–63, and so on.</p>
 <p><strong>Alignment</strong> describes where the first address falls relative to a sector boundary. Starting byte offset 0 begins on a boundary; offset 4 begins four bytes later. <strong>Coalescing</strong> means combining a warp’s nearby memory requests into fewer transactions. Here we count touched sectors, not measured DRAM traffic.</p></div>
 
 <p class="course-core"><a href="motion.html#coalescing">Walk through lane addresses → memory sectors</a> — reveal which requests share a sector before counting bytes.</p>
-<div class="lab" data-gpu-lab="coalescing" role="group" aria-label="Inspect a warp’s memory requests"><h3>Inspect a warp’s memory requests</h3><p class="gpu-static">Toy transaction model: 32 lanes each load one distinct 4-byte number; 32-byte aligned sectors, no cache reuse. Stride 1 from byte 0 touches 4 sectors (128 bytes); stride 8 touches 32 sectors (1,024 bytes) for the same 128 useful bytes.</p>
+<div class="lab" data-gpu-lab="coalescing" role="group" aria-label="Inspect a warp’s memory requests"><h3>Inspect a warp’s memory requests</h3><p class="gpu-static">Toy transaction model: 32 lanes each load one distinct 4-byte number; 32-byte aligned sectors, no cache reuse. Stride 1 from byte 0 touches 4 sectors (128 bytes); stride 8 touches 32 sectors (1,024 bytes) for the same 128 useful bytes. Teaching numbers, not measurements.</p>
 </div>
 
-<details class="course-detail"><summary>Define the boundary before counting</summary><div><p>This explorer counts distinct 32-byte sectors touched by one warp instruction. It does not predict HBM transactions, cache hit rate, latency or speedup. Real transaction rules depend on instruction width, alignment and GPU architecture. The byte offset changes alignment; stride is measured in elements, not bytes. The requested addresses remain distinct in this example.</p>
-</div></details>
+
 <div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Contiguous loads start 4 bytes past a sector boundary. Still exactly 4 sectors?</p>
 <button type="button" data-answer="correct">No; now 5 sectors</button> <button type="button" data-answer="wrong">Yes; stride alone decides</button><p class="gpu-feedback" hidden data-feedback data-explanation="The 128 useful bytes now span bytes 4 through 131, crossing five 32-byte sectors. Alignment changes demand even at stride 1."></p>
 <noscript><p>The 128 useful bytes now span bytes 4 through 131, crossing five 32-byte sectors. Alignment changes demand even at stride 1.</p>
@@ -75,6 +73,10 @@
 </div>
 
 <details class="course-detail"><summary>Capacity, traffic, bandwidth, latency</summary><div><p>Capacity uses bytes; bandwidth uses bytes/second; latency uses seconds per dependent access. A 1 GiB tensor read ten times can create about 10 GiB of logical reads while occupying only 1 GiB. Hardware caches may reduce HBM reads. Shared-memory reuse can reduce global-load demand while consuming scarce on-chip storage. Lower HBM traffic does not guarantee lower time when another resource becomes limiting.</p>
+</div></details>
+<details class="course-detail"><summary>Model boundaries</summary><div><p><strong>Cache and DRAM paths.</strong> Not every instruction uses every cache, and a store does not imply an immediate HBM write. Exact cache paths and capacities vary by architecture. A software KV cache need not fit in hardware L2. Apple unified memory changes the physical organization; the capacity/traffic distinctions still help, while CUDA block and warp details do not transfer verbatim.</p>
+<p><strong>Spills and banks.</strong> Excess register demand can spill into thread-local memory backed by device memory. Shared-memory bank conflicts (competing accesses to the same storage bank) and synchronization affect access cost.</p>
+<p><strong>Sector counts.</strong> The coalescing explorer counts distinct 32-byte sectors touched by one warp instruction. It does not predict HBM transactions, cache hit rate, latency or speedup. Real transaction rules depend on instruction width, alignment and GPU architecture. Stride is measured in elements, not bytes; the requested addresses stay distinct in this example.</p>
 </div></details>
 <p class="course-core">Next: count exactly what a tiled matrix product reuses.</p>
 </section>
