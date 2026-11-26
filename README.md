@@ -12,11 +12,11 @@ In repository Settings → Pages, choose **GitHub Actions**. The Pages workflow 
 
 ## Add a journal entry
 
-Copy `journal/starting-this-journal.html` to a new file under `journal/`. Update its title, description, date and content. Add a linked entry to the Journal section of `index.html`.
+Copy `journal/starting-this-journal.html` to a new file under `journal/`. Update its title, description, date and content. Add a linked entry to Notes & reading → Writing in `index.html`.
 
 ## Add a learning site
 
-Put static site files in a folder under `labs/` (for example `labs/my-experiment/index.html`). Add a link and description to the Learning sites section of `index.html`, replacing the empty-state message. Use relative asset paths so nested pages work. You can also link to separately hosted public sites.
+Put static site files in a folder under `labs/` (for example `labs/my-experiment/index.html`). Register it in `assets/learning-catalog.js` (title, path, kind, one-sentence summary, tags, and project if it belongs to a collection) and add its card to the Learning sites section of `index.html` (and the collection page, if any); a test checks the two stay in sync. Use relative asset paths so nested pages work. You can also link to separately hosted public sites.
 
 ## Checks
 
@@ -34,6 +34,10 @@ This repository is public. Keep credentials, private notes, internal company mat
 
 Edit `defaultTheme` in `assets/theme-config.js` (`paper`, `midnight`, `contrast`), then push to main. Every page uses this owner palette. The shared Light/Dark button switches appearance, persists under `journal-appearance`, and synchronizes across pages and tabs; it does not select a separate palette.
 
-Edit `assets/theme.css` to change the global Computation studio palette or shared sans typography. The homepage, journal and all learning sites inherit the same light, dark and high-contrast tokens. Local page CSS controls layout only. Add both shared CSS and script to every new page using relative paths.
+Edit `assets/theme.css` to change the global Modern tech palette (tokens, type, spacing, radii, shadows). The homepage, journal and all learning sites inherit the same light, dark and high-contrast tokens. Local page CSS controls layout only.
+
+## Shared chrome
+
+`assets/chrome.css` + `assets/chrome.js` provide the sticky header (wordmark, Learn / Writing / Books, icon Light/Dark toggle), breadcrumb, footer, chips, badges, buttons and cards. A page needs `theme.css`, `chrome.css` and `chrome.js` (relative paths), plus `<header class="chrome-header" data-chrome="header" data-current="learn"></header>` and `<footer class="chrome-footer" data-chrome="footer"></footer>`; empty placeholders are filled by `chrome.js`. See the comment block at the top of `assets/chrome.js` for the full API and `assets/chrome.css` for component classes.
 
 `CLAUDE.md` symlinks to `AGENTS.md`; edit the latter for future-agent design and privacy rules.

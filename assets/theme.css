@@ -1,53 +1,81 @@
-/* One Computation studio palette for the journal and every learning site.
-   Page styles own layout; colors and typography inherit these shared tokens. */
+/* Modern tech design tokens for the journal and every learning site.
+   Crisp neutral surfaces, near-black ink, one indigo accent. Colours live only here;
+   page styles own layout. Existing token names keep working for lab pages.
+
+   Themes (set on <html data-theme="...">, owner default in theme-config.js):
+     paper    light, the default
+     midnight dark
+     contrast black/white with yellow accents
+
+   Token groups
+     Surfaces   --paper --card --surface-alt --line --line-strong
+     Text       --ink --muted
+     Accent     --accent --accent-hover --on-accent --accent-soft
+     Status     --success --success-soft --danger-soft
+     Diagrams   --diagram* and Q/K/V roles --llm-query --llm-key --llm-value
+     Chips      --chip-bg --chip-ink
+     Scale      --text-* --space-* --radius-* --shadow-* --measure --header-h */
+
 :root, :root[data-theme="paper"] {
   color-scheme: light;
 
-  --paper: #f3f6fb;
-  --ink: #1d2b43;
-  --muted: #526279;
-  --line: #ced8e8;
+  --paper: #fafafb;
+  --ink: #0f1115;
+  --muted: #53586a;
+  --line: #e3e4ea;
+  --line-strong: #8a8fa0;
   --card: #ffffff;
-  --surface-alt: #e9eef7;
-  --accent: #315fbe;
-  --accent-hover: #23498f;
+  --surface-alt: #f1f2f6;
+  --accent: #4338ca;
+  --accent-hover: #3730a3;
   --on-accent: #ffffff;
-  --accent-soft: #e3ebfc;
-  --success: #087a73;
-  --success-soft: #dcf1eb;
-  --danger-soft: #f7e7e9;
-  --diagram: #1d2b43;
-  --diagram-surface: #e9eef7;
-  --diagram-ink: #1d2b43;
-  --diagram-muted: #526279;
-  --llm-query: #315fbe;
-  --llm-key: #7852ac;
-  --llm-value: #087a73;
+  --accent-soft: #eceefe;
+  --success: #0f766e;
+  --success-soft: #dff3ef;
+  --danger-soft: #fce8ea;
+  --chip-bg: #eef0f5;
+  --chip-ink: #3f4457;
+  --header-bg: rgb(250 250 251 / 88%);
+  --shadow-sm: 0 1px 2px rgb(15 17 21 / 6%);
+  --shadow-md: 0 1px 2px rgb(15 17 21 / 5%), 0 8px 24px rgb(15 17 21 / 8%);
+  --diagram: #0f1115;
+  --diagram-surface: #f1f2f6;
+  --diagram-ink: #0f1115;
+  --diagram-muted: #53586a;
+  --llm-query: #0369a1;
+  --llm-key: #a21caf;
+  --llm-value: #0f766e;
 }
 
 :root[data-theme="midnight"] {
   color-scheme: dark;
 
-  --paper: #141c2a;
-  --ink: #edf3ff;
-  --muted: #acbbd3;
-  --line: #35435b;
-  --card: #1d293b;
-  --surface-alt: #243249;
-  --accent: #8cafff;
-  --accent-hover: #b2c9ff;
-  --on-accent: #141c2a;
-  --accent-soft: #273b60;
-  --success: #79d2c2;
-  --success-soft: #1e3d3b;
-  --danger-soft: #442c3a;
-  --diagram: #141c2a;
-  --diagram-surface: #243249;
-  --diagram-ink: #edf3ff;
-  --diagram-muted: #acbbd3;
-  --llm-query: #8cafff;
-  --llm-key: #c4a7ef;
-  --llm-value: #79d2c2;
+  --paper: #0b0d12;
+  --ink: #f2f3f8;
+  --muted: #a3a8ba;
+  --line: #262b38;
+  --line-strong: #6b7186;
+  --card: #141720;
+  --surface-alt: #1b1f2b;
+  --accent: #a5b4fc;
+  --accent-hover: #c7d2fe;
+  --on-accent: #0b0d12;
+  --accent-soft: #232954;
+  --success: #5eead4;
+  --success-soft: #11332f;
+  --danger-soft: #3d1f28;
+  --chip-bg: #1f2331;
+  --chip-ink: #c3c8d8;
+  --header-bg: rgb(11 13 18 / 86%);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 40%), 0 10px 28px rgb(0 0 0 / 45%);
+  --diagram: #0b0d12;
+  --diagram-surface: #1b1f2b;
+  --diagram-ink: #f2f3f8;
+  --diagram-muted: #a3a8ba;
+  --llm-query: #7dd3fc;
+  --llm-key: #f0abfc;
+  --llm-value: #5eead4;
 }
 
 :root[data-theme="contrast"] {
@@ -57,6 +85,7 @@
   --ink: #ffffff;
   --muted: #eeeeee;
   --line: #ffffff;
+  --line-strong: #ffffff;
   --card: #000000;
   --surface-alt: #161616;
   --accent: #ffff00;
@@ -66,6 +95,13 @@
   --success: #ffff00;
   --success-soft: #262600;
   --danger-soft: #3b1d1d;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --chip-bg: #000000;
+  --chip-ink: #ffffff;
+  --header-bg: #000000;
+  --shadow-sm: none;
+  --shadow-md: none;
   --diagram: #000000;
   --diagram-surface: #242424;
   --diagram-ink: #ffffff;
@@ -75,20 +111,46 @@
   --llm-value: var(--accent);
 }
 
-/* Legacy learning components consume the same semantic palette. */
+/* Scale: type, spacing, radii, layout. Shared by every theme. */
 :root {
+  --body-font: system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, "Helvetica Neue", arial, sans-serif;
+  --heading-font: var(--body-font);
+  --mono-font: ui-monospace, "SF Mono", menlo, consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: clamp(2rem, 1.4rem + 2.4vw, 2.75rem);
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --measure: 66ch;
+  --container: 1120px;
+  --gutter: clamp(1rem, 4vw, 2rem);
+  --header-h: 3.5rem;
+
+  /* Legacy learning components consume the same semantic palette. */
   --orange: var(--accent);
   --orange-soft: var(--accent-soft);
   --teal: var(--success);
   --teal-soft: var(--success-soft);
   --bad: var(--danger-soft);
-  --body-font: system-ui, -apple-system, blinkmacsystemfont, "Segoe UI", sans-serif;
-  --heading-font: var(--body-font);
 }
 
-:where(a, button, input, select):focus-visible {
+:where(a, button, input, select, summary, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 4px;
+  outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -97,28 +159,73 @@
 
 /* Shared reading typography across the journal and learning sites. */
 body {
+  background: var(--paper);
+  color: var(--ink);
   font-family: var(--body-font);
-  font-size: 16px;
+  font-size: var(--text-base);
   line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--heading-font);
 }
 
 h2, h3, h4 {
-  font-family: var(--body-font);
   font-weight: 600;
 }
 
-button.theme-toggle {
-  font: 500 13px/1.4 var(--body-font);
+::selection {
+  background: var(--accent-soft);
   color: var(--ink);
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 7px 10px;
-  white-space: nowrap;
-  cursor: pointer;
-  letter-spacing: normal;
 }
 
-button.theme-toggle:hover {
+/* Light/Dark toggle. Markup and API are documented in chrome.js. */
+html button.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: normal;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+html button.theme-toggle:hover {
+  background: var(--accent-soft);
   border-color: var(--accent);
+}
+
+button.theme-toggle:not([data-ready]) {
+  visibility: hidden;
+}
+
+button.theme-toggle svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  fill: none;
+  stroke: currentcolor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Show the icon of the mode you will switch to. */
+button.theme-toggle .icon-sun { display: none; }
+
+:root[data-theme="midnight"] button.theme-toggle .icon-sun,
+:root[data-theme="contrast"] button.theme-toggle .icon-sun { display: block; }
+
+:root[data-theme="midnight"] button.theme-toggle .icon-moon,
+:root[data-theme="contrast"] button.theme-toggle .icon-moon { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  button.theme-toggle { transition: none; }
 }

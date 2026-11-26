@@ -3,74 +3,133 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Surya’s personal journal: books, reflections, technical notes, and learning websites.">
-  <title>Surya — personal journal</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta name="description" content="Surya Shukla’s personal journal: interactive learning sites, notes and reading.">
+  <title>Surya Shukla — learning sites, notes and reading</title>
   <link rel="stylesheet" href="assets/theme.css">
-  <script type="module" src="assets/theme.js"></script>
+  <link rel="stylesheet" href="assets/chrome.css">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="assets/chrome.js"></script>
   <script type="module" src="assets/learning-tags.js"></script>
+  <script type="module" src="assets/learning-index.js"></script>
 </head>
 <body>
-  <div class="page">
-    <header class="site-header">
-      <a class="wordmark" href="./" aria-label="Surya home">surya<span> / journal</span></a>
-      <nav aria-label="Main navigation"><a href="#sites">Learning sites</a><a href="#journal">Writing</a><a href="#books">Books</a></nav>
-    </header>
-    <main>
-      <section class="intro" aria-labelledby="intro-title">
-        <p class="eyebrow">A personal notebook</p>
+  <a class="chrome-skip" href="#main">Skip to content</a>
+  <header class="chrome-header" data-chrome="header" data-spy>
+    <div class="chrome-container chrome-header-inner">
+      <a class="chrome-brand" href="./" aria-label="Surya, home"><span class="chrome-mark" aria-hidden="true">S</span>Surya</a>
+      <nav class="chrome-nav" aria-label="Primary"><a href="#learn" data-nav="learn">Learn</a><a href="#writing" data-nav="writing">Writing</a><a href="#books" data-nav="books">Books</a></nav>
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode"></button>
+    </div>
+  </header>
+  <main id="main">
+    <section class="intro chrome-container" aria-labelledby="intro-title">
+      <div>
         <h1 id="intro-title">Surya Shukla</h1>
-        <p class="lede">I’m a software engineer at <a href="https://temple.com/">Temple</a>. Previously at <a href="https://www.zomato.com/">Zomato</a> and <a href="https://paytm.com/">Paytm</a>; a graduate of <a href="https://iitgoa.ac.in/">IIT Goa</a>.</p>
-        <p>I’ve built backend services, search systems, and event-driven pipelines.</p>
-        <p>Outside work, I play tennis, swim, and run. Fitness is a regular part of my life. This is where I share what I’m reading, learning, and thinking about.</p>
-        <p class="small">Stack: Go · Python · Kafka · Redis · Apache Solr · MySQL · AWS</p>
-        <p class="small"><a href="mailto:official.surya3jan@gmail.com">official.surya3jan@gmail.com</a><br><a href="https://www.linkedin.com/in/cerdo/">LinkedIn ↗</a> · <a href="https://github.com/cerdo03">GitHub ↗</a></p>
-        <p class="small">A journal in progress. One useful idea at a time.</p>
-      </section>
-      <section id="sites" class="section" aria-labelledby="sites-title">
-        <div class="section-heading"><h2 id="sites-title">Learning sites</h2><span>Ideas you can explore</span></div>
-        <article class="entry">
-          <div class="entry-meta"><span>Paper companion</span><span data-learning-site="dynamo">Distributed systems · Storage</span></div>
-          <div><h3><a href="labs/dynamo/">Dynamo Paper Companion <span aria-hidden="true">↗</span></a></h3><p>Study the 2007 Dynamo paper through replica placement, causal version histories, failure and repair experiments, operational trade-offs, and a source-linked evidence reader. Teaching simulations are distinguished from historical measurements.</p></div>
-        </article>
-        <article class="entry">
-          <div class="entry-meta"><span>Interactive guide</span><span data-learning-site="kafka">Kafka · System design</span></div>
-          <div><h3><a href="labs/kafka/">Kafka Design Reader <span aria-hidden="true">↗</span></a></h3><p>I built this site to understand <a href="https://chiraghasija.cc/posts/design-distributed-message-queue-system-design/">Design a Distributed Message Queue (like Kafka)</a> by Chirag Hasija. Explore partitions, consumer offsets, replication, and delivery guarantees through diagrams and interactive examples.</p></div>
-        </article>
-        <article class="entry">
-          <div class="entry-meta"><span>Interactive guide</span><span data-learning-site="scion">Distributed systems · Source control</span></div>
-          <div><h3><a href="labs/scion/">Source control, rethought <span aria-hidden="true">↗</span></a></h3><p>A visual companion to <a href="https://www.anthropic.com/engineering/redesigning-source-control">Anthropic’s Scion article</a>. Follow one code change through content-addressed storage, sparse checkouts and cache tiers, then explore competing writes and failures.</p></div>
-        </article>
-        <article class="entry learning-entry">
-          <div class="entry-meta"><span>Collection · 6 sites</span><span data-learning-project="llm-systems">AI · LLM systems</span></div>
-          <div><h3><a href="labs/llm-systems/">Learning LLM Systems <span aria-hidden="true">↗</span></a></h3><p>My ongoing study of language model inference and serving. It starts with an interactive guide to token generation and KV caching, followed by a module on attention math and KV-cache memory.</p></div>
-        </article>
-      </section>
-      <section id="journal" class="section" aria-labelledby="journal-title">
-        <div class="section-heading"><h2 id="journal-title">Writing</h2><span>Notes &amp; reflections</span></div>
-        <section class="writing-group" aria-labelledby="technical-title">
-          <h3 id="technical-title">Technical notes</h3>
-          <p class="small">Notes on software and systems will live here. For now, explore the interactive Kafka guide in Learning sites.</p>
-        </section>
-        <section class="writing-group" aria-labelledby="personal-title">
-          <h3 id="personal-title">Personal reflections</h3>
-          <article class="entry">
-            <div class="entry-meta"><time datetime="2026-10-11">11 Oct 2026</time><span>Site note</span></div>
-            <div><h4><a href="journal/starting-this-journal.html">Starting this journal <span aria-hidden="true">↗</span></a></h4><p>A small home for the things I explore, build, and learn along the way.</p></div>
-          </article>
-        </section>
-      </section>
-      <section id="books" class="section" aria-labelledby="books-title">
-        <div class="section-heading"><h2 id="books-title">Books</h2><span>On my bookshelf</span></div>
-        <div class="entry">
-          <div class="entry-meta"><span>Currently reading</span></div>
-          <div><h3>The Palace of Illusions</h3><p>Chitra Banerjee Divakaruni</p></div>
+        <p class="intro-lede">Software engineer at <a href="https://temple.com/">Temple</a>, building backend services, search systems and event-driven pipelines. Previously at <a href="https://www.zomato.com/">Zomato</a> and <a href="https://paytm.com/">Paytm</a>; <a href="https://iitgoa.ac.in/">IIT Goa</a> graduate.</p>
+        <p class="intro-aside">Away from the keyboard: tennis, swimming and running. This is where I keep what I’m learning, reading and thinking about.</p>
+      </div>
+      <div class="intro-side">
+        <ul class="intro-links">
+          <li><a class="btn" href="mailto:official.surya3jan@gmail.com">Email</a></li>
+          <li><a class="btn" href="https://www.linkedin.com/in/cerdo/">LinkedIn <span aria-hidden="true">↗</span></a></li>
+          <li><a class="btn" href="https://github.com/cerdo03">GitHub <span aria-hidden="true">↗</span></a></li>
+        </ul>
+        <div>
+          <p class="intro-label" id="stack-label">Works with</p>
+          <ul class="chip-list" aria-labelledby="stack-label"><li class="chip">Go</li><li class="chip">Python</li><li class="chip">Kafka</li><li class="chip">Redis</li><li class="chip">Apache Solr</li><li class="chip">MySQL</li><li class="chip">AWS</li></ul>
         </div>
-        <p class="small">Read: <cite>The White Tiger</cite> · <cite>Anxious People</cite> · <cite>Days at the Morisaki Bookshop</cite></p>
-        <p class="small">A place for reading notes and reflections as I write them.</p>
-      </section>
-    </main>
-    <footer><span>Surya’s personal journal</span><a href="https://github.com/cerdo03">Follow the work on GitHub ↗</a></footer>
-  </div>
+      </div>
+    </section>
+
+    <section id="learn" class="section chrome-container" aria-labelledby="learn-title">
+      <div class="section-head"><h2 id="learn-title">Learning sites</h2><p>9 interactive sites: one collection and 3 standalone guides</p></div>
+      <div class="filter" data-topic-filter hidden></div>
+      <ul class="site-grid" data-site-grid>
+        <li class="is-collection" data-entry="llm-systems">
+          <article class="card card-collection">
+            <div class="card-collection-main">
+              <div class="card-badges"><span class="badge">Collection · 6 sites</span></div>
+              <h3><a href="labs/llm-systems/">Learning LLM Systems</a></h3>
+              <p class="card-summary">My ongoing study of how language models generate text, reuse computation and serve requests: tokens and KV cache, attention math, GPUs and efficient attention.</p>
+              <div data-learning-project="llm-systems"><ul class="chip-list"><li class="chip">AI</li><li class="chip">LLM systems</li></ul></div>
+              <a class="btn btn-primary" href="labs/llm-systems/">View collection <span aria-hidden="true">→</span></a>
+            </div>
+            <ol class="member-list">
+              <li data-site="math-fluency"><a href="labs/math-fluency/"><span class="member-list-label">Module 0</span><span class="member-list-title">Mathematical Notation for Systems Engineers</span></a></li>
+              <li data-site="inference"><a href="labs/inference/"><span class="member-list-label">Module 1</span><span class="member-list-title">LLM Inference: Foundations &amp; KV Cache</span></a></li>
+              <li data-site="attention"><a href="labs/attention/"><span class="member-list-label">Module 2</span><span class="member-list-title">Attention Mechanisms &amp; KV-Cache Internals</span></a></li>
+              <li data-site="gpu"><a href="labs/gpu/"><span class="member-list-label">Module 3</span><span class="member-list-title">GPU Architecture and Performance Engineering</span></a></li>
+              <li data-site="efficient-attention"><a href="labs/efficient-attention/"><span class="member-list-label">Module 4</span><span class="member-list-title">Efficient Attention and Memory</span></a></li>
+              <li data-site="architecture-explorer"><a href="labs/attention/architecture-explorer/"><span class="member-list-label">Optional</span><span class="member-list-title">Transformer Architecture Explorer</span></a></li>
+            </ol>
+          </article>
+        </li>
+        <li data-entry="dynamo" data-site="dynamo">
+          <article class="card card-link">
+            <div class="card-badges"><span class="badge">Paper companion</span></div>
+            <h3><a class="card-stretch" href="labs/dynamo/">Dynamo Paper Companion</a></h3>
+            <p class="card-summary">The 2007 Dynamo paper through replica placement, version histories, failure and repair experiments. Simulations are labelled apart from the paper’s measurements.</p>
+            <div data-learning-site="dynamo"><ul class="chip-list"><li class="chip">Distributed systems</li><li class="chip">Storage</li><li class="chip">Research paper</li></ul></div>
+            <div class="card-foot"><span class="card-go">Open <span aria-hidden="true">→</span></span></div>
+          </article>
+        </li>
+        <li data-entry="kafka" data-site="kafka">
+          <article class="card card-link">
+            <div class="card-badges"><span class="badge">Interactive guide</span></div>
+            <h3><a class="card-stretch" href="labs/kafka/">Kafka Design Reader</a></h3>
+            <p class="card-summary">Partitions, consumer offsets, replication and delivery guarantees, following Chirag Hasija’s “Design a Distributed Message Queue”.</p>
+            <div data-learning-site="kafka"><ul class="chip-list"><li class="chip">Kafka</li><li class="chip">System design</li></ul></div>
+            <div class="card-foot"><span class="card-go">Open <span aria-hidden="true">→</span></span></div>
+          </article>
+        </li>
+        <li data-entry="scion" data-site="scion">
+          <article class="card card-link">
+            <div class="card-badges"><span class="badge">Interactive guide</span></div>
+            <h3><a class="card-stretch" href="labs/scion/">Source control, rethought</a></h3>
+            <p class="card-summary">Follow one code change through content-addressed storage, sparse checkouts and cache tiers, then break it with competing writes. Companion to Anthropic’s Scion article.</p>
+            <div data-learning-site="scion"><ul class="chip-list"><li class="chip">Distributed systems</li><li class="chip">Source control</li></ul></div>
+            <div class="card-foot"><span class="card-go">Open <span aria-hidden="true">→</span></span></div>
+          </article>
+        </li>
+
+      </ul>
+    </section>
+
+    <section id="notes" class="section chrome-container" aria-labelledby="notes-title">
+      <div class="section-head"><h2 id="notes-title">Notes &amp; reading</h2></div>
+      <div class="notes">
+        <section id="writing" aria-labelledby="writing-title">
+          <h3 id="writing-title">Writing</h3>
+          <ul class="note-list">
+            <li>
+              <span class="note-list-meta"><time datetime="2026-10-11">11 Oct 2026</time> · Site note</span>
+              <a href="journal/starting-this-journal.html">Starting this journal</a>
+              <p>A small home for the things I explore, build, and learn along the way.</p>
+            </li>
+          </ul>
+        </section>
+        <section id="books" aria-labelledby="books-title">
+          <h3 id="books-title">Books</h3>
+          <ul class="note-list">
+            <li>
+              <span class="note-list-meta">Currently reading</span>
+              <cite class="note-list-title">The Palace of Illusions</cite>
+              <p>Chitra Banerjee Divakaruni</p>
+            </li>
+            <li>
+              <span class="note-list-meta">Read</span>
+              <p><cite>The White Tiger</cite> · <cite>Anxious People</cite> · <cite>Days at the Morisaki Bookshop</cite></p>
+            </li>
+          </ul>
+        </section>
+      </div>
+    </section>
+  </main>
+  <footer class="chrome-footer" data-chrome="footer">
+    <div class="chrome-container chrome-footer-inner">
+      <span>Surya’s personal journal</span>
+      <nav aria-label="Footer"><a href="#learn">Learn</a><a href="#writing">Writing</a><a href="#books">Books</a><a href="https://github.com/cerdo03">GitHub <span aria-hidden="true">↗</span></a></nav>
+    </div>
+  </footer>
 </body>
 </html>

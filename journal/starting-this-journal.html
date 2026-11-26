@@ -5,24 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="A small home for books, reflections, technical notes, and learning websites.">
   <title>Starting this journal — Surya</title>
-  <link rel="stylesheet" href="../styles.css">
   <link rel="stylesheet" href="../assets/theme.css">
-  <script type="module" src="../assets/theme.js"></script>
+  <link rel="stylesheet" href="../assets/chrome.css">
+  <link rel="stylesheet" href="../styles.css">
+  <script type="module" src="../assets/chrome.js"></script>
 </head>
 <body>
-  <div class="page">
-    <header class="site-header"><a class="wordmark" href="../">surya<span> / journal</span></a><nav aria-label="Main navigation"><a href="../#sites">Learning sites</a><a href="../#journal">Writing</a><a href="../#books">Books</a></nav></header>
-    <main class="post">
-      <a class="back" href="../#journal">← All writing</a>
+  <a class="chrome-skip" href="#main">Skip to content</a>
+  <header class="chrome-header" data-chrome="header" data-current="writing"></header>
+  <main id="main" class="chrome-container">
+    <nav class="chrome-breadcrumb" aria-label="Breadcrumb"><ol><li><a href="../#writing">Writing</a></li><li aria-current="page">Starting this journal</li></ol></nav>
+    <article class="post">
       <h1>Starting this journal</h1>
-      <p class="small"><time datetime="2026-10-11">11 October 2026</time> · Site note</p>
+      <p class="post-meta"><time datetime="2026-10-11">11 October 2026</time> · Site note</p>
       <p>This journal is a place to collect what I read, learn, build, and think about: books, personal reflections, technical experiments, and websites that make an idea easier to understand.</p>
       <h2>What belongs here</h2>
       <p>A book that stays with me. An observation from everyday life. A question worth investigating. An explanation that finally clicks. A small project that helps me test an idea. Each entry can be short; the aim is to keep a useful record.</p>
       <h2>Learning by building</h2>
       <p>The learning sites section will collect interactive examples as I publish them. Each will include a short description of the idea it explores.</p>
-    </main>
-    <footer><span>Surya’s personal journal</span><a href="../">Back to home ↗</a></footer>
-  </div>
+    </article>
+  </main>
+  <footer class="chrome-footer" data-chrome="footer"></footer>
 </body>
 </html>

@@ -11,16 +11,16 @@ Public personal journal for GitHub account cerdo03. `CLAUDE.md` is a relative sy
 - Run relevant tests and local lint. If a lint failure comes from the current change, get owner approval before fixing it.
 - Keep source buildless HTML/CSS/JavaScript. Development tools are allowed; avoid runtime frameworks unless needed and agreed.
 
-## Design scheme: personal notebook
+## Design scheme: modern tech
 
-One visual language, two levels of interaction. The homepage is a quiet directory and short personal introduction. Inner learning sites teach through exploration.
+One visual language, two levels of interaction, aimed at learners first. The homepage is a scannable directory: a compact introduction, then the learning sites. Inner learning sites teach through exploration. Look: crisp neutral surfaces, near-black ink, system sans type, rounded cards and one vivid indigo accent.
 
 ### Homepage and journal
 
-- Put personal identity first: short professional bio and modest interests, then Learning sites, Writing and Books. Keep navigation to those three links; contact links belong in the introduction. Writing has separate Technical notes and Personal reflections groups; the reading shelf tracks books, with future book essays in Personal reflections.
-- Keep the homepage simple: short bio, contact links, dated notes, a reading shelf and learning-site links. No ornamental animations, dashboards, hero illustrations or dense cards.
-- Journal entries can cover books, personal reflections, everyday observations or technical questions and experiments. Link sources and related learning sites when relevant. Never invent book opinions, ratings or experiences for the owner. Keep reading status distinct from published reflections.
-- Use readable type, generous spacing and clear hierarchy. Keep navigation short. Avoid long resumes and invented accomplishments.
+- Keep the introduction compact (short bio, contact links, a one-line stack) so learning sites appear in the first screen. Learning sites come first; Notes & reading is a slim section after them. Primary navigation is Learn, Writing and Books; contact links belong in the introduction.
+- Learning sites are scannable cards: type badge, title, one or two sentence summary, tag chips from the catalog and a clear internal-link affordance (→; reserve ↗ for external links). A collection is a wider card that lists its member sites. The homepage lists every published site and filters by tag from `assets/learning-catalog.js`; without JavaScript the full list remains. Never list unpublished lessons.
+- Notes & reading holds dated writing and the reading shelf with no empty placeholders: add a Technical notes or Personal reflections group only when it has entries. Journal entries can cover books, personal reflections, everyday observations or technical questions and experiments; link sources and related learning sites. Never invent book opinions, ratings or experiences for the owner. Keep reading status distinct from published reflections.
+- No ornamental animations, dashboards or hero illustrations. Use readable type, generous spacing and clear hierarchy. Avoid long resumes and invented accomplishments.
 
 ### Learning sites
 
@@ -35,12 +35,13 @@ One visual language, two levels of interaction. The homepage is a quiet director
 
 ## Shared themes: one global source
 
-- All pages load `assets/theme.css` and `assets/theme.js` using correct relative paths, including journal posts and every learning site.
+- All pages load `assets/theme.css` (tokens) and `assets/theme.js`; pages using the shared chrome also load `assets/chrome.css` and `assets/chrome.js` (which loads `theme.js`) using correct relative paths, including journal posts and every learning site.
 - Owner default lives in `assets/theme-config.js`: `defaultTheme` is `paper`, `midnight` or `contrast`. Changing it and deploying changes the design everywhere for all visitors.
-- All pages use the Computation studio palette and shared sans typography: Paper has cool blue-gray backgrounds, navy text, white surfaces and blue accents; Midnight has cool navy surfaces, light text and pale blue accents. High contrast stays black/white with yellow accents. Apply these tokens globally, including the homepage, journal and every learning site; do not add collection-specific palette overrides.
+- All pages use one Modern tech palette and system sans typography (no external fonts): Paper is light with off-white surfaces, white cards, near-black ink and indigo accent; Midnight is near-black with light text and pale indigo accent; High contrast stays black/white with yellow accents. Query blue, key magenta-purple and value teal diagram roles stay distinct from the indigo accent. Apply these tokens globally, including the homepage, journal and every learning site; do not add collection-specific palette overrides.
 - Colors must use shared semantic CSS variables. Never add page-specific palettes, hardcoded colors, font families or local theme implementations. Page-specific layouts and interactive diagrams are encouraged.
-- Prefer shared `--paper`, `--ink`, `--muted`, `--line`, `--card`, `--surface-alt`, `--accent`, `--on-accent`, `--accent-soft`, `--success-soft`, `--danger-soft` and diagram tokens. Typography uses `--body-font` and `--heading-font`.
+- Prefer shared `--paper`, `--ink`, `--muted`, `--line`, `--line-strong`, `--card`, `--surface-alt`, `--accent`, `--on-accent`, `--accent-soft`, `--success-soft`, `--danger-soft`, `--chip-bg`/`--chip-ink` and diagram tokens. Typography uses `--body-font`, `--heading-font` and the `--text-*` scale; spacing, radii and shadows use `--space-*`, `--radius-*` and `--shadow-*`. Keep AA contrast in all three themes.
 - Design scheme control belongs to the owner. Visitors have one shared Light/Dark button on every page, persisted under journal-appearance and synchronized across tabs. Do not expose palette menus or independent page overrides. Legacy scheme preferences remain ignored.
+- Shared chrome: sticky header (wordmark, Learn / Writing / Books, icon Light/Dark toggle), optional breadcrumb, footer, chips, badges, buttons and cards live in `assets/chrome.css` and `assets/chrome.js`. The API (placeholders, `data-current`, `data-spy`, toggle markup) is documented at the top of `assets/chrome.js`; adopt it instead of writing page-local headers. Class names are kebab-case (`.chrome-*`, `.chip`, `.card`) to satisfy stylelint.
 - New palettes, fonts and global visual decisions belong in shared assets, not copied page CSS. Test all themes after adding a component.
 - This synchronizes sites hosted under this journal origin; separately hosted external sites need their own integration.
 
@@ -73,9 +74,9 @@ One visual language, two levels of interaction. The homepage is a quiet director
 
 ## LLM Systems collection design contract
 
-The layout and learning-interaction rules below apply to the Learning LLM Systems collection (`labs/llm-systems/`, `labs/inference/`, `labs/attention/` and future member sites). Its Computation studio palette and shared sans typography apply globally to the homepage, journal and all learning sites.
+The layout and learning-interaction rules below apply to the Learning LLM Systems collection (`labs/llm-systems/`, `labs/inference/`, `labs/attention/` and future member sites). The shared Modern tech palette and sans typography apply globally to the homepage, journal and all learning sites.
 
-- Load `labs/llm-systems/course.css` and `course-shell.js` after topic styles. These own the shared header, module navigation, concept navigation, content width, mobile behavior, and Previous/Next pattern. Topic files own diagrams and calculations. Preserve existing URLs.
+- Load `labs/llm-systems/course.css` and `course-shell.js` after topic styles. These own the shared module navigation, concept navigation, content width, mobile behavior, and Previous/Next pattern. Topic files own diagrams and calculations. Preserve existing URLs.
 - Use Module 1’s one-concept-at-a-time flow with Module 2’s precise mathematics available in expandable technical details. Keep a brief intuition, the relevant inline illustration, and its consequence on the main path. Do not add slogans, decorative motion, dashboards, notes boxes or progression gates.
 - Use the simple “The sky is” running example where appropriate. Label a wider-vector model or alternate mathematical example explicitly; do not silently change vector meanings or position numbering.
 - Put optional input experiments at the start and share their state through all dependent main diagrams. Do not edit an intermediate Q or x locally as if it were an upstream embedding change. A calculator and its chart share one model configuration.
@@ -88,11 +89,13 @@ The layout and learning-interaction rules below apply to the Learning LLM System
 
 - For numeric projections, score/softmax/value arithmetic, request/cache flow, head splitting/sharing, vocabulary projection and prefix validity, reuse `labs/llm-systems/learning-visuals.js` and its pure `visual-model.js`. Keep head/query inputs separate from cached K/V, propagate shared starting embeddings, and keep controls/layout stable during operation stepping. A scripted continuation must be identified as scripted; a numerical vocabulary demo must calculate logits from its stated final vector. Preserve essential inline diagrams and move retained implementation references into expandable details.
 
+- The collection landing page (`labs/llm-systems/index.html`) uses the shared chrome header and `overview.css`: a numbered Start here path (module numbers match), an Optional companions list, meta chips instead of wrapped columns, citations on a secondary line, and the Modules sidebar open by default on desktop (collapsible on phones).
+
 - Let the lesson column use the available screen width beside the sidebar. Constrain prose line length and diagram scale separately, rather than capping the entire desktop lesson at a narrow fixed width. Check phone, tablet and wide desktop layouts without page-level overflow.
 
 - Computational diagrams must show the operation and its purpose, not just a weight-matrix name on an arrow. Separate input sharing, multiplication, product summation, score scaling/masking, normalization, weighted-value summation, concatenation and residual addition. Put component arithmetic inline at the relevant step; keep the model map compact or expandable. Reuse the stated numeric model and shared embeddings; never assign its numbers to an uncomputed schematic layer/head.
 
 - Guided diagrams start with known inputs. Next reveals one operation and its result, retaining earlier work while concealing future calculations. Draw incoming connections smoothly before fading in their new result; keep numbers stationary and respect reduced motion. Keep equations visible, and offer Show all for reviewing the whole transformation. Inspect equivalent components or key comparisons by selecting revealed nodes; reserve selectors for meaningful changes of input, layer, head or model configuration.
 
-- Reuse the global Computation studio palette defined centrally in `assets/theme.css`: cool neutral surfaces, query blue, key purple, value teal, and shared sans typography. Do not scope a different palette to this collection. Use labels as well as colors.
+- Reuse the global Modern tech palette defined centrally in `assets/theme.css`: neutral surfaces, query blue, key magenta-purple, value teal, and shared sans typography. Do not scope a different palette to this collection. Use labels as well as colors.
 - Numerical Q/K/V, score and weighted-value views reuse `studio-arithmetic.js`: start with known inputs, reveal future results by operation, and retain Show all for complete vectors/matrices. Click revealed outputs to inspect products. Values stay stationary. Animate only eased connection/cell highlights, with reduced-motion support; no traveling numbers, particles or marching dashed lines.
