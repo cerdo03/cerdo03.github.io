@@ -608,15 +608,23 @@ a.tile:focus-visible .tile-go b {
     row-gap: var(--space-2);
   }
 
-  .chrome-nav {
-    order: 3;
-    justify-content: space-between;
-    width: 100%;
-    margin: 0;
+  /* Compact header: the name collapses to the brand mark so mark, nav and toggle share one row. */
+  .chrome-brand > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 
-  .theme-toggle {
+  .chrome-nav {
     margin-left: auto;
+  }
+
+  .chrome-nav a {
+    padding: var(--space-2) 0.625rem;
+    font-size: 0.85rem;
   }
 
   .tile {
