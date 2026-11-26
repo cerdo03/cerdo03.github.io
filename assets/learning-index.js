@@ -3,7 +3,7 @@ import { matchTag, tagCounts, sites } from './learning-catalog.js';
 // Homepage topic filter, driven by the learning catalog. Without JavaScript the full bento stays visible.
 // Markup contract: [data-topic-filter] (empty, hidden) and a .bento grid whose learning tiles carry
 // data-entry="<catalog id>". A collection tile lists member sites as .stairs > li[data-site].
-// Filtering either hides non-matching tiles and reflows the grid, or dims them (the checkbox).
+// Filtering either hides non-matching tiles and reflows the grid, or dims them (the "Hide other topics" switch).
 const host = document.querySelector('[data-topic-filter]');
 const grid = document.querySelector('.bento');
 
@@ -29,10 +29,18 @@ if (host && grid) {
   option.className = 'filter-option';
   const box = document.createElement('input');
   box.type = 'checkbox';
+  box.setAttribute('role', 'switch');
+  box.setAttribute('aria-describedby', 'filter-status');
   box.checked = hideOthers;
-  option.append(box, ' Hide others (unchecked: dim)');
+  const optionText = document.createElement('span');
+  optionText.textContent = 'Hide other topics';
+  const optionState = document.createElement('span');
+  optionState.className = 'filter-state';
+  optionState.setAttribute('aria-hidden', 'true');
+  option.append(box, optionText, optionState);
   const status = document.createElement('p');
   status.className = 'filter-status';
+  status.id = 'filter-status';
   status.setAttribute('role', 'status');
   host.replaceChildren(heading, chips, option, status);
 
@@ -118,10 +126,11 @@ if (host && grid) {
       }
     });
     update();
-    box.disabled = !filtering;
+    optionState.textContent = hideOthers ? 'On' : 'Off';
+    const others = hideOthers ? 'Other topics are hidden.' : 'Other topics are dimmed, not hidden.';
     status.textContent = filtering
-      ? `Topic: ${selected}. ${sitesShown} of ${total} learning sites match${hide ? '; other tiles hidden' : '; other tiles dimmed'}.`
-      : `Showing all ${total} learning sites.`;
+      ? `Topic: ${selected}. ${sitesShown} of ${total} learning sites match. ${others}`
+      : `Showing all ${total} learning sites. Pick a topic to filter. ${others.replace('Other topics are', 'Other topics will be').replace(', not hidden', '')}`;
     if (tilesShown === 0) status.textContent += ' Nothing matches.';
     if (user) {
       const url = new URL(location.href);

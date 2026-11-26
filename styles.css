@@ -67,6 +67,16 @@ body {
   accent-color: var(--ink);
 }
 
+.filter-state {
+  min-width: 2.4em;
+  padding: 1px 8px;
+  border: 2px solid currentcolor;
+  border-radius: var(--radius-pill);
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 .filter-status {
   flex-basis: 100%;
   margin: 2px 0 0;
@@ -194,7 +204,7 @@ body {
 .t-llm .stairs {
   flex: 1 1 auto;
   height: auto;
-  min-height: clamp(150px, 20vw, 220px);
+  min-height: clamp(200px, 22vw, 240px);
 }
 
 .t-llm .sub {
@@ -403,7 +413,7 @@ body {
   }
 
   .shelf {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
   }
 }
 

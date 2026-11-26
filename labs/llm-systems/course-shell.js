@@ -73,7 +73,7 @@ if (typeof document !== 'undefined') {
     }
     const modules = document.createElement('details');
     modules.className = 'course-modules';
-    rememberDisclosure(modules, 'modules', location.pathname.includes('llm-systems') && !window.matchMedia('(max-width: 900px)').matches); // open on the collection landing page (desktop); collapsed on lessons and phones
+    const overviewPage = location.pathname.includes('llm-systems');rememberDisclosure(modules, overviewPage ? 'modules-overview' : 'modules', overviewPage && !window.matchMedia('(max-width: 900px)').matches); // landing page: open on desktop by default with its own remembered choice (a collapsed lesson-page state must not hide it); lessons and narrow screens start collapsed
     const title = document.createElement('summary');title.textContent = 'Modules';modules.append(title);
     const links = document.createElement('nav');links.setAttribute('aria-label', 'Modules');
     links.innerHTML = '<ul><li><a href="../math-fluency/">0. Optional math toolkit</a><ul>' + mathLessons.map((text, i) => `<li><a href="../math-fluency/lesson-${i + 1}.html${mathPage ? mathSearch : ''}">0.${i + 1} ${text}</a></li>`).join('') + '</ul></li><li><a href="../inference/">1. Inference fundamentals</a></li><li><a href="../attention/">2. Attention and KV cache</a><ul>' + lessons.map((text, i) => `<li><a href="../attention/lesson-${i + 1}.html">2.${i + 1} ${text}</a></li>`).join('') + '<li><a href="../attention/architecture-explorer/">Optional · Architecture explorer</a></li></ul></li><li><a href="../gpu/">3. GPU architecture and performance</a><ul>' + gpuLessons.map((text, i) => `<li><a href="../gpu/lesson-${i + 1}.html">3.${i + 1} ${text}</a></li>`).join('') + '</ul></li></ul>';

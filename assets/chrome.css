@@ -479,10 +479,11 @@ a.tile:focus-visible .tile-go b {
 
 /* Staircase: modules as rising steps. Items are links (homepage) or .step spans (decorative). */
 .stairs {
+  container-type: inline-size;
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  height: clamp(150px, 20vw, 220px);
+  height: clamp(200px, 22vw, 240px);
   margin: 4px 0 0;
   padding: 0;
   list-style: none;
@@ -553,7 +554,9 @@ a.tile:focus-visible .tile-go b {
 .step-name {
   margin-top: auto;
   font: 800 0.74rem / 1.1 var(--body-font);
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .stairs li.is-off a {
@@ -568,21 +571,23 @@ a.tile:focus-visible .tile-go b {
   text-transform: uppercase;
 }
 
-@media (max-width: 520px) {
-  .stairs {
-    gap: 5px;
-  }
-
+/* Narrow staircases: drop the "Module" word and turn the short name sideways so no word breaks. */
+@container (max-width: 619px) {
   .step-word {
     display: none;
   }
 
   .step-name {
-    font-size: 0.62rem;
+    align-self: flex-start;
+    font-size: 0.7rem;
+    transform: rotate(180deg);
+    writing-mode: vertical-rl;
   }
+}
 
-  .stairs .step-name {
-    display: none;
+@media (max-width: 520px) {
+  .stairs {
+    gap: 5px;
   }
 
   .stairs a,
