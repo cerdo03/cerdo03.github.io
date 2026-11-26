@@ -1,5 +1,6 @@
-import { launchModel, sectorModel, multiply, toyLeft, toyRight, tileTraffic, roofline, projection, decodeAttention } from './model.js';
+import { launchModel, sectorModel, multiply, toyLeft, toyRight, tileTraffic, roofline, projection, decodeAttention, kvReadIntensity, decodeStep, latencyHiding } from './model.js';
 const num = value => new Intl.NumberFormat('en-US',{maximumFractionDigits:3}).format(value);
+const whole = value => new Intl.NumberFormat('en-US',{maximumFractionDigits:0}).format(value);
 const precise = value => value === 0 ? '0' : value < 0.001 ? value.toExponential(3) : num(value);
 let controlId = 0;
 function element(tag, text, cls) {
@@ -272,10 +273,43 @@ function kv(root) {
     const a=decodeAttention(+batch.value,+context.value,32,+heads.value,128,2);
     flow(scene,[['Current query rows',`${batch.value} sequence(s), 32 query heads, width 128. Queries match cached keys, then normalized weights mix cached values.`],['KV-head reuse assumption',`${32/+heads.value} query head(s) per KV head. Assume each KV element is fetched once and reused across grouped queries.`],['Read old/current KV; append new KV',`${context.value} visible positions include the current consumed position. Appending one new K/V row is accounted separately from the read payload.`]]);
     metrics(values,[['One-layer KV read payload',`${num(a.kvBytes)} bytes`],['Read payload in MiB',`${num(a.kvBytes/2**20)} MiB`],['QK + weighted-V work',`${num(a.flops)} FLOPs`],['KV-read-only intensity',`${num(a.flops/a.kvBytes)} FLOP/byte`],['New KV append',`${num(a.appendBytes)} bytes`]]);
-    output.textContent=`${num(a.kvBytes)} raw KV bytes per step under perfect grouped-query reuse. Doubling context or sequences doubles read payload and work here; reducing KV heads reduces payload but leaves query-head work unchanged. Not full attention traffic, HBM measurement or token latency.`;
+    const intensity=kvReadIntensity(32,+heads.value,2);
+    output.textContent=`KV-read intensity = 2·H_q / (H_KV·B) = 2·32 / (${heads.value}·2) = ${num(intensity)} FLOP/byte. Sequences and context are not in that formula: doubling either doubles both bytes and work, so intensity stays put. Only more KV heads (lower) or fewer (higher), or bytes per element, change it. Batching therefore spreads weight reads across sequences but not KV reads: each sequence reads its own cache. ${num(a.kvBytes)} raw KV bytes per step under perfect grouped-query reuse; one layer, simplified model, not an HBM measurement or token latency.`;
   }draw();
 }
-const mounts={thread,execution,residency,coalescing,matmul,tiling,roofline:roof,phases,kv};
+function latency(root) {
+  const {controls,body,output}=setup(root),timeline=element('div',undefined,'gpu-timeline'),values=element('div',undefined,'gpu-metrics');body.append(timeline,values);
+  const warps=control(controls,'Resident warps on the scheduler',[1,2,3,5,8],1,draw);
+  const run=2,wait=8,window=20;
+  function draw() {
+    const a=latencyHiding(+warps.value,run,wait,window);
+    timeline.replaceChildren();
+    timeline.style.setProperty('--ticks',window);
+    timeline.tabIndex=0;timeline.setAttribute('role','group');timeline.setAttribute('aria-label',`Timeline of ${warps.value} warps over ${window} ticks`);
+    const head=element('div',undefined,'gpu-timeline-row');head.append(element('span','Tick','gpu-timeline-name'));
+    for(let t=1;t<=window;t++)head.append(element('span',String(t),'gpu-timeline-tick'));
+    timeline.append(head);
+    const mark={run:'run',wait:'wait',ready:'idle'};
+    a.rows.forEach((cells,w)=>{
+      const row=element('div',undefined,'gpu-timeline-row');row.append(element('span',`Warp ${String.fromCharCode(65+w)}`,'gpu-timeline-name'));
+      for(const cell of cells){const node=element('span',mark[cell],`gpu-timeline-cell is-${cell}`);row.append(node);}
+      timeline.append(row);
+    });
+    metrics(values,[['Ticks the SM does math',`${a.busy} of ${a.window}`],['Math units busy',`${num(a.utilization*100)}%`],['Warps needed to cover one wait',`${a.warpsToCover}`]]);
+    output.textContent=`${warps.value} resident warp(s): ${a.busy} of ${a.window} ticks do math (${num(a.utilization*100)}%). Each warp computes ${run} ticks, then waits ${wait} ticks for memory, so ${a.warpsToCover} warps (${run}+${wait})/${run} cover one wait; more than that adds nothing here. Teaching numbers in abstract ticks, not clock cycles or a measurement; one issue slot, no other bottleneck.`;
+  }draw();
+}
+function decode(root) {
+  const {controls,body,output}=setup(root),scene=element('div',undefined,'gpu-flow'),values=element('div',undefined,'gpu-metrics');body.append(scene,values);
+  const batch=control(controls,'Active sequences',[1,8,32,128],1,draw),context=control(controls,'Visible positions per sequence',[1024,4096,32768],4096,draw);
+  function draw() {
+    const a=decodeStep(7e9,32,+batch.value,+context.value,32,8,128,2,3);
+    flow(scene,[['Weights: read once per step, shared by every sequence',`7 billion parameters × 2 bytes = ${num(a.weightBytes/1e9)} GB, however many sequences are active.`],['KV cache: each sequence reads its own',`32 layers × ${batch.value} sequence(s) × ${num(+context.value)} positions × 8 KV heads × width 128 × K and V × 2 bytes = ${num(a.kvBytes/1e9)} GB.`],['Lower bound on this step',`(${num(a.weightBytes/1e9)} + ${num(a.kvBytes/1e9)}) GB ÷ 3 TB/s = ${precise(a.timeMs)} ms.`]]);
+    metrics(values,[['Weight bytes per step',`${num(a.weightBytes/1e9)} GB`],['KV bytes per step',`${num(a.kvBytes/1e9)} GB`],['Weights share of bytes',`${(a.weightShare*100).toFixed(1)}%`],['Step time lower bound',`≈ ${precise(a.timeMs)} ms`],['Steps per second, one batch',`≈ ${whole(a.stepsPerSecond)}`],['Tokens per second, all sequences',`≈ ${whole(a.tokensPerSecond)}`]]);
+    output.textContent=`${batch.value} sequence(s) × ${context.value} positions: step ≥ ${precise(a.timeMs)} ms, so at most about ${whole(a.tokensPerSecond)} tokens/s across the batch. Batching shares the ${num(a.weightBytes/1e9)} GB of weights, so tokens/s grows; the KV bytes grow with every sequence, so the step gets slower. Invented 7B model and 3 TB/s device; reads only, no compute, attention-kernel or launch time; an illustration, not a measurement.`;
+  }draw();
+}
+const mounts={thread,execution,residency,coalescing,matmul,tiling,roofline:roof,phases,kv,latency,decode};
 for(const root of document.querySelectorAll('[data-gpu-lab]'))mounts[root.dataset.gpuLab]?.(root);
 for(const root of document.querySelectorAll('[data-check]'))for(const button of root.querySelectorAll('button'))button.addEventListener('click',()=>{
   for(const sibling of root.querySelectorAll('button'))sibling.setAttribute('aria-pressed',String(sibling===button));

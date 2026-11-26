@@ -32,3 +32,29 @@ export function decodeAttention(batch, context, queryHeads, kvHeads, width, elem
   // One layer. Two dot-product-like operations: QK and attention-weighted V.
   return { flops: 4 * batch * context * queryHeads * width, kvBytes: 2 * batch * context * kvHeads * width * elementBytes, appendBytes: 2 * batch * kvHeads * width * elementBytes };
 }
+export function kvReadIntensity(queryHeads, kvHeads, elementBytes) {
+  // 4*N*T*H_q*D FLOPs over 2*N*T*H_KV*D*B bytes: N, T and D cancel.
+  return 2 * queryHeads / (kvHeads * elementBytes);
+}
+export function decodeStep(params, layers, sequences, context, queryHeads, kvHeads, width, elementBytes, tbps) {
+  // Whole-model decode step: weights are read once and shared by all sequences; every sequence reads its own KV cache.
+  const weightBytes = params * elementBytes;
+  const kvBytes = layers * decodeAttention(sequences, context, queryHeads, kvHeads, width, elementBytes).kvBytes;
+  const bytes = weightBytes + kvBytes, timeMs = bytes / (tbps * 1e12) * 1000;
+  return { weightBytes, kvBytes, bytes, timeMs, stepsPerSecond: 1000 / timeMs, tokensPerSecond: sequences * 1000 / timeMs, weightShare: weightBytes / bytes };
+}
+export function latencyHiding(warps, runTicks, waitTicks, window) {
+  // One scheduler issues from one warp per tick. A warp runs a burst of runTicks, then waits waitTicks, then is ready again.
+  const readyAt = Array(warps).fill(0), rows = Array.from({ length: warps }, () => []);
+  let current = -1, left = 0, busy = 0;
+  for (let t = 0; t < window; t++) {
+    if (left === 0) {
+      current = -1;
+      for (let w = 0; w < warps; w++) if (readyAt[w] <= t && (current < 0 || readyAt[w] < readyAt[current])) current = w;
+      if (current >= 0) left = runTicks;
+    }
+    for (let w = 0; w < warps; w++) rows[w].push(w === current && left > 0 ? 'run' : readyAt[w] > t ? 'wait' : 'ready');
+    if (current >= 0 && left > 0) { busy++; if (--left === 0) readyAt[current] = t + 1 + waitTicks; }
+  }
+  return { rows, busy, window, utilization: busy / window, warpsToCover: Math.ceil((runTicks + waitTicks) / runTicks) };
+}

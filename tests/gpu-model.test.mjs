@@ -73,3 +73,28 @@ test('GPU-only notation cannot change symbol meanings in older modules', async (
   assert.equal(symbolKey({textContent:'W',nextSibling:null,closest:()=>null}),null);
   assert.equal(symbolKey({textContent:'W',nextSibling:null,closest:()=>({})}),'W');
 });
+test('KV-read intensity is independent of batch and context; weights amortize but KV does not', () => {
+  ready();
+  for (const [n,t] of [[1,256],[4,4096],[16,32768]]) {
+    const a=model.decodeAttention(n,t,32,8,128,2);
+    assert.equal(a.flops/a.kvBytes,model.kvReadIntensity(32,8,2));
+  }
+  assert.equal(model.kvReadIntensity(32,8,2),4);
+  assert.equal(model.kvReadIntensity(32,32,2),1);
+  const one=model.decodeStep(7e9,32,1,4096,32,8,128,2,3), many=model.decodeStep(7e9,32,32,4096,32,8,128,2,3);
+  assert.equal(one.weightBytes,14e9);
+  assert.equal(many.weightBytes,one.weightBytes);
+  assert.equal(many.kvBytes,32*one.kvBytes);
+  assert.equal(one.kvBytes,32*16777216);
+  assert.ok(Math.abs(one.timeMs-14536870912/3e12*1000)<1e-12);
+  assert.ok(many.tokensPerSecond>14*one.tokensPerSecond&&many.timeMs<2.2*one.timeMs);
+});
+test('latency hiding: utilization rises with resident warps until the wait is covered', () => {
+  ready();
+  const u=w=>model.latencyHiding(w,2,8,20).utilization;
+  assert.equal(u(1),0.2);
+  assert.ok(u(2)>u(1)&&u(3)>u(2)&&u(5)>u(3));
+  assert.equal(u(5),1);
+  assert.equal(u(8),1);
+  assert.equal(model.latencyHiding(5,2,8,20).warpsToCover,5);
+});

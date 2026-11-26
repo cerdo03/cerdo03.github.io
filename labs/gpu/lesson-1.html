@@ -56,7 +56,7 @@
 <div class="lab" data-gpu-lab="execution" role="group" aria-label="Map work onto a GPU"><h3>Try a separate launch</h3><p>This experiment changes the total output count and inspects the final warp. Its settings are separate from the selected-output walkthrough above.</p><p class="gpu-static">Example: 1,000 output elements with 128 threads/block need 8 blocks. The last warp has 8 valid output lanes and 24 guarded lanes. A block stays on one SM during ordinary execution; a warp contains 32 CUDA threads.</p>
 </div>
 
-<details class="course-detail"><summary>Indexing pseudocode and scheduling details</summary><div><p>A thread is not a dedicated physical core. Ready warps can issue instructions while others wait on dependencies. Blocks need not start together or execute in numerical order. This ordinary mapping keeps a block on one SM; it does not specify which SM or when it runs.</p>
+<details class="course-detail"><summary>Indexing pseudocode and scheduling details</summary><div><p>A thread is not a dedicated physical core. Ready warps can issue (start) instructions while others wait on dependencies or loads. Blocks need not start together or execute in numerical order. This ordinary mapping keeps a block on one SM; it does not specify which SM or when it runs.</p>
 <pre tabindex="0" aria-label="Pseudocode; scroll horizontally if needed"><code>// Schematic mapping, not an optimized CUDA GEMM.
 flat = blockIdx.x * blockDim.x + threadIdx.x;
 if (flat &lt; rows * columns) {
@@ -67,7 +67,19 @@ if (flat &lt; rows * columns) {
     Y[row][col] = acc;
 }</code></pre><p>The multiply-add loop has an accumulator dependency. Parallel output elements do not eliminate that dependency. Optimized kernels distribute work differently and can use tensor cores for matrix fragments; this one-thread-per-output sketch explains indexing only.</p>
 </div></details></section>
-<section id="residency" aria-labelledby="residency-title"><h2 id="residency-title">Enough work is not enough resources</h2><p>A block needs registers and shared memory to reside on an SM. A larger block or more storage per block can reduce how many warps are resident. More resident warps may help hide latency, but occupancy alone does not measure useful throughput.</p>
+<section id="residency" aria-labelledby="residency-title"><h2 id="residency-title">Enough work is not enough resources</h2><p>A block needs registers and shared memory to reside on an SM. A larger block or more storage per block can reduce how many warps are resident. Before counting how many fit, see why having several matters.</p>
+
+<div class="course-core"><h3>Latency hiding: why many resident warps help</h3>
+<p><strong>Latency</strong> is the wait between asking for something and getting it. A load from device memory takes many clock cycles to return, and during that time the warp that asked cannot do its next multiply. A <strong>warp scheduler</strong> is the SM hardware that picks, each cycle, a warp that is ready and <strong>issues</strong> (starts) its next instruction. If another resident warp is ready while warp A waits, the scheduler runs that one instead. This is <strong>latency hiding</strong>: the wait is not shortened, it is overlapped with other warps’ work. Switching costs almost nothing because every resident warp’s registers stay allocated on the SM, which is why residency is limited by registers and shared memory.</p>
+<p>Try the timeline. Each warp computes for 2 ticks, then waits 8 ticks for memory. With one warp the math units sit idle most of the time. About (2 + 8) / 2 = 5 warps cover one wait.</p></div>
+
+<div class="lab" data-gpu-lab="latency" role="group" aria-label="Count how many resident warps hide a memory wait"><h3>Hide a memory wait with other warps</h3>
+<p class="gpu-static">Teaching numbers in abstract ticks, not clock cycles. Warp A computes for 2 ticks, then waits 8 ticks for a load. Alone, it keeps the math units busy 4 of 20 ticks (20%). With 5 resident warps, B to E run while A waits, and every tick does math (100%).</p>
+</div>
+<p class="course-core">So residency is not the goal by itself: it is the supply of other warps to switch to. That is what the occupancy number below counts. Enough warps to cover the wait is useful; more than that adds nothing in this timeline.</p>
+
+<div class="course-core"><h3>Occupancy: how many warps fit</h3>
+<p>More resident warps may help hide latency, as above, but occupancy alone does not measure useful throughput.</p></div>
 
 <div class="course-core"><p><strong>Resident</strong> means currently allocated space on an SM, whether ready to run or waiting. <strong>Registers</strong> hold a thread’s working values, such as its running sum. <strong>Shared memory</strong> holds values cooperating threads in one block can reuse. Both have limited space.</p>
 <p><strong>Occupancy</strong> is the resident warp count divided by the SM’s maximum resident warp count. The toy SM below has 64 warp slots: 8 resident warps means 8 / 64 = 12.5% occupancy. This counts allocated warps, not how busy they are. KiB means 1,024 bytes; each 32-bit register holds 4 bytes.</p></div>
@@ -79,8 +91,8 @@ if (flat &lt; rows * columns) {
 <p>Registers hold per-thread state such as the accumulator. More registers can avoid spills or enable reuse; reducing them blindly can add device-memory traffic. Search for a causal trade-off, not maximum occupancy.</p>
 </div></details>
 <div class="course-core gpu-check" data-check><p><strong>Predict:</strong> Double registers/thread. Must throughput improve?</p>
-<button type="button" data-answer="correct">No; residency may fall</button> <button type="button" data-answer="wrong">Yes; more storage is always faster</button><p class="gpu-feedback" hidden data-feedback data-explanation="Register demand can reduce resident blocks. It may also avoid spills or enable reuse. Only measured execution reveals the net effect."></p>
-<noscript><p>Register demand can reduce resident blocks. It may also avoid spills or enable reuse. Only measured execution reveals the net effect.</p>
+<button type="button" data-answer="correct">No; residency may fall</button> <button type="button" data-answer="wrong">Yes; more storage is always faster</button><p class="gpu-feedback" hidden data-feedback data-explanation="Register demand can reduce resident blocks, leaving fewer warps to switch to while one waits for memory. It may also avoid spills or enable reuse. Only measured execution reveals the net effect."></p>
+<noscript><p>Register demand can reduce resident blocks, leaving fewer warps to switch to while one waits for memory. It may also avoid spills or enable reuse. Only measured execution reveals the net effect.</p>
 </noscript></div></section>
 <section id="dependencies" aria-labelledby="dependencies-title"><h2 id="dependencies-title">Parallelism must respect dependencies</h2><p>In “The sky is”, prefill has three supplied token rows. Within one layer, many projections and output elements can run in parallel. The next layer still needs the previous layer’s outputs. During ordinary autoregressive decode, the next input token is unknown until the current step selects it.</p>
 

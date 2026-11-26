@@ -109,3 +109,23 @@
   .gpu-thread-lanes { grid-template-columns: repeat(4,minmax(0,1fr)); }
   .gpu-thread-diagram .gpu-nest-link::before { content: none; }
 }
+
+/* Latency-hiding timeline: text labels in every cell, tint is only a second cue. */
+.gpu-course .gpu-timeline { display: grid; gap: 3px; margin: 16px 0; overflow-x: auto; }
+.gpu-timeline .gpu-timeline-row { display: grid; grid-template-columns: 5.5rem repeat(var(--ticks,20), minmax(1.9rem,1fr)); gap: 3px; min-width: 52rem; }
+.gpu-timeline .gpu-timeline-name { font-weight: 600; align-self: center; }
+.gpu-timeline .gpu-timeline-tick { text-align: center; font-size: 0.75rem; color: var(--muted); }
+.gpu-timeline .gpu-timeline-cell { text-align: center; padding: 6px 0; border: 1px solid var(--line); border-radius: 4px; font-size: 0.75rem; }
+.gpu-timeline .is-run { background: var(--accent-soft); border: 2px solid var(--accent); font-weight: 700; }
+.gpu-timeline .is-wait { background: var(--surface-alt); color: var(--muted); border-style: dashed; }
+.gpu-timeline .is-ready { background: var(--card); color: var(--muted); }
+.gpu-course .gpu-source-table { margin: 16px 0; }
+.gpu-source-table th[scope="row"] { white-space: nowrap; }
+@media (max-width: 700px) {
+  .gpu-source-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .gpu-source-table caption { display: block; }
+  .gpu-source-table table, .gpu-source-table tbody, .gpu-source-table tr, .gpu-source-table th, .gpu-source-table td { display: block; }
+  .gpu-source-table tr { border: 1px solid var(--line); border-radius: 6px; background: var(--surface-alt); padding: 8px 12px; margin-bottom: 8px; }
+  .gpu-source-table th, .gpu-source-table td { border: 0; padding: 4px 0; }
+  .gpu-source-table td::before { content: attr(data-label) ': '; font-weight: 600; }
+}
