@@ -98,7 +98,7 @@
         </dl>
         <p>Read it as a hierarchy: the KV cache → one layer → its keys or values → one token position → an <var>H</var><sub>KV</sub> × <var>D</var> slice. That slice is everything one position contributes to one layer's keys (or values).</p>
         <div class="callout limit">
-          <p><span class="callout-label">Conceptual, not physical.</span> This order is a way to reason about contents, not a universal memory layout. Hugging Face-style caches typically keep one tensor per layer shaped [<var>B</var>, <var>H</var><sub>KV</sub>, <var>T</var>, <var>D</var>]; serving engines such as <a href="https://docs.vllm.ai/">vLLM</a> store K/V in fixed-size blocks (paged layouts), and attention kernels may require their own orderings. The planned Module 3 covers physical layouts. The element count is the same either way.</p>
+          <p><span class="callout-label">Conceptual, not physical.</span> This order is a way to reason about contents, not a universal memory layout. Hugging Face-style caches typically keep one tensor per layer shaped [<var>B</var>, <var>H</var><sub>KV</sub>, <var>T</var>, <var>D</var>]; serving engines such as <a href="https://docs.vllm.ai/">vLLM</a> store K/V in fixed-size blocks (paged layouts), and attention kernels may require their own orderings. <a href="../efficient-attention/lesson-4.html">Lesson 4.4 (PagedAttention)</a> shows how a serving engine stores K/V in blocks, and <a href="../gpu/">Module 3 (GPU architecture)</a> explains the GPU memory those layouts live in. The element count is the same either way.</p>
         </div>
         <div class="lab" role="group" aria-labelledby="lab-hierarchy">
           <div class="lab-header"><h3 id="lab-hierarchy">One indexed cache slice</h3>
