@@ -12,7 +12,7 @@ try{
  for(const width of [390,768,1440])for(const theme of ['paper','midnight','contrast']){
   const p=await browser.newPage({viewport:{width,height:1000},reducedMotion:'reduce'});p.on('pageerror',e=>errors.push(e.message));
   for(const route of routes){
-   await p.goto(base+route);await p.waitForSelector('.course-header');await p.evaluate(t=>document.documentElement.dataset.theme=t,theme);
+   await p.goto(base+route);await p.waitForSelector('nav[aria-label="Breadcrumb"]');await p.evaluate(t=>document.documentElement.dataset.theme=t,theme);
    const sections=await p.locator('main > section[id]').evaluateAll(ns=>ns.map(n=>n.id));
    if(route.includes('lesson-')){for(const id of sections){await p.goto(base+route+'#'+id);await p.waitForSelector(`main > section[id="${id}"]:not([hidden])`);await p.evaluate(t=>document.documentElement.dataset.theme=t,theme);await geometry(p,`${route}#${id}/${width}/${theme}`);}const active=await p.locator('.course-modules [aria-current="page"]').getAttribute('href');assert.ok(active?.includes('/efficient-attention/'));}
    await geometry(p,`${route}/${width}/${theme}`);await scan(p,`${route}/${width}/${theme}`);cases.push({route,width,theme});

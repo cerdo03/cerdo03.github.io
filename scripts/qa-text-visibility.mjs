@@ -131,7 +131,7 @@ try{
    await prepare(`/labs/scion/#${item.id}`,width,theme);
    for(let stage=0;stage<8;stage++){
     await inspect(`scion/${item.id}/${stage}/${width}/${theme}`);
-    const next=page.locator('#next-frame:not(:disabled)');if(!await next.count())break;await next.click();
+    const next=page.locator('#next-frame:not(:disabled):visible'); // the fixed worked-comparison lesson hides the stepperif(!await next.count())break;await next.click();
    }
   }
   console.log(`Page sections ${width}/${theme}: ${report.cases.length} states, ${report.issues.length} states with findings`);

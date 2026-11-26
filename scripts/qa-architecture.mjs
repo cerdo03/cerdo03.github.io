@@ -144,7 +144,7 @@ try {
   await page.goto(base+'/labs/math-fluency/lesson-4.html?from=softmax');
   assert.ok((await page.locator('.course-sidebar a').evaluateAll(a=>a.filter(x=>x.pathname.includes('/math-fluency/lesson-')).map(x=>x.search))).every(s=>s==='?from=softmax'));
   for(const path of ['/labs/attention/','/labs/attention/lesson-2.html','/labs/attention/lesson-3.html','/labs/llm-systems/']){
-    await page.goto(base+path);assert.ok(await page.locator('a[href*="architecture-explorer/"]').count()>0);assert.equal(await page.locator('.course-header a[href="/labs/llm-systems/"]').getAttribute('href'),'/labs/llm-systems/');
+    await page.goto(base+path);assert.ok(await page.locator('a[href*="architecture-explorer/"]').count()>0);if(path==='/labs/llm-systems/')assert.equal(await page.locator('nav[aria-label="Breadcrumb"] [aria-current="page"]').textContent(),'Learning LLM Systems');else assert.equal(await page.locator('.course-header a[href="/labs/llm-systems/"]').getAttribute('href'),'/labs/llm-systems/');
   }
   // Graceful graphics failure: renderer import is unavailable, core learning remains functional.
   const fallback=await context.newPage();await fallback.route('**/scene.js*',r=>r.abort());await fallback.goto(base+route);

@@ -55,7 +55,7 @@ try{
           await page.evaluate(i=>document.querySelectorAll('nav[aria-label="Concepts"] button')[i].click(),i);
           assert.equal(await page.locator('main > section[id]:visible').count(),1);
           for(const details of await page.locator('main > section[id]:visible details').all())await details.evaluate(e=>e.open=true);
-          for(const show of await page.locator('main > section[id]:visible button').filter({hasText:'Show all'}).all())await show.click();
+          for(const show of await page.locator('main > section[id]:visible button').filter({hasText:'Show all'}).elementHandles())await show.click(); // handles stay bound when a clicked button relabels itself to 'Step by step'
           await geometry();
         }
       }else await geometry();
@@ -126,7 +126,7 @@ try{
   await context.close();
   // Readable progressive fallback and all lesson links without scripts.
   const noJS=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}}),staticPage=await noJS.newPage();
-  await staticPage.goto(base+'/labs/gpu/');assert.equal(await staticPage.locator('.gpu-lesson-list a').count(),5);
+  await staticPage.goto(base+'/labs/gpu/');assert.equal(await staticPage.locator('.gpu-lesson-list a[href^="lesson-"]').count(),5);
   await staticPage.goto(base+'/labs/gpu/lesson-4.html');assert.equal(await staticPage.locator('main > section:visible').count(),3);assert.match(await staticPage.locator('.gpu-static').innerText(),/100 TFLOP/);
   await noJS.close();
   assert.deepEqual(report.errors,[]);
