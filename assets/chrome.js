@@ -14,6 +14,10 @@
 //     <footer class="chrome-footer" data-chrome="footer"></footer>
 //   </body>
 //
+// LLM Systems lesson pages (attention, efficient-attention, gpu, math-fluency, inference) get this chrome,
+// the breadcrumb and a reading-progress bar injected by labs/llm-systems/course-shell.js; they only need
+// the assets/chrome.css <link>. Standalone sites (dynamo, kafka, scion) use the placeholders above.
+//
 // An EMPTY header/footer element is filled in by this module with the standard markup, so
 // lab pages only need the one-line placeholders above. Any path depth works: links resolve
 // from this module's URL. Replace the placeholder with the static markup built by

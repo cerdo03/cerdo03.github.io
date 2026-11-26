@@ -6,13 +6,16 @@
   <meta name="description" content="A self-paced visual walkthrough of Dynamo: replica replies, partial failures, concurrent histories and application reconciliation.">
   <title>A cart, through failure — Dynamo step by step</title>
   <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="../../assets/chrome.css">
   <link rel="stylesheet" href="motion.css">
+  <script type="module" src="../../assets/chrome.js"></script>
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="motion.js"></script>
 </head>
 <body>
   <a class="skip" href="#player">Skip to animation</a>
-  <header class="topbar"><a href="../../">surya / journal</a><nav aria-label="Appearance"><a href="./">Dynamo companion ↗</a></nav></header>
+  <header class="chrome-header" data-chrome="header" data-current="learn"></header>
+  <nav class="chrome-breadcrumb chrome-container" aria-label="Breadcrumb"><ol><li><a href="../../#learn">Learn</a></li><li><a href="./">Dynamo paper companion</a></li><li aria-current="page">A cart, through failure</li></ol></nav>
   <main>
     <header class="intro-header">
       <div><p class="eyebrow">Dynamo / step by step</p><h1>A cart, through failure.</h1><p class="intro">Follow one object through copies, disagreement and recovery.<br> See what keeps working—and what the application must decide.</p></div>
@@ -59,6 +62,7 @@
     </div>
     <footer><p>Dynamo, step by step · One guided slice of the paper. <a href="./">Continue with all twelve lessons →</a></p><p>Slide navigation does not measure understanding. No reading notes or progress are recorded.</p></footer>
   </main>
+  <footer class="chrome-footer" data-chrome="footer"></footer>
   <noscript><p>This visual walkthrough requires JavaScript. Read DeCandia et al., <cite>Dynamo: Amazon’s Highly Available Key-value Store</cite>, SOSP 2007, §§4.3–4.7 for replication, versioning and recovery.</p></noscript>
 </body>
 </html>

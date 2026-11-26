@@ -45,7 +45,7 @@ export function bindThemeToggles(root = document) {
 
 apply();
 function bindDocument() {
-  if (!document.querySelector('[data-theme-toggle]')) {
+  if (!document.querySelector('[data-theme-toggle], [data-chrome="header"]')) {
     const host = document.querySelector('.site-header nav, .topbar nav, main > header');
     if (host) {
       const legacy = document.createElement('button');

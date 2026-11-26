@@ -7,10 +7,13 @@
     <title>Kafka Design Reader</title>
     <link rel="stylesheet" href="./styles.css?v=article-depth-3">
     <link rel="stylesheet" href="../../assets/theme.css">
+    <link rel="stylesheet" href="../../assets/chrome.css">
+  <script type="module" src="../../assets/chrome.js"></script>
   <script type="module" src="../../assets/theme.js"></script>
 </head>
   <body>
-    <header class="topbar"><a class="brand" href="#top">Kafka <span>Design Reader</span></a><nav><a href="#scope">Start reading</a><a href="#capacity">Capacity</a><a href="#replication">Reliability</a><a href="#bottlenecks">Recap</a></nav></header>
+    <header class="chrome-header" data-chrome="header" data-current="learn"></header>
+    <nav class="chrome-breadcrumb chrome-container" aria-label="Breadcrumb"><ol><li><a href="../../#learn">Learn</a></li><li aria-current="page">Kafka design reader</li></ol></nav>
     <main id="top">
       <section class="hero">
         <p class="eyebrow">AN INTERACTIVE STUDY GUIDE</p>
@@ -24,7 +27,8 @@
         <section id="article-content" aria-live="polite"></section>
       </div>
     </main>
-    <footer>Built from <a href="https://chiraghasija.cc/posts/design-distributed-message-queue-system-design/" target="_blank" rel="noreferrer">Design a Distributed Message Queue (like Kafka)</a>. Built to help me understand this article through interactive examples. <a href="../../">Back to my technical journal</a>.</footer>
+    <p class="source-credit">Built from <a href="https://chiraghasija.cc/posts/design-distributed-message-queue-system-design/" target="_blank" rel="noreferrer">Design a Distributed Message Queue (like Kafka)</a>. Built to help me understand this article through interactive examples.</p>
+    <footer class="chrome-footer" data-chrome="footer"></footer>
     <script type="module" src="./app.js?v=article-depth-2"></script>
   </body>
 </html>

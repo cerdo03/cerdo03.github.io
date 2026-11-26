@@ -44,7 +44,7 @@ try {
         assert.equal(await page.locator('#lessons-nav [aria-current="step"]').count(), 1);
         if (width <= 640) assert.equal(await page.locator('#contents').evaluate(el => el.open), false, 'Mobile selection closes long path');
         assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${width}/${theme}/${index}: page overflow`);
-        const header = await page.locator('.topbar').boundingBox();
+        const header = await page.locator('.chrome-header').boundingBox();
         assert.ok(header.height <= 90, 'Shared compact header');
         for (const selector of ['#version-graph', '.diagram-viewport']) {
           const region = page.locator(selector);

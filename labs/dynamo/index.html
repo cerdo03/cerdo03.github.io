@@ -6,12 +6,15 @@
   <meta name="description" content="Explore the 2007 Dynamo paper through twelve guided lessons, causal histories, replica placement, failure and recovery experiments.">
   <title>Dynamo — paper companion</title>
   <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="../../assets/chrome.css">
   <link rel="stylesheet" href="styles.css">
+  <script type="module" src="../../assets/chrome.js"></script>
   <script type="module" src="../../assets/theme.js"></script>
 </head>
 <body>
   <a class="skip" href="#lesson">Skip to lesson</a>
-  <header class="topbar"><a href="../../">surya / journal</a><nav aria-label="Appearance"></nav></header>
+  <header class="chrome-header" data-chrome="header" data-current="learn"></header>
+  <nav class="chrome-breadcrumb chrome-container" aria-label="Breadcrumb"><ol><li><a href="../../#learn">Learn</a></li><li aria-current="page">Dynamo paper companion</li></ol></nav>
   <div class="layout">
     <aside aria-label="Dynamo learning path">
       <a class="course-name" href="./">Dynamo</a>
@@ -59,6 +62,7 @@
     <footer><p>Source: DeCandia et al., <cite>Dynamo: Amazon’s Highly Available Key-value Store</cite>, SOSP 2007, §§1–7, Figures 1–8 and Tables 1–2. This describes the historical Dynamo system. Synthetic cart contents are not an Amazon production trace.</p></footer>
     </main>
   </div>
+  <footer class="chrome-footer" data-chrome="footer"></footer>
   <noscript><p>This companion needs JavaScript for its guided lessons and experiments. Source: DeCandia et al., <cite>Dynamo: Amazon’s Highly Available Key-value Store</cite>, SOSP 2007.</p></noscript>
   <script type="module" src="app.js?v=dynamo20261023-final"></script>
 </body>

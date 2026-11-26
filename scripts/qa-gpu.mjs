@@ -120,7 +120,7 @@ try{
   // Existing module routes retain context and now include the same Module 3 hierarchy.
   for(const path of ['/labs/llm-systems/','/labs/math-fluency/lesson-1.html','/labs/inference/','/labs/attention/lesson-2.html','/labs/attention/architecture-explorer/']){
     await goto(path);assert.equal(await page.locator('nav[aria-label="Modules"] a[href*="/gpu/"]').count(),6);
-    if(path.includes('attention/lesson'))assert.match(await page.locator('.course-header').innerText(),/Attention · Multi-head attention/);
+    if(path.includes('attention/lesson'))assert.match(await page.locator(".course-header").innerText(),/Attention[\s\S]*Multi-head attention/);
   }
   report.interactions.push('progressive reveal, tail guards, resource changes, coalescing alignment/stride, exact matmul + retained focus, tile traffic, roofline crossover, phase counterexamples, KV payload, feedback, symbol keyboard/Escape, cross-lesson navigation, Modules 0–2 regression');
   await context.close();

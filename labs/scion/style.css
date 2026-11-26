@@ -8,8 +8,6 @@ button.primary { background: var(--accent); color: var(--on-accent); border-colo
 button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 .skip { position: absolute; top: -100px; }
 .skip:focus { top: 8px; background: var(--card); padding: 12px; z-index: 5; }
-.topbar { min-height: 72px; border-bottom: 1px solid var(--line); padding: 16px max(24px, calc((100vw - 1240px) / 2)); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.topbar > a { color: var(--ink); text-decoration: none; font-size: 14px; }
 .layout { max-width: 1240px; margin: auto; display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 66px; padding: 40px 24px 60px; }
 aside { align-self: start; position: sticky; top: 30px; }
 .course-name { color: var(--ink); font: 26px/1.15 var(--heading-font); text-decoration: none; }
@@ -51,7 +49,7 @@ h1 { font: normal clamp(30px, 4vw, 46px)/1.15 var(--heading-font); letter-spacin
 .depth p { margin: 14px 0 0; }
 .source-note { margin: 15px 0 25px; }
 .lesson-controls { display: flex; justify-content: space-between; gap: 12px; margin: 28px 0; }
-footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 20px; }
+main > footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 20px; }
 .experiment { margin-top: 18px; padding: 18px; border: 1px solid var(--line); border-radius: 8px; }
 .experiment h3 { margin: 0 0 8px; font-size: 15px; }
 .experiment p { font-size: 14px; margin: 8px 0 14px; }
@@ -64,8 +62,7 @@ footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line)
   .node { min-height: auto; }
 }
 @media (max-width: 640px) {
-  .topbar { min-height: 60px; padding: 12px 18px; }
-  .layout { display: block; padding: 24px 18px 40px; }
+    .layout { display: block; padding: 24px 18px 40px; }
   aside { position: static; border-bottom: 1px solid var(--line); margin-bottom: 28px; padding-bottom: 10px; }
   .course-name { font-size: 22px; }
   .course-name br { display: none; }
@@ -88,3 +85,27 @@ footer { color: var(--muted); font-size: 12px; border-top: 1px solid var(--line)
   .fixed-comparison { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .fixed-comparison > section > .flow { grid-template-columns: 1fr; }
 }
+
+/* Bento treatment (shared tokens only). Site accent: lilac tile. */
+body { --site-tb: var(--tile-lilac); --site-ti: var(--tile-lilac-ink); }
+button, select, input, textarea { border: 2px solid var(--line-strong); border-radius: var(--radius-md); }
+button { font-weight: 700; }
+button:hover:not(:disabled) { color: var(--site-ti); background: var(--site-tb); border-color: var(--tile-edge); }
+button.primary { color: var(--on-accent); background: var(--accent); border-color: var(--tile-edge); border-radius: var(--radius-pill); box-shadow: 0 3px 0 var(--tile-edge); }
+button.primary:hover:not(:disabled) { color: var(--on-accent); background: var(--accent-hover); }
+:focus-visible { outline-color: var(--focus-ring); }
+.skip:focus { color: var(--ink); border-radius: var(--radius-md); }
+.chrome-breadcrumb { padding-top: var(--space-4); }
+.layout { padding-top: var(--space-4); }
+aside { top: calc(var(--header-h) + var(--space-4)); max-height: calc(100dvh - var(--header-h) - 2 * var(--space-4)); }
+.course-name { font-weight: 800; letter-spacing: -0.02em; }
+.eyebrow { display: inline-block; padding: 2px var(--space-3); color: var(--site-ti); background: var(--site-tb); border: 2px solid var(--tile-edge); border-radius: var(--radius-pill); font-weight: 800; }
+h1 { font-weight: 800; letter-spacing: -0.03em; }
+#path a[aria-current="step"] { color: var(--site-ti); background: var(--site-tb); border: 2px solid var(--tile-edge); font-weight: 800; }
+#path a:hover { color: var(--ink); background: var(--surface-alt); }
+@media (min-width: 641px) {
+  .layout main, main#lesson { padding: var(--space-5) var(--space-6) var(--space-6); background: var(--card); border: 2px solid var(--tile-edge); border-radius: var(--radius-xl); }
+}
+.takeaway, dl { border-left: 6px solid var(--site-tb); }
+.demonstrations, .stage, .experiment { border: 2px solid var(--line); border-radius: var(--radius-lg); }
+.lesson-controls, .scene-controls { border-top: 2px solid var(--line); }

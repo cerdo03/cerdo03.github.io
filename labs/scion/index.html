@@ -6,13 +6,16 @@
   <meta name="description" content="Understand source control at scale through a small shop repository, visual walkthroughs, and interactive cache experiments. Inspired by Anthropic’s Scion architecture.">
   <title>Source control, rethought — a visual guide</title>
   <link rel="stylesheet" href="../../assets/theme.css">
+  <link rel="stylesheet" href="../../assets/chrome.css">
   <link rel="stylesheet" href="style.css">
+  <script type="module" src="../../assets/chrome.js"></script>
   <script type="module" src="../../assets/theme.js"></script>
   <script type="module" src="app.js"></script>
 </head>
 <body>
   <a class="skip" href="#lesson">Skip to lesson</a>
-  <header class="topbar"><a href="../../">surya / journal</a><nav aria-label="Appearance"></nav></header>
+  <header class="chrome-header" data-chrome="header" data-current="learn"></header>
+  <nav class="chrome-breadcrumb chrome-container" aria-label="Breadcrumb"><ol><li><a href="../../#learn">Learn</a></li><li aria-current="page">Source control, rethought</li></ol></nav>
   <div class="layout">
     <aside>
       <a class="course-name" href="#repo">Source control, <br>rethought.</a>
@@ -41,6 +44,7 @@
       <footer>Independent learning companion. Diagrams are simplified teaching models; no performance measurements. Your place is saved on this browser.</footer>
     </main>
   </div>
+  <footer class="chrome-footer" data-chrome="footer"></footer>
   <noscript><p>This guide needs JavaScript for its diagrams. <a href="https://www.anthropic.com/engineering/redesigning-source-control">Read the source article.</a></p></noscript>
 </body>
 </html>

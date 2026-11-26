@@ -3,6 +3,7 @@ import '../attention/symbols.js';
 import { equationContext, conceptTitle } from './course-context.js';
 import { renderMathIn } from './math-renderer.js';
 import { mountEquationExplorers } from './equation-explorer.js';
+import { mountChrome } from '../../assets/chrome.js';
 // Shared guided reading shell for this collection only. Existing URLs and section anchors remain valid.
 const moduleBase = new URL('../', import.meta.url);
 const explorerPage = typeof document !== 'undefined' && !!document.body.dataset.explorer;
@@ -171,15 +172,59 @@ if (typeof document !== 'undefined') {
       section.querySelector('h2').remove();section.replaceWith(detail);detail.append(summary, section);
     }
   }
-  const existingHeader = inference ? document.querySelector('main > header') : document.querySelector('.site-header');
-  if (existingHeader) {
-    const themeButton = document.querySelector('[data-theme-toggle], [data-appearance-toggle]') || [...document.querySelectorAll('button')].find(b => /mode$/.test(b.textContent.trim()));
-    existingHeader.className = 'course-header';
-    document.querySelector('main')?.prepend(existingHeader);
-    existingHeader.replaceChildren();
-    const home = document.createElement('a');home.href = new URL('llm-systems/', moduleBase).pathname;home.textContent = 'Learning LLM Systems';existingHeader.append(home);
-    const context = document.createElement('span');context.textContent = efficientPage ? (efficientNumber ? `Efficient attention · ${efficientLessons[efficientNumber - 1]}` : 'Efficient attention and memory') : gpuPage ? (gpuNumber ? `GPU systems · ${gpuLessons[gpuNumber - 1]}` : 'GPU architecture and performance') : explorerPage ? 'Attention · Architecture explorer' : mathNumber ? `Mathematical notation · ${mathLessons[mathNumber - 1]}` : location.pathname.includes('/math-fluency/') ? 'Optional math toolkit' : inference ? 'Inference fundamentals' : number ? `Attention · ${lessons[number - 1]}` : location.pathname.includes('llm-systems') ? 'Modules' : 'Attention and KV cache';existingHeader.append(context);
-    if (themeButton) existingHeader.append(themeButton);
-    if (!themeButton) { const observer = new MutationObserver(() => { const toggle = document.querySelector('.theme-toggle');if (toggle) { if (toggle.parentElement !== existingHeader) existingHeader.append(toggle);observer.disconnect(); } });observer.observe(document.body, {childList: true, subtree: true}); }
+  // Shared bento chrome: header, breadcrumb (Learn > Collection > Module > Lesson), progress bar, footer.
+  const overview = location.pathname.includes('/llm-systems/');
+  const meta = efficientPage ? { step: 5, label: 'Module 4 · Efficient attention', href: '../efficient-attention/', lesson: efficientLessons[efficientNumber - 1] }
+    : gpuPage ? { step: 4, label: 'Module 3 · GPU systems', href: '../gpu/', lesson: gpuLessons[gpuNumber - 1] }
+    : explorerPage ? { step: 6, label: 'Module 2 · Attention', href: '../attention/', lesson: 'Architecture explorer' }
+    : mathPage ? { step: 1, label: 'Module 0 · Math toolkit', href: '../math-fluency/', lesson: mathLessons[mathNumber - 1] }
+    : inference ? { step: 2, label: 'Module 1 · Inference', href: '../inference/', lesson: '' }
+    : { step: 3, label: 'Module 2 · Attention', href: '../attention/', lesson: lessons[number - 1] };
+  if (!overview) {
+    document.body.dataset.courseStep = String(meta.step);
+    for (const old of document.querySelectorAll(inference ? '.site-header, main > header' : '.site-header, .topbar')) old.remove();
+    if (!document.querySelector('.chrome-header')) {
+      const header = document.createElement('header');
+      header.className = 'chrome-header';header.dataset.chrome = 'header';header.dataset.current = 'learn';
+      const skipLink = document.querySelector('.skip-link');
+      if (skipLink) skipLink.after(header); else document.body.prepend(header);
+      const footer = document.createElement('footer');
+      footer.className = 'chrome-footer';footer.dataset.chrome = 'footer';
+      document.body.append(footer);
+      const bar = document.createElement('div');
+      bar.className = 'course-progress';bar.setAttribute('aria-hidden', 'true');
+      bar.innerHTML = '<span></span>';
+      for (const stray of document.querySelectorAll('.theme-toggle')) stray.remove(); // theme.js may add a legacy toggle before this shell runs
+      mountChrome(document);
+      header.append(bar);
+      const fill = bar.firstElementChild;
+      const update = () => {
+        const range = document.documentElement.scrollHeight - window.innerHeight;
+        const scrolled = range > 0 ? Math.min(1, Math.max(0, window.scrollY / range)) : 0;
+        const at = Math.max(0, sections.findIndex(section => !section.hidden));
+        const fraction = sections.length ? (at + scrolled) / sections.length : scrolled;
+        fill.style.width = `${(Math.min(1, fraction) * 100).toFixed(1)}%`;
+      };
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      document.addEventListener('course:section', update);
+      update();
+    }
+    const crumbs = document.createElement('nav');
+    crumbs.className = 'course-header chrome-breadcrumb';crumbs.setAttribute('aria-label', 'Breadcrumb');
+    crumbs.dataset.context = mathNumber ? `Mathematical notation · ${mathLessons[mathNumber - 1]}` : `${meta.label}${meta.lesson ? ` · ${meta.lesson}` : ''}`;
+    const trail = [['Learn', '../../#learn'], ['Learning LLM Systems', '../llm-systems/'], [meta.label, meta.lesson ? meta.href : null]];
+    if (meta.lesson) trail.push([meta.lesson, null]);
+    crumbs.innerHTML = '<ol>' + trail.map(([text, href]) => href ? `<li><a href="${href}">${text}</a></li>` : `<li aria-current="page">${text}</li>`).join('') + '</ol>';
+    for (const link of crumbs.querySelectorAll('a')) { const url = new URL(link.getAttribute('href'), new URL('attention/', moduleBase));link.href = url.pathname + url.hash; }
+    document.querySelector('main')?.prepend(crumbs);
+    // Page footers keep their scope note; the shared footer owns navigation back to the journal.
+    for (const old of document.querySelectorAll('body > footer:not(.chrome-footer)')) {
+      const note = document.createElement('p');
+      note.className = 'lesson-footnote';
+      const span = old.querySelector('span');
+      if (span) note.innerHTML = span.innerHTML;
+      if (note.textContent.trim()) old.replaceWith(note); else old.remove();
+    }
   }
 }

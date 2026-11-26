@@ -9,10 +9,6 @@ button:disabled { opacity: .45; cursor: default; }
 .skip { position: absolute; top: -100px; }
 .skip:focus { top: 8px; padding: 12px; background: var(--card); z-index: 5; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px max(24px, calc((100vw - 1440px) / 2)); border-bottom: 1px solid var(--line); min-height: 72px; }
-.topbar > a { color: var(--ink); text-decoration: none; font-size: 14px; }
-.topbar nav { display: flex; align-items: center; gap: 24px; font-size: 13px; }
-.topbar nav > a { color: var(--muted); text-decoration: none; }
 main { max-width: 1440px; padding: 46px 32px 28px; margin: auto; }
 .intro-header { display: flex; justify-content: space-between; align-items: end; gap: 24px; margin-bottom: 38px; }
 .eyebrow { margin: 0; font-size: 10px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -109,8 +105,8 @@ th, td { text-align: left; border-bottom: 1px solid var(--line); padding: 10px 8
 .policy-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-block: 24px; }
 .policy-inputs > div { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-alt); }
 .policy-inputs p { margin: 12px 0 0; }
-footer { display: flex; justify-content: space-between; gap: 18px; padding: 24px 0 0; margin-top: 28px; border-top: 1px solid var(--line); font-size: 10px; color: var(--muted); }
-footer p { margin: 0; }
+main > footer { display: flex; justify-content: space-between; gap: 18px; padding: 24px 0 0; margin-top: 28px; border-top: 1px solid var(--line); font-size: 10px; color: var(--muted); }
+main > footer p { margin: 0; }
 [hidden] { display: none !important; }
 @media (max-width: 1100px) {
  .workspace { grid-template-columns: 165px minmax(0, 1fr); gap: 24px; }
@@ -129,9 +125,6 @@ footer p { margin: 0; }
  .edition { display: none; }
 }
 @media (max-width: 540px) {
- .topbar { min-height: 64px; padding: 12px 18px; }
- .topbar nav { gap: 10px; }
- .topbar nav > a { display: none; }
  main { padding: 28px 16px 24px; }
  .intro-header { margin-bottom: 25px; }
  .intro { font-size: 13px; }
@@ -175,8 +168,8 @@ footer p { margin: 0; }
  .glossary dd { margin: 5px 0 20px; }
  #read-panel, #explore-panel { padding: 20px 18px; }
  #read-panel h2, #explore-panel h2 { font-size: 24px; }
- footer { display: block; }
- footer p { margin-bottom: 10px; }
+ main > footer { display: block; }
+ main > footer p { margin-bottom: 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
  .scene * { animation: none !important; transition: none !important; }
@@ -233,3 +226,15 @@ button.symbol-label { padding: 2px 5px; border: 0; min-height: 32px; background:
 #auto-advance::before { content: ''; position: absolute; width: 14px; height: 14px; top: 3px; left: 3px; border-radius: 50%; background: var(--ink); }
 #auto-advance:checked { background: var(--accent); border-color: var(--accent); }
 #auto-advance:checked::before { left: 19px; background: var(--on-accent); }
+
+/* Bento treatment (shared tokens only). Site accent: coral tile. */
+body { --site-tb: var(--tile-coral); --site-ti: var(--tile-coral-ink); }
+button, select { border: 2px solid var(--line-strong); border-radius: var(--radius-md); font-weight: 700; }
+button:hover:not(:disabled), select:hover { border-color: var(--tile-edge); }
+.intro-header { padding: var(--space-5); color: var(--site-ti); background: var(--site-tb); border: 2px solid var(--tile-edge); border-radius: var(--radius-xl); }
+.intro-header .eyebrow, .intro-header .intro, .intro-header .edition, .intro-header h1 { color: inherit; }
+.intro-header a { color: inherit; }
+h1 { font-weight: 800; letter-spacing: -0.03em; }
+.chapters { top: calc(var(--header-h) + var(--space-4)); }
+.chrome-breadcrumb { padding-block: var(--space-4) 0; }
+.skip:focus { color: var(--ink); }
