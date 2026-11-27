@@ -79,7 +79,7 @@
 .execution-studio .execution-inspection strong { display: block; margin-bottom: 4px; }
 .execution-studio .execution-step-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 22px; }
 .llm-course .execution-studio .execution-primary { background: var(--accent); color: var(--on-accent); border: 1px solid var(--accent); border-radius: 5px; padding: 11px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
-.llm-course .execution-studio .execution-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.llm-course .execution-studio .execution-primary:hover:not(:disabled) { background: var(--accent-hover); color: var(--on-accent); }
 .llm-course .execution-studio .execution-text { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 8px 12px; font-size: 12px; cursor: pointer; }
 .llm-course .execution-studio button:disabled { opacity: .5; cursor: default; }
 .execution-studio .execution-detail { display: grid; grid-template-columns: 240px minmax(0,1fr); gap: 35px; padding: 32px 0; border-bottom: 1px solid var(--line); }
@@ -144,6 +144,8 @@
   .execution-studio .execution-steps button strong { font-size: 11px; }
   .execution-studio .scene-bar { padding: 13px 12px; font-size: 8px; gap: 8px; }
   .execution-studio .execution-drawing svg { aspect-ratio: 1.2; }
+  /* The mobile crop scales SVG text to about 4px; the MEMORY callout already names the packages. */
+  .execution-studio .execution-drawing .chip-text { display: none; }
   .execution-studio .execution-inspector { display: block; padding: 22px 18px; }
   .execution-studio .execution-selection { margin: 18px 0; }
   .execution-studio .execution-inspector h2 { font-size: 26px; }
@@ -181,6 +183,7 @@
 .execution-studio .execution-drawing .work-lane-label { font-size: 8px; fill: var(--ink); }
 .execution-studio .execution-drawing .work-on-selected { font-size: 10px; fill: var(--on-accent); }
 .execution-studio .execution-drawing .work-value { font-size: 18px; font-weight: 700; }
+.execution-studio .execution-drawing .is-covered { visibility: hidden; }
 .execution-studio .execution-drawing .gpu-work-layer { animation: gpu-work-reveal var(--execution-duration) ease-out both; }
 .execution-studio .execution-drawing .placed-block { animation: gpu-placement-reveal var(--execution-duration) ease-out both; }
 @keyframes gpu-work-reveal { from { transform: translateY(24px); } to { transform: translateY(0); } }

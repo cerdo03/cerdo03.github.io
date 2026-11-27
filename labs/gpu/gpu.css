@@ -124,7 +124,8 @@
 .gpu-course .gpu-source-table { margin: 16px 0; }
 .gpu-source-table th[scope="row"] { white-space: nowrap; }
 @media (max-width: 700px) {
-  .gpu-source-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  /* Stacked cards carry their column name in each cell's data-label, so the header row is redundant. */
+  .gpu-source-table thead { display: none; }
   .gpu-source-table caption { display: block; }
   .gpu-source-table table, .gpu-source-table tbody, .gpu-source-table tr, .gpu-source-table th, .gpu-source-table td { display: block; }
   .gpu-source-table tr { border: 1px solid var(--line); border-radius: 6px; background: var(--surface-alt); padding: 8px 12px; margin-bottom: 8px; }

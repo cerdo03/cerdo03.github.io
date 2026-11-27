@@ -54,11 +54,11 @@ function draw(launch){
  for(let i=0;i<10;i++)traces+=`<path class="board-trace" d="M 18 ${48+i*22} H ${62+i%4*12} V ${110+i%4*16} H 160 M 444 ${48+i*22} H ${394-i%4*9} V ${110+i%4*16} H 325"/>`;
  let screws='';for(const [x,y] of [[14,14],[444,14],[14,296],[444,296]])screws+=`<circle class="board-edge" cx="${x}" cy="${y}" r="5"/><path class="board-edge" d="M ${x-2} ${y} h 4"/>`;
  let contacts='';for(let i=0;i<28;i++)contacts+=`<rect class="board-contact" x="${70+i*10}" y="300" width="7" height="23" rx="1"/>`;
- board+=`<g transform="${plane(0,0,1)}">${traces}${screws}${contacts}<text x="20" y="35" class="drawing-small">EXECUTION STUDY / 01</text></g>`;
+ board+=`<g transform="${plane(0,0,1)}">${traces}${screws}${contacts}<text x="22" y="274" class="drawing-small">EXECUTION STUDY / 01</text></g>`;
  const chips=[[63,62],[63,124],[63,186],[368,62],[368,124],[368,186]];
  for(const [x,y] of chips){
   board+=plate(x,y,39,46,8,8,'chip-top');
-  board+=`<g transform="${plane(x,y,9)}"><text class="chip-text" x="5" y="16">MEMORY</text><text class="chip-text" x="5" y="28">DRAM</text>${Array.from({length:6},(_,i)=>`<path class="board-edge" d="M -4 ${5+i*6} H 0 M 39 ${5+i*6} H 43"/>`).join('')}</g>`;
+  board+=`<g transform="${plane(x,y,9)}"><text class="chip-text" x="19.5" y="26" text-anchor="middle">DRAM</text>${Array.from({length:6},(_,i)=>`<path class="board-edge" d="M -4 ${5+i*6} H 0 M 39 ${5+i*6} H 43"/>`).join('')}</g>`;
  }
  board+=plate(133,48,210,204,14,14,'die-base');
  for(let i=0;i<15;i++)board+=`<g transform="${plane(0,0,15)}"><path class="board-edge" d="M ${142+i*13} 43 v 5 M ${142+i*13} 252 v 5 M 128 ${58+i*13} h 5 M 343 ${58+i*13} h 5"/></g>`;
@@ -80,6 +80,19 @@ function draw(launch){
  const desktop=`<g class="scene-output-panel"><rect class="output-panel" x="30" y="85" width="265" height="310" rx="9"/><text class="drawing-label" x="49" y="111">OUTPUT MATRIX</text><text class="drawing-small" x="49" y="135">${gridStart}–${gridEnd-1} of ${state.items} outputs</text>${cells}<text class="drawing-heading" x="49" y="337">Output ${state.output}${state.calculation===3?' = '+outputValue:''}</text><text class="drawing-small" x="49" y="361">Row ${selected.row} · column ${selected.column}</text><text class="drawing-small" x="49" y="380">Select a cell · arrow keys move</text></g>`;
  const mobile=window.matchMedia('(max-width:650px)').matches;
  find('[data-drawing]').innerHTML=`<svg viewBox="${mobile?'280 95 750 510':'0 0 1050 635'}" role="group" aria-label="Illustrated GPU with four selectable streaming multiprocessors and a selected output matrix cell"><title>Follow output ${state.output} onto an illustrated GPU</title><desc>Six memory packages surround a raised compute die containing four SMs. Select a component for an explanation. Work grouping is separate from these physical components.</desc>${mobile?'':desktop}${mobile?'':trail}<g class="scene-machine">${board}</g>${workLayer(launch)}<text class="drawing-label" x="421" y="110">OUTPUT ${state.output} / ${state.step===0||state.step===4?'PHYSICAL HARDWARE':'WORK CLOSE-UP'}</text><text class="drawing-heading" x="421" y="139">${sceneTitle}</text><text class="drawing-small" x="421" y="161">${status}</text><path class="leader" d="M 828 199 H 868 V ${dieAnchor[1]} H ${dieAnchor[0]+20}"/><text class="drawing-label" x="828" y="185">COMPUTE DIE</text><path class="leader" d="M 848 365 H 925 V ${memoryAnchor[1]} H ${memoryAnchor[0]+8}"/><text class="drawing-label" x="848" y="386">MEMORY</text><path class="leader" d="M 435 542 H 565 V ${connectorAnchor[1]+10} H ${connectorAnchor[0]}"/><text class="drawing-label" x="355" y="564">HOST CONNECTION</text><text class="drawing-small" x="355" y="585">Work arrives from the CPU</text><path class="zoom-bracket" d="M ${dieAnchor[0]-24} ${dieAnchor[1]-16} v -10 h 20"/></svg>`;
+
+ hideCoveredLabels();
+}
+// The raised work sheet is opaque, so labels on the hardware beneath it would be hidden text. Drop them while it floats above;
+// each SM keeps its accessible name through aria-label.
+function hideCoveredLabels(){
+ const surface=find('.work-surface');if(!surface)return;
+ const inverse=surface.getScreenCTM().inverse();
+ for(const text of find('[data-drawing]').querySelectorAll('.scene-machine text')){
+  const box=text.getBBox(),toScreen=text.getScreenCTM();
+  const corners=[[box.x,box.y],[box.x+box.width,box.y],[box.x,box.y+box.height],[box.x+box.width,box.y+box.height]];
+  if(corners.some(([x,y])=>surface.isPointInFill(new DOMPoint(x,y).matrixTransform(toScreen).matrixTransform(inverse))))text.classList.add('is-covered');
+ }
 }
 function detail(launch){
  const s=launch.selected,c=outputCalculation(state.output),block=launch.blocks[s.block];
