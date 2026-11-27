@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment_retry.outputs.page_url || steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
@@ -31,5 +31,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
+      - name: Let the uploaded artifact register
+        run: sleep 15
       - uses: actions/deploy-pages@v5
         id: deployment
+        continue-on-error: true
+      - name: Wait before retrying deploy
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 45
+      - uses: actions/deploy-pages@v5
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
