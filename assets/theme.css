@@ -14,6 +14,8 @@
      Accent     --accent --accent-hover --on-accent --accent-soft --focus-ring
      Status     --success --success-soft --danger-soft
      Diagrams   --diagram* and Q/K/V roles --llm-query --llm-key --llm-value
+                --diagram-surface is the panel; --diagram-ink and --diagram-muted are text on it;
+                --diagram is a strong fill and --on-diagram is text on that fill
      Tiles      --tile-<colour> + --tile-<colour>-ink for sun, indigo (+ -accent), coral,
                 mint, lilac, pink, sky; --tile-indigo-accent(-ink) for buttons on indigo; --tile-edge --tile-fill --tile-chip;
                 stair/module steps --step-1..6 with --step-ink --step-edge.
@@ -47,6 +49,7 @@
   --diagram-surface: #fdecd0;
   --diagram-ink: #1f1710;
   --diagram-muted: #55432f;
+  --on-diagram: #fff6e6;
   --llm-query: #0067b8;
   --llm-key: #a3207c;
   --llm-value: #246f28;
@@ -104,6 +107,7 @@
   --diagram-surface: #261f17;
   --diagram-ink: #fbefdc;
   --diagram-muted: #d9c7ad;
+  --on-diagram: #fbefdc;
   --llm-query: #7cc0ff;
   --llm-key: #ff9fd6;
   --llm-value: #8be59b;
@@ -161,6 +165,7 @@
   --diagram-surface: #242424;
   --diagram-ink: #ffffff;
   --diagram-muted: #eeeeee;
+  --on-diagram: #ffffff;
   --llm-query: var(--accent);
   --llm-key: var(--accent);
   --llm-value: var(--accent);

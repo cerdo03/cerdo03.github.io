@@ -184,8 +184,9 @@
 .llm-course input[type="range"] { padding: 0; }
 
 .llm-course button { padding: 12px 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--ink); cursor: pointer; font-size: 14px; }
+.llm-course button:hover:not(:disabled) { background: var(--surface-alt); color: var(--ink); border-color: var(--line-strong); }
 .llm-course button:disabled { opacity: 0.45; cursor: default; }
-.llm-course button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.llm-course button[aria-pressed="true"], .llm-course button[aria-pressed="true"]:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
 
 /* One module hierarchy on collection, overview and lesson pages. */
 .llm-course .page { max-width: none; margin: 0; padding: 0; }

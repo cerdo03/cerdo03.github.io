@@ -420,7 +420,7 @@ pre code {
 .t-o {
   --role-bg: var(--diagram);
   --role-border: 2px solid var(--diagram);
-  --role-ink: var(--diagram-ink);
+  --role-ink: var(--on-diagram);
   --role-fill: var(--diagram);
 }
 
@@ -701,6 +701,7 @@ button:not(.theme-toggle) {
 .button:hover,
 button:not(.theme-toggle):hover {
   background: var(--accent-hover);
+  color: var(--on-accent);
 }
 
 .button-secondary,
@@ -712,6 +713,7 @@ button.button-secondary {
 
 button.button-secondary:hover {
   background: var(--surface-alt);
+  color: var(--ink);
 }
 
 button:disabled {
@@ -758,8 +760,9 @@ button:disabled {
 .diagram {
   margin: 20px 0;
   padding: 16px;
+  border: 2px solid var(--line-strong);
   border-radius: 8px;
-  background: var(--diagram);
+  background: var(--diagram-surface);
   color: var(--diagram-ink);
   max-width: 100%;
   overflow-x: auto;
