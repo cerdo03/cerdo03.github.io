@@ -89,6 +89,26 @@ test('tile colour tokens exist in every theme and keep AA contrast for their ink
   }
 });
 
+test('caption, muted and diagram text pairs keep AA contrast in every theme', () => {
+  const pairs = [['muted', 'surface-alt'], ['muted', 'accent-soft'], ['ink', 'accent-soft'], ['ink', 'surface-alt'], ['ink', 'success-soft'], ['ink', 'danger-soft'],
+    ['diagram-ink', 'diagram-surface'], ['diagram-muted', 'diagram-surface'], ['accent', 'diagram-surface'], ['on-diagram', 'diagram'], ['on-accent', 'accent-hover']];
+  for (const theme of ['paper', 'midnight', 'contrast']) {
+    const tokens = themeBlock(theme);
+    for (const [foreground, background] of pairs) {
+      if (!tokens[foreground] || !tokens[background]) continue;
+      assert.ok(ratio(tokens[foreground], tokens[background]) >= 4.5, `${theme}: ${foreground} on ${background}`);
+    }
+  }
+});
+
+test('figure panels pair their text tokens with the light diagram surface, not the dark diagram fill', () => {
+  const attention = read('labs/attention/styles.css');
+  const panel = attention.match(/\n\.diagram \{([^}]*)\}/)[1];
+  assert.match(panel, /background: var\(--diagram-surface\)/);
+  assert.match(panel, /color: var\(--diagram-ink\)/);
+  assert.match(attention.match(/\.t-o \{([^}]*)\}/)[1], /--role-ink: var\(--on-diagram\)/);
+});
+
 test('page CSS for the bento pages uses theme tokens, not hardcoded colours', () => {
   for (const file of ['styles.css', 'assets/chrome.css', 'labs/llm-systems/overview.css']) {
     assert.doesNotMatch(read(file).replace(/\/\*[\s\S]*?\*\//g, ''), /#[0-9a-fA-F]{3,8}\b|rgba?\(/, `${file} hardcodes a colour`);

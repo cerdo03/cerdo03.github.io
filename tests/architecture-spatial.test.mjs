@@ -67,6 +67,18 @@ test('tablet head layout retains each physical KV node with four well-spaced col
  assert.ok(heads[0].y-heads[4].y>=2);
  assert.deepEqual(result.map(n=>n.id),original.map(n=>n.id));
 });
+test('wide scenes lay 32 heads in two rows of sixteen so labels fit',async()=>{
+ const {layoutNodes}=await load();
+ const {sceneModel,configuration}=await import('../labs/attention/architecture-explorer/model.js');
+ const original=sceneModel('heads',configuration({qHeads:32})).nodes;
+ const before=JSON.stringify(original),result=layoutNodes(original,1400),heads=result.filter(n=>n.id.startsWith('head-'));
+ assert.equal(JSON.stringify(original),before);
+ assert.equal(new Set(heads.map(n=>n.x)).size,16);
+ assert.equal(new Set(heads.map(n=>n.y)).size,2);
+ assert.deepEqual(result.map(n=>n.id),original.map(n=>n.id));
+ const row=heads.slice(0,16).map(n=>n.x);
+ assert.ok(row.every((x,i)=>i===0||x-row[i-1]>=2.3));
+});
 test('stacked projections each receive a direct branch clear of the other blocks',async()=>{
  const {projectionRoute}=await load(),input=[0,4,0];
  for(const y of [1.5,-1.5,-4.5]){
