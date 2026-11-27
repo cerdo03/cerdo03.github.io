@@ -36,8 +36,18 @@ export function mountScene(host,labels,onSelect) {
     space={center:[...next.center],scale:next.scale};group.position.fromArray(space.center);group.scale.setScalar(space.scale);
     const height=(localSize.y+2.8)*space.scale,width=(localSize.x+3.2)*space.scale;
     const distance=Math.max(height,width/camera.aspect)/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2))*1.12;
+    const unitAxis=axis.clone().normalize();
     fit={target:group.position.clone(),position:group.position.clone().add(axis.multiplyScalar(distance)),distance};
     group.updateMatrixWorld(true);
+    // Perspective makes the nearer side of a wide diagram larger, so back off until every corner is inside the frame.
+    const box=new THREE.Box3().setFromObject(group),probe=camera.clone(),corners=[];
+    for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z])corners.push(new THREE.Vector3(x,y,z));
+    for(let i=0;i<30;i++){
+      probe.position.copy(fit.target).addScaledVector(unitAxis,fit.distance);probe.lookAt(fit.target);probe.updateMatrixWorld(true);
+      if(corners.every(c=>{const p=c.clone().project(probe);return Math.abs(p.x)<=.94&&Math.abs(p.y)<=.94;}))break;
+      fit.distance*=1.05;
+    }
+    fit.position.copy(fit.target).addScaledVector(unitAxis,fit.distance);
   }
   function snap(){tween=null;removeGhost();camera.position.copy(fit.position);controls.target.copy(fit.target);cameraLimits();controls.update();host.dataset.motion='idle';invalidate();}
   function move(duration){
@@ -63,6 +73,17 @@ export function mountScene(host,labels,onSelect) {
       item.element.style.opacity=String(item.ghost?(ghost?.opacity||0):1);
       item.element.hidden=!readable||projected.z>1||projected.z< -1||Math.abs(projected.x)>1||Math.abs(projected.y)>1;
     }
+    // Node labels never overlap: the selected node and larger blocks keep their label, crowded head labels yield.
+    // Hidden names stay available through the component buttons and each node's accessible description.
+    const placed=[],claim=item=>{
+      const box=item.element.getBoundingClientRect(),clear=placed.every(o=>box.right+1<=o.left||box.left>=o.right+1||box.bottom+1<=o.top||box.top>=o.bottom+1);
+      if(clear)placed.push(box);else item.element.hidden=true;
+    };
+    const named=labelNodes.filter(item=>item.id&&!item.element.hidden),isHead=item=>/^(head|kv)-/.test(item.id);
+    const chosen=item=>item.id===selected||item.element.classList.contains('is-selected');
+    named.filter(chosen).forEach(claim);
+    named.filter(item=>!chosen(item)&&!isHead(item)).forEach(claim);
+    named.filter(item=>!chosen(item)&&isHead(item)).forEach(claim);
     const captions=labelNodes.filter(item=>!item.id&&!item.element.hidden);
     if(captions.length){
       const viewport=host.getBoundingClientRect();
@@ -83,7 +104,7 @@ export function mountScene(host,labels,onSelect) {
     }else{disposeGroup(group);labelNodes.forEach(n=>n.element.remove());}
     group=new THREE.Group();scene.add(group);meshes=[];edges=[];labelNodes=[];graph=data;
     const colors=palette(),byId=new Map(),nodes=layoutNodes(data.nodes,host.clientWidth);
-    host.parentElement.dataset.dense=String(host.clientWidth<900&&nodes.filter(n=>n.id.startsWith('head-')).length>8);
+    const crowded=nodes.filter(n=>n.id.startsWith('head-')).length>8;host.parentElement.dataset.dense=String(host.clientWidth<900&&crowded);host.parentElement.dataset.crowded=String(crowded);
     function label(text,id,point,width){const element=document.createElement('span');element.className='scene-label';element.textContent=text;labels.append(element);labelNodes.push({element,id,point,width,root:group});}
     nodes.forEach(n=>{
       const head=n.id.startsWith('head-')||n.id.startsWith('kv-'),width=head?2.05:5;

@@ -44,6 +44,16 @@ export function layoutNodes(source,width){
    items.forEach((n,i)=>{n.x=(i%columns-(columns-1)/2)*2.6;n.y=above?2+(rows-1-Math.floor(i/columns))*2.2:-2-Math.floor(i/columns)*2.2;});
   }
  }
+ // Wide scenes have room for sixteen columns, which halves the rows so 32 heads stay large enough to label.
+ if(width>=900&&nodes.filter(n=>n.id.startsWith('head-')).length>16){
+  for(const [items,above]of [[nodes.filter(n=>n.id.startsWith('head-')),true],[nodes.filter(n=>n.id.startsWith('kv-')),false]]){
+   const columns=16,rows=Math.ceil(items.length/columns);
+   items.forEach((n,i)=>{
+    const rowLength=Math.min(columns,items.length-Math.floor(i/columns)*columns);
+    n.x=(i%columns-(rowLength-1)/2)*2.35;n.y=above?2+(rows-1-Math.floor(i/columns))*2:-2-Math.floor(i/columns)*2;
+   });
+  }
+ }
  return nodes;
 }
 // A side trunk preserves parallel input branches when projections stack vertically.
